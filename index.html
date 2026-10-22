@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Internos</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1f5c57">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Internos">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Hanken+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f1e7;--card:#fffdf8;--ink:#1c2b2a;--mut:#5d6b69;--line:#ddd5c4;--acc:#1f5c57;--accx:#fff;--warn:#ffd84d;--warnx:#3a2f00;--bad:#a8332a;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#131b1b;--card:#1b2625;--ink:#ece6d8;--mut:#9fb0ad;--line:#2f3d3b;--acc:#6cc4b8;--accx:#0c1a19;--warn:#e8c53a;--warnx:#241d00;--bad:#ff8a7e;color-scheme:dark}}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.45 "Hanken Grotesk",system-ui,sans-serif}
+main{max-width:1100px;margin:0 auto;padding:24px 16px 48px}
+h1{font:700 34px/1.1 Fraunces,Georgia,serif;margin:0}
+.sub{color:var(--mut);margin:4px 0 16px}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.who{display:flex;gap:10px;align-items:center;color:var(--mut);font-size:13px}
+.role{font-weight:700;font-size:12px;border:1px solid var(--line);border-radius:99px;padding:2px 10px;color:var(--ink)}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 16px;min-width:150px}
+.stat b{font:700 26px/1 Fraunces,Georgia,serif;display:block}.stat span{color:var(--mut);font-size:13px}
+.stat.w b{background:var(--warn);color:var(--warnx);padding:0 8px;border-radius:6px;display:inline-block}
+.bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+input,select,textarea,button{font:inherit;color:var(--ink)}
+input,select,textarea{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:9px 11px;width:100%}
+input:disabled,select:disabled,textarea:disabled{opacity:.85;background:transparent}
+.bar input{flex:1 1 220px;width:auto}.bar select{width:auto}
+button{cursor:pointer;border:1px solid var(--line);background:var(--card);border-radius:8px;padding:9px 16px;font-weight:500}
+button.p{background:var(--acc);color:var(--accx);border-color:var(--acc);font-weight:700}
+button.d{color:var(--bad);border-color:var(--bad)}button:disabled{opacity:.6;cursor:wait}
+.wrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;min-width:860px}
+th{background:var(--acc);color:var(--accx);text-align:left;font-weight:700;padding:10px 12px;white-space:nowrap;font-size:13px}
+th.s{cursor:pointer}
+td{padding:10px 12px;border-top:1px solid var(--line);vertical-align:middle}
+tr.r{cursor:pointer}tr.r:hover td{background:color-mix(in srgb,var(--acc) 8%,transparent)}
+td.n{font-weight:700}
+.y{background:var(--warn);color:var(--warnx);font-weight:700;border-radius:6px;padding:2px 8px;display:inline-block}
+.t{font-size:12px;font-weight:700;border:1px solid var(--line);border-radius:99px;padding:2px 10px}
+.empty{padding:36px;text-align:center;color:var(--mut)}
+.box{max-width:440px;margin:12vh auto 0;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:28px;display:grid;gap:14px}
+.box h2{font:700 26px/1.1 Fraunces,Georgia,serif;margin:0}.box p{margin:0;color:var(--mut)}
+.deny h2{color:var(--bad)}
+dialog{border:1px solid var(--line);border-radius:16px;background:var(--card);color:var(--ink);width:min(560px,94vw);padding:0}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+form.ff{padding:20px;display:grid;gap:12px;max-height:88vh;overflow:auto}
+form h2{font:700 24px/1.1 Fraunces,Georgia,serif;margin:0}
+label{display:grid;gap:4px;font-size:13px;color:var(--mut);font-weight:500}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+fieldset{border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:10px;margin:0}
+legend{font:700 15px Fraunces,Georgia,serif;padding:0 6px;color:var(--ink)}
+textarea{min-height:56px;resize:vertical}
+.acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}.acts .d{margin-right:auto}
+details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{margin-top:8px}
+.msg{color:var(--bad);font-size:13px;min-height:1em}
+</style>
+</head>
+<body>
+<!-- 1) Ingreso por correo -->
+<section id="login" class="box">
+  <h1>Internos</h1>
+  <p>Ingresá tu correo electrónico para continuar.</p>
+  <form id="lf" style="display:grid;gap:12px">
+    <label>Correo electrónico<input id="em" type="email" required autocomplete="email" placeholder="nombre@correo.com"></label>
+    <details><summary>Conexión con Google (avanzado)</summary>
+      <label>URL de la Web App<input id="apiurl" type="url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off"></label>
+    </details>
+    <div class="msg" id="lmsg" role="alert"></div>
+    <button class="p" id="lbtn" type="submit">Ingresar</button>
+  </form>
+</section>
+
+<!-- 3) Acceso denegado -->
+<section id="denied" class="box deny" hidden>
+  <h2>Acceso denegado</h2>
+  <p id="dtxt"></p>
+  <button id="retry">Probar con otro correo</button>
+</section>
+
+<main id="app" hidden>
+  <div class="top">
+    <div><h1>Internos</h1><p class="sub" id="hoy"></p></div>
+    <div class="who"><span id="whoem"></span><span class="role" id="whorole"></span><button id="out">Salir</button></div>
+  </div>
+  <div class="stats" id="stats"></div>
+  <div class="bar">
+    <input id="q" type="search" placeholder="Buscar por nombre o cédula…" aria-label="Buscar">
+    <select id="ft" aria-label="Tipo"><option value="">Todos los tipos</option><option>Privado</option><option>MIDES</option></select>
+    <button id="refresh">Actualizar</button>
+    <button class="p" id="add" hidden>Agregar interno</button>
+  </div>
+  <div class="msg" id="amsg" role="alert"></div>
+  <div class="wrap"><table>
+    <thead><tr><th>Nombre</th><th>Cédula</th><th class="s" id="sort">Ingreso ▲</th><th>Lleva</th><th>Le falta</th><th>Finalización</th><th>Próxima salida</th><th>Falta para salir</th><th>Tipo</th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table><div class="empty" id="empty" hidden>No hay internos para mostrar.</div></div>
+</main>
+
+<dialog id="dlg"><form id="f" class="ff">
+  <h2 id="ft2">Interno</h2>
+  <label>Nombre<input name="nombre" required autocomplete="off"></label>
+  <div class="g2">
+    <label>Cédula<input name="cedula" autocomplete="off" placeholder="1.234.567-8"></label>
+    <label>Tipo<select name="tipo"><option>Privado</option><option>MIDES</option></select></label>
+  </div>
+  <label>Fecha de ingreso<input name="ingreso" type="date" required></label>
+  <fieldset><legend>Medicación</legend>
+    <label>Desayuno<textarea name="desayuno"></textarea></label>
+    <label>Almuerzo<textarea name="almuerzo"></textarea></label>
+    <label>Merienda<textarea name="merienda"></textarea></label>
+    <label>Cena<textarea name="cena"></textarea></label>
+  </fieldset>
+  <div class="msg" id="msg" role="alert"></div>
+  <div class="acts">
+    <button type="button" class="d" id="del" hidden>Eliminar</button>
+    <button type="button" id="cancel">Cancelar</button>
+    <button type="submit" class="p" id="save">Guardar</button>
+  </div>
+</form></dialog>
+
+<script>
+/* ===== Configuración ===== */
+const DEFAULT_API = "https://script.google.com/macros/s/AKfycbzYLuWCtvRv-sQobVzwXxUhTbjfhDuul9raoOD4RbxFOkBVaPI5FLEOU4TI5z3pQl9_/exec";
+let API = DEFAULT_API;
+const ACT = { check:"checkUser", list:"getInternos", add:"addInterno", update:"updateInterno", remove:"deleteInterno" };
+const DUR=9, PRIMERA=3, AV_FIN=10, AV_SAL=7;
+const MEALS=["desayuno","almuerzo","merienda","cena"];
+
+/* ===== Estado ===== */
+let email="", role="", items=[], asc=true, cur=null, delArm=false, scriptViejo=false;
+const $=id=>document.getElementById(id);
+const isAdmin=()=>role==="Admin";
+
+/* ===== Comunicación con Google Sheets (Apps Script) ===== */
+async function api(params, body){
+  const r = body
+    ? await fetch(API,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(body)})
+    : await fetch(API+"?"+new URLSearchParams(params));
+  if(!r.ok) throw new Error("HTTP "+r.status);
+  const t=await r.text();
+  if(/^\s*</.test(t)) throw new Error("la Web App devolvió una página en vez de datos; revisá que el acceso sea «Cualquier persona» y que el enlace sea el de la implementación activa");
+  try{return JSON.parse(t)}catch(e){return t.trim()}
+}
+function matchRole(s){s=String(s||"");return /admin/i.test(s)?"Admin":/usuario|user/i.test(s)?"Usuario":""}
+function parseRole(res){
+  if(res&&typeof res==="object"){
+    if([res.authorized,res.autorizado,res.ok,res.success,res.allowed].some(v=>v===false)) return "";
+    return matchRole(res.role??res.rol??res.Rol??res.data?.role??res.data?.rol);
+  }
+  return matchRole(res);
+}
+const norm=k=>k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z]/g,"");
+function pick(o,...ks){for(const k of Object.keys(o)) if(ks.includes(norm(k))) return o[k]==null?"":o[k];return ""}
+function toISO(v){
+  v=String(v||"").trim(); if(!v) return "";
+  if(/^\d{4}-\d{2}-\d{2}/.test(v)) return v.slice(0,10);
+  const m=v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/); if(m) return m[3]+"-"+m[2].padStart(2,"0")+"-"+m[1].padStart(2,"0");
+  const d=new Date(v); return isNaN(d)?"":d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+function toItem(o){return{id:String(pick(o,"id")),nombre:String(pick(o,"nombre","nombredelinterno")),cedula:String(pick(o,"cedula")),
+  ingreso:toISO(pick(o,"ingreso","fechadeingreso","fechaingreso")),tipo:String(pick(o,"tipo")),
+  desayuno:String(pick(o,"desayuno")),almuerzo:String(pick(o,"almuerzo")),merienda:String(pick(o,"merienda")),cena:String(pick(o,"cena"))}}
+function confirmar(res){
+  if(res&&typeof res==="object"){if(res.error)throw new Error(res.error);if(res.ok===true)return}
+  throw new Error("el script no confirmó el cambio y respondió: "+JSON.stringify(res).slice(0,140)+". Probablemente sigue publicado el código viejo: pegá el código nuevo, guardalo y publicá una Nueva versión");
+}
+async function load(){
+  const res=await api({action:ACT.list,email});
+  if(typeof res==="string") throw new Error(res||"Respuesta vacía");
+  if(res&&res.error) throw new Error(res.error);
+  const arr=Array.isArray(res)?res:(res.data||res.internos||res.records||[]);
+  scriptViejo=arr.length>0&&!arr.some(o=>Object.keys(o).some(k=>norm(k)==="id"));
+  items=arr.map(toItem);
+}
+
+/* ===== Fechas ===== */
+const DAY=864e5;
+const parse=s=>{const[y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
+const hoy=(()=>{const n=new Date();return new Date(n.getFullYear(),n.getMonth(),n.getDate())})();
+const days=(a,b)=>Math.round((b-a)/DAY);
+function addM(d,n){const t=new Date(d.getFullYear(),d.getMonth()+n,1);const last=new Date(t.getFullYear(),t.getMonth()+1,0).getDate();return new Date(t.getFullYear(),t.getMonth(),Math.min(d.getDate(),last))}
+function fullM(a,b){let m=(b.getFullYear()-a.getFullYear())*12+b.getMonth()-a.getMonth();if(addM(a,m)>b)m--;return m}
+function span(a,b){const m=fullM(a,b),d=days(addM(a,m),b);return m+(m===1?" mes, ":" meses, ")+d+(d===1?" día":" días")}
+const fd=d=>String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+d.getFullYear();
+function calc(it){
+  const ing=parse(it.ingreso), fin=addM(ing,DUR);
+  const m0=ing>hoy?0:fullM(ing,hoy);
+  const idx=Math.max(PRIMERA,addM(ing,m0)>=hoy?m0:m0+1);
+  let sal=addM(ing,idx); if(sal>=fin) sal=null;
+  return{ing,fin,lleva:ing>hoy?"Aún no ingresa":span(ing,hoy),falta:fin<=hoy?"Cumplido":span(hoy,fin),
+    sal,salF:sal?(+sal===+hoy?"Sale hoy":span(hoy,sal)):"",
+    finSoon:fin>=hoy&&days(hoy,fin)<=AV_FIN,salSoon:!!sal&&days(hoy,sal)<=AV_SAL};
+}
+
+/* ===== Pantalla ===== */
+function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
+function cell(tr,txt,cls,hl){const td=el("td",cls);if(hl)td.append(el("span","y",txt));else td.textContent=txt;tr.append(td)}
+function show(which){["login","denied","app"].forEach(k=>$(k).hidden=k!==which)}
+function render(){
+  $("hoy").textContent="Hoy es "+fd(hoy)+". Tratamiento de "+DUR+" meses; primera salida a los "+PRIMERA+" meses.";
+  $("amsg").textContent=scriptViejo?"Atención: tu Apps Script de Google sigue con el código viejo, así que agregar, editar y eliminar no van a funcionar. Pegá el código nuevo, guardalo y publicá una Nueva versión (Implementar > Administrar implementaciones > lápiz > Nueva versión).":"";
+  $("whoem").textContent=email; $("whorole").textContent=role; $("add").hidden=!isAdmin();
+  const q=$("q").value.trim().toLowerCase(), ft=$("ft").value;
+  const all=items.filter(i=>i.nombre&&i.ingreso).map(i=>({i,c:calc(i)}));
+  $("stats").replaceChildren(...[[all.length,"internos",""],[all.filter(x=>x.c.salSoon).length,"salen en "+AV_SAL+" días o menos","w"],[all.filter(x=>x.c.finSoon).length,"terminan en "+AV_FIN+" días o menos","w"]]
+    .map(([n,l,k])=>{const s=el("div","stat "+k);s.append(el("b","",String(n)),el("span","",l));return s}));
+  const list=all.filter(({i})=>(!ft||i.tipo===ft)&&(!q||(i.nombre+" "+i.cedula).toLowerCase().includes(q))).sort((a,b)=>(a.c.ing-b.c.ing)*(asc?1:-1));
+  const tb=$("rows"); tb.replaceChildren(); $("empty").hidden=list.length>0;
+  list.forEach(({i,c})=>{
+    const tr=el("tr","r"); tr.tabIndex=0;
+    cell(tr,i.nombre.trim(),"n"); cell(tr,i.cedula); cell(tr,fd(c.ing)); cell(tr,c.lleva); cell(tr,c.falta);
+    cell(tr,fd(c.fin),"",c.finSoon); cell(tr,c.sal?fd(c.sal):"Sin salidas pendientes","",c.salSoon); cell(tr,c.salF,"",c.salSoon);
+    const t=el("td"); t.append(el("span","t",i.tipo)); tr.append(t);
+    tr.onclick=()=>openDlg(i); tr.onkeydown=e=>{if(e.key==="Enter")openDlg(i)};
+    tb.append(tr);
+  });
+}
+function openDlg(it){
+  cur=it||null; delArm=false; $("msg").textContent=""; $("del").textContent="Eliminar";
+  const f=$("f"); f.reset();
+  f.nombre.value=it?it.nombre.trim():""; f.cedula.value=it?.cedula||""; f.tipo.value=it?.tipo||"Privado"; f.ingreso.value=it?.ingreso||"";
+  MEALS.forEach(m=>f[m].value=it?.[m]||"");
+  const ro=!isAdmin();
+  [...f.elements].forEach(x=>{if(x.tagName!=="BUTTON")x.disabled=ro});
+  $("save").hidden=ro; $("del").hidden=ro||!it; $("cancel").textContent=ro?"Cerrar":"Cancelar";
+  $("ft2").textContent=it?it.nombre.trim():"Agregar interno";
+  $("dlg").showModal();
+}
+async function reload(){try{await load();$("amsg").textContent="";render()}catch(e){$("amsg").textContent="No se pudo actualizar la lista: "+e.message}}
+
+/* ===== Eventos ===== */
+$("lf").addEventListener("submit",async e=>{
+  e.preventDefault(); email=$("em").value.trim().toLowerCase(); $("lmsg").textContent="";
+  const u=$("apiurl").value.trim();
+  if(!u||u===DEFAULT_API){API=DEFAULT_API;try{localStorage.removeItem("internos-api")}catch(x){}}
+  else if(/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(u)){API=u;try{localStorage.setItem("internos-api",u)}catch(x){}}
+  else{$("lmsg").textContent="Esa URL no parece la de una Web App de Google (tiene que terminar en /exec).";return} $("lbtn").disabled=true; $("lbtn").textContent="Verificando…";
+  try{
+    role=parseRole(await api({action:ACT.check,email}));
+    if(!role){$("dtxt").textContent="El correo "+email+" no está autorizado para usar esta aplicación.";show("denied");return}
+    await load(); show("app"); render();
+  }catch(err){$("lmsg").textContent="No se pudo conectar con la hoja de cálculo ("+err.message+"). Probá de nuevo."}
+  finally{$("lbtn").disabled=false;$("lbtn").textContent="Ingresar"}
+});
+$("retry").onclick=()=>{email="";role="";$("em").value="";show("login")};
+$("out").onclick=()=>{email="";role="";items=[];$("em").value="";show("login")};
+$("f").addEventListener("submit",async e=>{
+  e.preventDefault(); if(!isAdmin()) return; const f=$("f");
+  const rec={id:cur?.id||("i"+Date.now().toString(36)),nombre:f.nombre.value.trim(),cedula:f.cedula.value.trim(),tipo:f.tipo.value,ingreso:f.ingreso.value};
+  MEALS.forEach(m=>rec[m]=f[m].value);
+  if(!rec.nombre||!rec.ingreso){$("msg").textContent="Completá el nombre y la fecha de ingreso.";return}
+  $("save").disabled=true; $("save").textContent="Guardando…";
+  try{
+    const res=await api(null,{action:cur?ACT.update:ACT.add,email,record:rec});
+    confirmar(res);
+    $("dlg").close(); await reload();
+  }catch(err){$("msg").textContent="No se pudo guardar: "+err.message}
+  finally{$("save").disabled=false;$("save").textContent="Guardar"}
+});
+$("del").onclick=async()=>{
+  if(!delArm){delArm=true;$("del").textContent="¿Seguro? Tocá de nuevo";return}
+  try{
+    const res=await api(null,{action:ACT.remove,email,id:cur.id});
+    confirmar(res);
+    $("dlg").close(); await reload();
+  }catch(err){$("msg").textContent="No se pudo eliminar: "+err.message}
+};
+$("cancel").onclick=()=>$("dlg").close();
+$("add").onclick=()=>openDlg(null);
+$("refresh").onclick=reload;
+$("q").oninput=render; $("ft").onchange=render;
+$("sort").onclick=()=>{asc=!asc;$("sort").textContent="Ingreso "+(asc?"▲":"▼");render()};
+try{$("em").value=localStorage.getItem("internos-email")||"";const su=localStorage.getItem("internos-api");if(su)API=su}catch(e){}
+$("apiurl").value=API;
+$("lf").addEventListener("submit",()=>{try{localStorage.setItem("internos-email",$("em").value.trim())}catch(e){}});
+</script>
+<script>
+if("serviceWorker" in navigator && location.protocol.startsWith("http")){
+  window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+}
+</script>
+</body>
+</html>
