@@ -37,7 +37,7 @@ button{cursor:pointer;border:1px solid var(--line);background:var(--card);border
 button.p{background:var(--acc);color:var(--accx);border-color:var(--acc);font-weight:700}
 button.d{color:var(--bad);border-color:var(--bad)}button:disabled{opacity:.6;cursor:wait}
 .wrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:12px}
-table{border-collapse:collapse;width:100%;min-width:860px}
+table{border-collapse:collapse;width:100%;min-width:960px}
 th{background:var(--acc);color:var(--accx);text-align:left;font-weight:700;padding:10px 12px;white-space:nowrap;font-size:13px}
 th.s{cursor:pointer}
 td{padding:10px 12px;border-top:1px solid var(--line);vertical-align:middle}
@@ -117,7 +117,7 @@ details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{mar
   </div>
   <div class="msg" id="amsg" role="alert"></div>
   <div class="wrap"><table>
-    <thead><tr><th>Nombre</th><th>Cédula</th><th class="s" id="sort">Ingreso ▲</th><th>Lleva</th><th>Le falta</th><th>Finalización</th><th>Próxima salida</th><th>Falta para salir</th><th>Tipo</th></tr></thead>
+    <thead><tr><th>Nombre</th><th>Cédula</th><th class="s" id="sort">Ingreso ▲</th><th>Lleva</th><th>Le falta</th><th>Finalización</th><th>Próxima salida</th><th>Falta para salir</th><th>Vuelve en</th><th>Tipo</th></tr></thead>
     <tbody id="rows"></tbody>
   </table><div class="empty" id="empty" hidden>No hay internos para mostrar.</div></div>
 </main>
@@ -158,6 +158,7 @@ const DEFAULT_API = "https://script.google.com/macros/s/AKfycbzYLuWCtvRv-sQobVzw
 let API = DEFAULT_API;
 const ACT = { check:"checkUser", list:"getInternos", add:"addInterno", update:"updateInterno", remove:"deleteInterno" };
 const DUR=9, PRIMERA=3, AV_FIN=10, AV_SAL=7;
+const DIAS_SAL=n=>n<=3?4:7; // salidas 1.ª a 3.ª: 4 días; de la 4.ª en adelante: una semana
 const MEALS=["desayuno","almuerzo","merienda","cena"];
 
 /* ===== Estado ===== */
@@ -221,9 +222,14 @@ function calc(it){
   const m0=ing>hoy?0:fullM(ing,hoy);
   const idx=Math.max(PRIMERA,addM(ing,m0)>=hoy?m0:m0+1);
   let sal=addM(ing,idx); if(sal>=fin) sal=null;
+  // ¿Está de salida ahora? Busca la salida que empezó y todavía no terminó
+  let vuelve="";
+  for(let n=1;;n++){const ini=addM(ing,PRIMERA+n-1);if(ini>hoy||ini>=fin)break;
+    const reg=new Date(ini.getFullYear(),ini.getMonth(),ini.getDate()+DIAS_SAL(n));
+    if(hoy<=reg){const r=days(hoy,reg);vuelve=r===0?"Hoy":r+(r===1?" día":" días");}}
   return{ing,fin,lleva:ing>hoy?"Aún no ingresa":span(ing,hoy),falta:fin<=hoy?"Cumplido":span(hoy,fin),
     sal,salF:sal?(+sal===+hoy?"Sale hoy":span(hoy,sal)):"",
-    finSoon:fin>=hoy&&days(hoy,fin)<=AV_FIN,salSoon:!!sal&&days(hoy,sal)<=AV_SAL};
+    finSoon:fin>=hoy&&days(hoy,fin)<=AV_FIN,salSoon:!!sal&&days(hoy,sal)<=AV_SAL,vuelve};
 }
 
 /* ===== Pantalla ===== */
@@ -243,7 +249,7 @@ function render(){
   list.forEach(({i,c})=>{
     const tr=el("tr","r"); tr.tabIndex=0;
     cell(tr,i.nombre.trim(),"n"); cell(tr,i.cedula); cell(tr,fd(c.ing)); cell(tr,c.lleva); cell(tr,c.falta);
-    cell(tr,fd(c.fin),"",c.finSoon); cell(tr,c.sal?fd(c.sal):"Sin salidas pendientes","",c.salSoon); cell(tr,c.salF,"",c.salSoon);
+    cell(tr,fd(c.fin),"",c.finSoon); cell(tr,c.sal?fd(c.sal):"Sin salidas pendientes","",c.salSoon); cell(tr,c.salF,"",c.salSoon); cell(tr,c.vuelve);
     const t=el("td"); t.append(el("span","t",i.tipo)); tr.append(t);
     tr.onclick=()=>openDlg(i); tr.onkeydown=e=>{if(e.key==="Enter")openDlg(i)};
     tb.append(tr);
