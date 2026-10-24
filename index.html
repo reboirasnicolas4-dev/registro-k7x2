@@ -61,6 +61,23 @@ textarea{min-height:56px;resize:vertical}
 .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}.acts .d{margin-right:auto}
 details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{margin-top:8px}
 .msg{color:var(--bad);font-size:13px;min-height:1em}
+/* ===== Impresión (solo papel; no cambia la pantalla) ===== */
+#print{display:none}
+@media print{
+  @page{size:A4 portrait;margin:12mm}
+  :root{color-scheme:light}
+  html,body{background:#fff!important;color:#000!important}
+  body>*:not(#print){display:none!important}
+  #print{display:block;font:400 11pt/1.2 Arial,Helvetica,sans-serif;color:#000}
+  #print table{border-collapse:collapse;width:100%;min-width:0}
+  #print th,#print td{border:1px solid #000;padding:3px 8px;background:#fff;color:#000;white-space:nowrap;font-size:11pt;text-align:left;vertical-align:middle}
+  #print th{font-weight:700}
+  #print td.c{text-align:center;width:9%}
+  #print td.ce,#print td.f{text-align:center}
+  #print tr.mides td.nm,#print tr.mides td.ce,#print tr.mides td.f{background:#ffeb3b!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #print tr{break-inside:avoid}
+  #print tr.blank td{height:22px}
+}
 </style>
 </head>
 <body>
@@ -95,6 +112,7 @@ details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{mar
     <input id="q" type="search" placeholder="Buscar por nombre o cédula…" aria-label="Buscar">
     <select id="ft" aria-label="Tipo"><option value="">Todos los tipos</option><option>Privado</option><option>MIDES</option></select>
     <button id="refresh">Actualizar</button>
+    <button id="imprimir">Imprimir lista</button>
     <button class="p" id="add" hidden>Agregar interno</button>
   </div>
   <div class="msg" id="amsg" role="alert"></div>
@@ -125,6 +143,14 @@ details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{mar
     <button type="submit" class="p" id="save">Guardar</button>
   </div>
 </form></dialog>
+
+<!-- Lista para imprimir (invisible en pantalla) -->
+<section id="print" aria-hidden="true">
+  <table>
+    <thead><tr><th></th><th>RESIDENTES COMUNIDAD 1</th><th></th><th></th></tr></thead>
+    <tbody id="prows"></tbody>
+  </table>
+</section>
 
 <script>
 /* ===== Configuración ===== */
@@ -276,6 +302,19 @@ $("del").onclick=async()=>{
 $("cancel").onclick=()=>$("dlg").close();
 $("add").onclick=()=>openDlg(null);
 $("refresh").onclick=reload;
+/* ===== Imprimir lista de residentes ===== */
+function buildPrint(){
+  const tb=$("prows"); tb.replaceChildren();
+  const all=items.filter(i=>i.nombre&&i.ingreso).map(i=>({i,ing:parse(i.ingreso)})).sort((a,b)=>a.ing-b.ing);
+  all.forEach(({i,ing},k)=>{
+    const tr=el("tr",i.tipo==="MIDES"?"mides":"");
+    tr.append(el("td","c",String(k+1)),el("td","nm",i.nombre.trim().toUpperCase()),el("td","ce",i.cedula),el("td","f",fd(ing)));
+    tb.append(tr);
+  });
+  for(let k=0;k<5;k++){const tr=el("tr","blank");for(let c=0;c<4;c++)tr.append(el("td",c?"":"c",""));tb.append(tr)}
+}
+window.addEventListener("beforeprint",buildPrint);
+$("imprimir").onclick=()=>{if($("dlg").open)$("dlg").close();buildPrint();window.print()};
 $("q").oninput=render; $("ft").onchange=render;
 $("sort").onclick=()=>{asc=!asc;$("sort").textContent="Ingreso "+(asc?"▲":"▼");render()};
 try{$("em").value=localStorage.getItem("internos-email")||"";const su=localStorage.getItem("internos-api");if(su)API=su}catch(e){}
