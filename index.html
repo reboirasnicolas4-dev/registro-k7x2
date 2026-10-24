@@ -130,6 +130,17 @@ details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{mar
     <label>Tipo<select name="tipo"><option>Privado</option><option>MIDES</option></select></label>
   </div>
   <label>Fecha de ingreso<input name="ingreso" type="date" required></label>
+  <fieldset><legend>Salida</legend>
+    <div class="g2">
+      <label>Salió el<input name="salioel" type="date"></label>
+      <label>Vuelve el<input name="vuelveel" type="date"></label>
+    </div>
+    <div class="acts" style="justify-content:flex-start">
+      <button type="button" id="salhoy">Salió hoy</button>
+      <button type="button" id="volvio">Volvió / no sale</button>
+    </div>
+    <small id="salinfo" style="color:var(--mut)"></small>
+  </fieldset>
   <fieldset><legend>Medicación</legend>
     <label>Desayuno<textarea name="desayuno"></textarea></label>
     <label>Almuerzo<textarea name="almuerzo"></textarea></label>
@@ -194,7 +205,8 @@ function toISO(v){
 }
 function toItem(o){return{id:String(pick(o,"id")),nombre:String(pick(o,"nombre","nombredelinterno")),cedula:String(pick(o,"cedula")),
   ingreso:toISO(pick(o,"ingreso","fechadeingreso","fechaingreso")),tipo:String(pick(o,"tipo")),
-  desayuno:String(pick(o,"desayuno")),almuerzo:String(pick(o,"almuerzo")),merienda:String(pick(o,"merienda")),cena:String(pick(o,"cena"))}}
+  desayuno:String(pick(o,"desayuno")),almuerzo:String(pick(o,"almuerzo")),merienda:String(pick(o,"merienda")),cena:String(pick(o,"cena")),
+  salio:toISO(pick(o,"salioel")),vuelve:toISO(pick(o,"vuelveel"))}}
 function confirmar(res){
   if(res&&typeof res==="object"){if(res.error)throw new Error(res.error);if(res.ok===true)return}
   throw new Error("el script no confirmó el cambio y respondió: "+JSON.stringify(res).slice(0,140)+". Probablemente sigue publicado el código viejo: pegá el código nuevo, guardalo y publicá una Nueva versión");
@@ -222,11 +234,10 @@ function calc(it){
   const m0=ing>hoy?0:fullM(ing,hoy);
   const idx=Math.max(PRIMERA,addM(ing,m0)>=hoy?m0:m0+1);
   let sal=addM(ing,idx); if(sal>=fin) sal=null;
-  // ¿Está de salida ahora? Busca la salida que empezó y todavía no terminó
+  // "Vuelve en": solo si se registró la salida en la ficha (Salió el / Vuelve el)
   let vuelve="";
-  for(let n=1;;n++){const ini=addM(ing,PRIMERA+n-1);if(ini>hoy||ini>=fin)break;
-    const reg=new Date(ini.getFullYear(),ini.getMonth(),ini.getDate()+DIAS_SAL(n));
-    if(hoy<=reg){const r=days(hoy,reg);vuelve=r===0?"Hoy":r+(r===1?" día":" días");}}
+  if(it.salio&&it.vuelve){const s0=parse(it.salio),v0=parse(it.vuelve);
+    if(hoy>=s0&&hoy<=v0){const r=days(hoy,v0);vuelve=r===0?"Hoy":r+(r===1?" día":" días");}}
   return{ing,fin,lleva:ing>hoy?"Aún no ingresa":span(ing,hoy),falta:fin<=hoy?"Cumplido":span(hoy,fin),
     sal,salF:sal?(+sal===+hoy?"Sale hoy":span(hoy,sal)):"",
     finSoon:fin>=hoy&&days(hoy,fin)<=AV_FIN,salSoon:!!sal&&days(hoy,sal)<=AV_SAL,vuelve};
@@ -260,6 +271,8 @@ function openDlg(it){
   const f=$("f"); f.reset();
   f.nombre.value=it?it.nombre.trim():""; f.cedula.value=it?.cedula||""; f.tipo.value=it?.tipo||"Privado"; f.ingreso.value=it?.ingreso||"";
   MEALS.forEach(m=>f[m].value=it?.[m]||"");
+  f.salioel.value=it?.salio||""; f.vuelveel.value=it?.vuelve||""; salInfo();
+  $("salhoy").hidden=$("volvio").hidden=!isAdmin();
   const ro=!isAdmin();
   [...f.elements].forEach(x=>{if(x.tagName!=="BUTTON")x.disabled=ro});
   $("save").hidden=ro; $("del").hidden=ro||!it; $("cancel").textContent=ro?"Cerrar":"Cancelar";
@@ -288,6 +301,8 @@ $("f").addEventListener("submit",async e=>{
   e.preventDefault(); if(!isAdmin()) return; const f=$("f");
   const rec={id:cur?.id||("i"+Date.now().toString(36)),nombre:f.nombre.value.trim(),cedula:f.cedula.value.trim(),tipo:f.tipo.value,ingreso:f.ingreso.value};
   MEALS.forEach(m=>rec[m]=f[m].value);
+  rec.salioel=f.salioel.value; rec.vuelveel=f.vuelveel.value;
+  if(rec.salioel&&!rec.vuelveel){$("msg").textContent="Poné también la fecha en que vuelve.";return}
   if(!rec.nombre||!rec.ingreso){$("msg").textContent="Completá el nombre y la fecha de ingreso.";return}
   $("save").disabled=true; $("save").textContent="Guardando…";
   try{
@@ -306,6 +321,17 @@ $("del").onclick=async()=>{
   }catch(err){$("msg").textContent="No se pudo eliminar: "+err.message}
 };
 $("cancel").onclick=()=>$("dlg").close();
+/* ===== Salida registrada a mano ===== */
+const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+function numSalida(ingISO,salISO){if(!ingISO||!salISO)return 1;const ing=parse(ingISO),s=parse(salISO);return Math.max(1,fullM(ing,new Date(s.getFullYear(),s.getMonth(),s.getDate()+15))-PRIMERA+1)} // tolera salidas adelantadas o atrasadas
+function salInfo(){const f=$("f");const n=numSalida(f.ingreso.value,f.salioel.value);
+  $("salinfo").textContent=f.salioel.value?"Salida n.º "+n+" ("+DIAS_SAL(n)+" días). Podés cambiar la fecha de vuelta si se coordinó distinto.":"Sin salida registrada.";}
+function autoVuelve(){const f=$("f");if(!f.salioel.value){f.vuelveel.value="";salInfo();return}
+  const n=numSalida(f.ingreso.value,f.salioel.value),s=parse(f.salioel.value);
+  f.vuelveel.value=iso(new Date(s.getFullYear(),s.getMonth(),s.getDate()+DIAS_SAL(n)));salInfo();}
+$("f").salioel.addEventListener("change",autoVuelve);
+$("salhoy").onclick=()=>{$("f").salioel.value=iso(hoy);autoVuelve()};
+$("volvio").onclick=()=>{$("f").salioel.value="";$("f").vuelveel.value="";salInfo()};
 $("add").onclick=()=>openDlg(null);
 $("refresh").onclick=reload;
 /* ===== Imprimir lista de residentes ===== */
