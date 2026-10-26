@@ -61,6 +61,11 @@ textarea{min-height:56px;resize:vertical}
 .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}.acts .d{margin-right:auto}
 details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{margin-top:8px}
 .msg{color:var(--bad);font-size:13px;min-height:1em}
+.opts{display:grid;gap:8px}
+.opts label{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--ink);font-size:15px;cursor:pointer}
+.opts label small{display:block;color:var(--mut);font-size:12px;font-weight:400}
+.opts input{width:auto;margin:0;accent-color:var(--acc)}
+.opts label:has(input:checked){border-color:var(--acc);background:color-mix(in srgb,var(--acc) 10%,transparent)}
 /* ===== Impresión (solo papel; no cambia la pantalla) ===== */
 #print{display:none}
 @media print{
@@ -113,6 +118,7 @@ details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{mar
     <select id="ft" aria-label="Tipo"><option value="">Todos los tipos</option><option>Privado</option><option>MIDES</option></select>
     <button id="refresh">Actualizar</button>
     <button id="imprimir">Imprimir lista</button>
+    <button id="compartir">Compartir PDF</button>
     <button class="p" id="add" hidden>Agregar interno</button>
   </div>
   <div class="msg" id="amsg" role="alert"></div>
@@ -155,6 +161,24 @@ details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{mar
     <button type="button" class="d" id="del" hidden>Eliminar</button>
     <button type="button" id="cancel">Cancelar</button>
     <button type="submit" class="p" id="save">Guardar</button>
+  </div>
+</form></dialog>
+
+<!-- Compartir lista en PDF -->
+<dialog id="sdlg"><form id="sf" class="ff" method="dialog">
+  <h2>Compartir PDF</h2>
+  <p style="margin:0;color:var(--mut);font-size:13px">Elegí qué lista mandar. Se arma un PDF y se abre el menú para compartir: ahí elegís WhatsApp y el grupo o la persona.</p>
+  <div class="opts">
+    <label><input type="radio" name="tipo" value="todos" checked><span>Lista completa<small>Residentes como en papel, MIDES en amarillo</small></span></label>
+    <label><input type="radio" name="tipo" value="semana"><span>Salidas de la semana<small>Quién sale y quién vuelve en los próximos 7 días</small></span></label>
+    <label><input type="radio" name="tipo" value="hoy"><span>De salida hoy<small>Quién está afuera y cuándo vuelve</small></span></label>
+    <label><input type="radio" name="tipo" value="fin"><span>Terminan pronto<small>Finalizan en 10 días o menos</small></span></label>
+  </div>
+  <div class="msg" id="smsg" role="alert"></div>
+  <div class="acts">
+    <button type="button" id="scancel">Cancelar</button>
+    <button type="button" id="sdesc">Descargar</button>
+    <button type="button" class="p" id="sshare">Compartir</button>
   </div>
 </form></dialog>
 
@@ -249,7 +273,7 @@ function calc(it){
   let sal=fut.length?fut[0].d:null;
   return{ing,fin,lleva:ing>hoy?"Aún no ingresa":span(ing,hoy),falta:fin<=hoy?"Cumplido":span(hoy,fin),
     sal,salF:sal?(+sal===+hoy?"Sale hoy":span(hoy,sal)):"",
-    finSoon:fin>=hoy&&days(hoy,fin)<=AV_FIN,salSoon:!!sal&&days(hoy,sal)<=AV_SAL,vuelve};
+    finSoon:fin>=hoy&&days(hoy,fin)<=AV_FIN,salSoon:!!sal&&days(hoy,sal)<=AV_SAL,vuelve,evs};
 }
 
 /* ===== Pantalla ===== */
@@ -365,6 +389,85 @@ function buildPrint(){
 }
 window.addEventListener("beforeprint",buildPrint);
 $("imprimir").onclick=()=>{if($("dlg").open)$("dlg").close();buildPrint();window.print()};
+/* ===== Compartir lista en PDF (WhatsApp) ===== */
+const LIBS=["https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js","https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"];
+let libsP=null;
+function loadLibs(){
+  if(window.jspdf&&window.jspdf.jsPDF.API.autoTable) return Promise.resolve();
+  if(!libsP) libsP=LIBS.reduce((p,src)=>p.then(()=>new Promise((ok,ko)=>{const s=document.createElement("script");s.src=src;s.onload=ok;s.onerror=()=>ko(new Error("sin conexión"));document.head.append(s)})),Promise.resolve()).catch(e=>{libsP=null;throw e});
+  return libsP;
+}
+const fdc=d=>String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0");
+const DSEM=["dom","lun","mar","mié","jue","vie","sáb"];
+const enDias=n=>n===0?"Hoy":n===1?"Mañana":"En "+n+" días";
+function datosPDF(kind){
+  const all=items.filter(i=>i.nombre&&i.ingreso).map(i=>({i,c:calc(i)})).sort((a,b)=>a.c.ing-b.c.ing);
+  const nom=i=>i.nombre.trim();
+  if(kind==="todos") return{titulo:"RESIDENTES COMUNIDAD 1",archivo:"Residentes",
+    head:["","Residentes","Cédula","Fecha de ingreso"],mides:true,
+    rows:all.map(({i,c},k)=>({m:i.tipo==="MIDES",v:[String(k+1),nom(i).toUpperCase(),i.cedula,fd(c.ing)]}))};
+  if(kind==="semana"){
+    const lim=new Date(hoy.getFullYear(),hoy.getMonth(),hoy.getDate()+7), r=[];
+    all.forEach(({i,c})=>c.evs.forEach(e=>{
+      if(e.d>=hoy&&e.d<=lim) r.push({f:e.d,m:i.tipo==="MIDES",v:[DSEM[e.d.getDay()]+" "+fdc(e.d),nom(i),"Sale","Vuelve el "+fd(e.v),i.tipo]});
+      if(e.v>=hoy&&e.v<=lim) r.push({f:e.v,m:i.tipo==="MIDES",v:[DSEM[e.v.getDay()]+" "+fdc(e.v),nom(i),"Vuelve","Salió el "+fd(e.d),i.tipo]});
+    }));
+    r.sort((a,b)=>a.f-b.f);
+    return{titulo:"SALIDAS DE LA SEMANA",sub:"Del "+fd(hoy)+" al "+fd(lim),archivo:"Salidas_semana",
+      head:["Día","Nombre","Qué","Detalle","Tipo"],rows:r,vacio:"No hay salidas ni regresos en los próximos 7 días."};
+  }
+  if(kind==="hoy"){
+    const r=[];
+    all.forEach(({i,c})=>c.evs.forEach(e=>{if(hoy>=e.d&&hoy<=e.v)r.push({m:i.tipo==="MIDES",v:[nom(i),fd(e.d),fd(e.v),enDias(days(hoy,e.v)),i.tipo]})}));
+    return{titulo:"DE SALIDA HOY",sub:fd(hoy),archivo:"De_salida_hoy",
+      head:["Nombre","Salió el","Vuelve el","Vuelve","Tipo"],rows:r,vacio:"Hoy no hay nadie de salida."};
+  }
+  const r=all.filter(x=>x.c.finSoon).sort((a,b)=>a.c.fin-b.c.fin)
+    .map(({i,c})=>({m:i.tipo==="MIDES",v:[nom(i),i.cedula,fd(c.fin),enDias(days(hoy,c.fin)),i.tipo]}));
+  return{titulo:"TERMINAN EN LOS PRÓXIMOS "+AV_FIN+" DÍAS",sub:fd(hoy),archivo:"Terminan_pronto",
+    head:["Nombre","Cédula","Finaliza","Falta","Tipo"],rows:r,vacio:"Nadie termina en los próximos "+AV_FIN+" días."};
+}
+function armarPDF(kind){
+  const D=datosPDF(kind), doc=new window.jspdf.jsPDF({unit:"mm",format:"a4"});
+  doc.setFont("helvetica","bold");doc.setFontSize(15);doc.text(D.titulo,105,16,{align:"center"});
+  doc.setFont("helvetica","normal");doc.setFontSize(10);doc.text(D.sub||("Actualizada al "+fd(hoy)),105,22,{align:"center"});
+  let y=28;
+  if(!D.rows.length){doc.setFontSize(12);doc.text(D.vacio,105,40,{align:"center"});}
+  else{
+    const lista=kind==="todos";
+    doc.autoTable({startY:y,head:[D.head],body:D.rows.map(r=>r.v),theme:"grid",
+      styles:{font:"helvetica",fontSize:lista?11:10,textColor:0,lineColor:0,lineWidth:.25,cellPadding:lista?1.8:2.2,valign:"middle"},
+      headStyles:{fillColor:lista?255:[31,92,87],textColor:lista?0:255,fontStyle:"bold",halign:"center"},
+      columnStyles:lista?{0:{halign:"center",cellWidth:14},2:{halign:"center"},3:{halign:"center"}}:{},
+      didParseCell:h=>{if(h.section==="body"&&D.rows[h.row.index].m&&(!lista||h.column.index>0))h.cell.styles.fillColor=[255,235,59]},
+      margin:{left:12,right:12}});
+  }
+  doc.setFontSize(8);doc.setTextColor(120);
+  const n=doc.getNumberOfPages();for(let p=1;p<=n;p++){doc.setPage(p);doc.text("Página "+p+" de "+n,198,290,{align:"right"})}
+  const nombre=D.archivo+"_"+iso(hoy)+".pdf";
+  return{blob:doc.output("blob"),nombre,titulo:D.titulo};
+}
+function bajar(blob,nombre){const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=nombre;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),6e4)}
+function listoPDF(){return !!(window.jspdf&&window.jspdf.jsPDF.API.autoTable)}
+function prepLibs(){
+  $("smsg").textContent=""; if(listoPDF()) return;
+  $("sshare").disabled=$("sdesc").disabled=true; $("sshare").textContent="Preparando…";
+  loadLibs().then(()=>{$("sshare").textContent="Compartir"},e=>{$("sshare").textContent="Compartir";$("smsg").textContent="No se pudo preparar el PDF ("+e.message+"). Revisá internet y abrí de nuevo."})
+    .finally(()=>{$("sshare").disabled=$("sdesc").disabled=!listoPDF()});
+}
+$("compartir").onclick=()=>{if($("dlg").open)$("dlg").close();$("sdlg").showModal();prepLibs()};
+$("scancel").onclick=()=>$("sdlg").close();
+const kindSel=()=>$("sf").querySelector("input[name=tipo]:checked").value;
+$("sdesc").onclick=()=>{try{const r=armarPDF(kindSel());bajar(r.blob,r.nombre)}catch(e){$("smsg").textContent="No se pudo armar el PDF: "+e.message}};
+$("sshare").onclick=async()=>{
+  $("smsg").textContent="";
+  let r; try{r=armarPDF(kindSel())}catch(e){$("smsg").textContent="No se pudo armar el PDF: "+e.message;return}
+  const file=new File([r.blob],r.nombre,{type:"application/pdf"});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){
+    try{await navigator.share({files:[file],title:r.titulo});$("sdlg").close()}
+    catch(e){if(e.name!=="AbortError"){bajar(r.blob,r.nombre);$("smsg").textContent="Este celular no dejó compartir directo; el PDF se descargó. Mandalo desde WhatsApp con el clip."}}
+  }else{bajar(r.blob,r.nombre);$("smsg").textContent="Este dispositivo no permite compartir archivos directo; el PDF se descargó. Mandalo desde WhatsApp con el clip (Documento)."}
+};
 $("q").oninput=render; $("ft").onchange=render;
 $("sort").onclick=()=>{asc=!asc;$("sort").textContent="Ingreso "+(asc?"▲":"▼");render()};
 try{$("em").value=localStorage.getItem("internos-email")||"";const su=localStorage.getItem("internos-api");if(su)API=su}catch(e){}
