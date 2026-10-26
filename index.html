@@ -64,19 +64,19 @@ details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{mar
 /* ===== Impresión (solo papel; no cambia la pantalla) ===== */
 #print{display:none}
 @media print{
-  @page{size:A4 portrait;margin:12mm}
+  @page{size:A4 portrait;margin:10mm}
   :root{color-scheme:light}
   html,body{background:#fff!important;color:#000!important}
   body>*:not(#print){display:none!important}
   #print{display:block;font:400 11pt/1.2 Arial,Helvetica,sans-serif;color:#000}
   #print table{border-collapse:collapse;width:100%;min-width:0}
-  #print th,#print td{border:1px solid #000;padding:3px 8px;background:#fff;color:#000;white-space:nowrap;font-size:11pt;text-align:left;vertical-align:middle}
+  #print th,#print td{border:1px solid #000;padding:0 8px;height:var(--rh,7mm);line-height:1;background:#fff;color:#000;white-space:nowrap;font-size:var(--fs,11pt);text-align:left;vertical-align:middle;box-sizing:border-box}
   #print th{font-weight:700}
   #print td.c{text-align:center;width:9%}
   #print td.ce,#print td.f{text-align:center}
   #print tr.mides td.nm,#print tr.mides td.ce,#print tr.mides td.f{background:#ffeb3b!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   #print tr{break-inside:avoid}
-  #print tr.blank td{height:22px}
+  #print tr.blank td{height:var(--rh,7mm)}
 }
 </style>
 </head>
@@ -358,7 +358,10 @@ function buildPrint(){
     tr.append(el("td","c",String(k+1)),el("td","nm",i.nombre.trim().toUpperCase()),el("td","ce",i.cedula),el("td","f",fd(ing)));
     tb.append(tr);
   });
-  for(let k=0;k<5;k++){const tr=el("tr","blank");for(let c=0;c<4;c++)tr.append(el("td",c?"":"c",""));tb.append(tr)}
+  for(let k=0;k<2;k++){const tr=el("tr","blank");for(let c=0;c<4;c++)tr.append(el("td",c?"":"c",""));tb.append(tr)}
+  /* Ajusta el alto de fila y la letra para que toda la lista entre en una sola hoja A4 */
+  const filas=all.length+2+1, rh=Math.min(7,255/filas), fs=Math.max(6,Math.min(11,rh*1.7));
+  const pr=$("print"); pr.style.setProperty("--rh",rh.toFixed(2)+"mm"); pr.style.setProperty("--fs",fs.toFixed(1)+"pt");
 }
 window.addEventListener("beforeprint",buildPrint);
 $("imprimir").onclick=()=>{if($("dlg").open)$("dlg").close();buildPrint();window.print()};
