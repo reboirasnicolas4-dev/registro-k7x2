@@ -435,15 +435,16 @@ function armarPDF(kind){
   if(!D.rows.length){doc.setFontSize(12);doc.text(D.vacio,105,40,{align:"center"});}
   else{
     const lista=kind==="todos";
+    /* Achica el alto de fila y la letra para que todo entre en una sola hoja A4 */
+    const rh=Math.min(lista?7.5:8.5,(297-y-10)/(D.rows.length+1)-.05), fs=Math.max(5,Math.min(lista?11:10,rh*1.75));
     doc.autoTable({startY:y,head:[D.head],body:D.rows.map(r=>r.v),theme:"grid",
-      styles:{font:"helvetica",fontSize:lista?11:10,textColor:0,lineColor:0,lineWidth:.25,cellPadding:lista?1.8:2.2,valign:"middle"},
+      styles:{font:"helvetica",fontSize:fs,textColor:0,lineColor:0,lineWidth:.25,cellPadding:{top:0,bottom:0,left:2,right:2},minCellHeight:rh,valign:"middle",overflow:"ellipsize"},
       headStyles:{fillColor:lista?255:[31,92,87],textColor:lista?0:255,fontStyle:"bold",halign:"center"},
       columnStyles:lista?{0:{halign:"center",cellWidth:14},2:{halign:"center"},3:{halign:"center"}}:{},
       didParseCell:h=>{if(h.section==="body"&&D.rows[h.row.index].m&&(!lista||h.column.index>0))h.cell.styles.fillColor=[255,235,59]},
-      margin:{left:12,right:12}});
+      margin:{left:12,right:12,top:10,bottom:8}});
   }
-  doc.setFontSize(8);doc.setTextColor(120);
-  const n=doc.getNumberOfPages();for(let p=1;p<=n;p++){doc.setPage(p);doc.text("Página "+p+" de "+n,198,290,{align:"right"})}
+  
   const nombre=D.archivo+"_"+iso(hoy)+".pdf";
   return{blob:doc.output("blob"),nombre,titulo:D.titulo};
 }
