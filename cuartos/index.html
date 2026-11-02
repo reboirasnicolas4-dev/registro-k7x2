@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cuartos</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#f7a823">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Cuartos">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Hanken+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f1e7;--card:#fffdf8;--ink:#2a2118;--mut:#6b6157;--line:#ddd5c4;--acc:#f7a823;--accx:#281a08;--soft:#fbecd0;--ok:#2f7d4f;--new:#c2410c;--bad:#a8332a;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#16120e;--card:#211b15;--ink:#f0e8da;--mut:#b3a99b;--line:#3a3027;--acc:#f7a823;--accx:#281a08;--soft:#3a2a12;--ok:#6fcf97;--new:#fb923c;--bad:#ff8a7e;color-scheme:dark}}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.45 "Hanken Grotesk",system-ui,sans-serif}
+main{max-width:1150px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-right)) 48px max(16px,env(safe-area-inset-left))}
+h1{font:700 32px/1.1 Fraunces,Georgia,serif;margin:0}
+h2{font:700 20px/1.2 Fraunces,Georgia,serif;margin:0}
+.sub{color:var(--mut);margin:4px 0 0}
+button,input,select{font:inherit;color:var(--ink)}
+button{cursor:pointer;border:1px solid var(--line);background:var(--card);border-radius:8px;padding:9px 14px;font-weight:500}
+button.p{background:var(--acc);color:var(--accx);border-color:var(--acc);font-weight:700}
+button:disabled{opacity:.5;cursor:default}
+button:focus-visible,select:focus-visible,input:focus-visible,[role=button]:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+input,select{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:9px 11px}
+a{color:inherit}
+/* login */
+.box{max-width:440px;margin:10vh auto 0;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:28px;display:grid;gap:14px}
+.brand{display:grid;justify-items:center;text-align:center;gap:6px}
+.brand img{width:110px;height:110px;border-radius:50%;box-shadow:0 4px 18px rgba(0,0,0,.25)}
+.brand .org{font:700 26px/1.1 Fraunces,Georgia,serif;margin-top:6px}
+.brand h1{font:600 18px/1.2 "Hanken Grotesk",system-ui,sans-serif;color:var(--mut);letter-spacing:.04em}
+.box p{margin:0;color:var(--mut);text-align:center}
+.box label{display:grid;gap:4px;font-size:13px;color:var(--mut);font-weight:500}
+.box input{width:100%}
+.msg{color:var(--bad);font-size:13px;min-height:1em}
+/* cabecera */
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.tit{display:flex;gap:12px;align-items:center}
+.tit img{width:46px;height:46px;border-radius:50%}
+.who{display:flex;gap:8px;align-items:center;color:var(--mut);font-size:13px;flex-wrap:wrap}
+.role{font-weight:700;font-size:12px;border:1px solid var(--line);border-radius:99px;padding:2px 10px;color:var(--ink)}
+.estado{font-size:13px;color:var(--mut);min-height:1.4em;margin-top:6px}
+.estado.err{color:var(--bad);font-weight:700}
+.tabs{display:flex;gap:6px;margin:14px 0 16px;border-bottom:2px solid var(--line);overflow-x:auto}
+.tabs button{border:0;border-radius:8px 8px 0 0;background:transparent;padding:10px 16px;font-weight:700;color:var(--mut);border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap}
+.tabs button.on{color:var(--ink);border-bottom-color:var(--acc)}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+.bar .note{color:var(--mut);font-size:13px;flex:1 1 220px;min-width:0}
+.sum{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.pill{border:1px solid var(--line);background:var(--card);border-radius:99px;padding:4px 12px;font-size:13px}
+.pill b{font-variant-numeric:tabular-nums}
+.hint{background:var(--soft);border-radius:10px;padding:10px 12px;font-size:14px;margin-bottom:12px;display:grid;gap:4px}
+.trop{background:var(--card);border:2px solid var(--acc);border-radius:14px;padding:14px;margin-bottom:16px}
+.trop .hd,.room .hd{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.secs{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.sec{border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0}
+.sec h3{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut)}
+.chip{display:inline-block;border:1px solid var(--line);border-radius:99px;padding:2px 10px;margin:0 4px 4px 0;font-size:13px;background:var(--card)}
+.chip.btn{cursor:pointer}.chip.btn:hover{background:var(--soft)}
+.sincama{background:var(--card);border:2px solid var(--new);border-radius:14px;padding:12px;margin-bottom:16px}
+.sincama.vacio{border:1px dashed var(--line)}
+.sincama .bed{display:inline-flex;margin:0 6px 6px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.room{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;min-width:0}
+.room.man{border:2px dashed var(--acc)}
+.man-tag{font-size:12px;font-weight:700;color:var(--new);margin:-4px 0 8px}
+.cap{font-size:13px;color:var(--mut);font-variant-numeric:tabular-nums}
+.cap.full{color:var(--ok);font-weight:700}.cap.over{color:var(--bad);font-weight:700}
+.beds{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.bed{display:flex;align-items:center;gap:8px;border:1px dashed var(--line);border-radius:8px;padding:6px 8px;min-height:36px;font-size:14px;min-width:0}
+.bed.occ{border-style:solid}
+.edit .bed.occ{cursor:pointer}.edit .bed.occ:hover{background:var(--soft)}
+.bed.sel{outline:2px solid var(--acc);background:var(--soft)}
+.bed .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bed .tag{font-size:11px;font-weight:700;border-radius:99px;padding:1px 7px;white-space:nowrap}
+.tag.nuevo{color:var(--new);border:1px solid var(--new)}
+.tag.sigue{color:var(--mut);border:1px solid var(--line)}
+.bed.free{color:var(--mut);font-size:13px}
+.bed.free.target{border-color:var(--acc);color:var(--ink);cursor:pointer;background:var(--soft)}
+.wrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;min-width:560px}
+th{background:var(--acc);color:var(--accx);text-align:left;padding:9px 12px;font-size:13px}
+td{padding:8px 12px;border-top:1px solid var(--line)}
+.hist{display:grid;gap:10px}
+.h{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+.h .meta{color:var(--mut);font-size:13px;margin:2px 0 6px}
+.h div{margin:3px 0}
+.empty{color:var(--mut);padding:20px;text-align:center}
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);padding:0;width:min(360px,92vw)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+.mn{display:grid;gap:8px;padding:16px}
+.mn .sub2{color:var(--mut);font-size:13px;margin:-4px 0 4px}
+.mn .ops{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mn .ops button{display:grid;gap:2px;text-align:left;padding:10px 12px}
+.mn .ops button small{color:var(--mut);font-size:12px}
+.mn .ops button.act{border-color:var(--acc);background:var(--soft)}
+.mn .row{display:flex;gap:8px;flex-wrap:wrap}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:700;max-width:92vw;text-align:center;z-index:5}
+</style>
+</head>
+<body>
+
+<!-- Ingreso -->
+<section id="login" class="box">
+  <div class="brand">
+    <img src="../logo.png" alt="Logo de Alas de Libertad">
+    <div class="org">Alas de Libertad</div>
+    <h1>Cuartos</h1>
+  </div>
+  <p id="ltxt">Ingresá con el mismo correo y contraseña de la app de Internos.</p>
+  <form id="lf" style="display:grid;gap:12px">
+    <label>Correo electrónico<input id="em" type="email" required autocomplete="username" placeholder="nombre@correo.com"></label>
+    <label id="pwrow">Contraseña<input id="pw" type="password" autocomplete="current-password"></label>
+    <div id="setup" hidden style="display:grid;gap:12px">
+      <label>Elegí tu contraseña (mínimo 6 caracteres)<input id="np1" type="password" autocomplete="new-password"></label>
+      <label>Repetila<input id="np2" type="password" autocomplete="new-password"></label>
+    </div>
+    <label style="display:flex;gap:8px;align-items:center;font-size:14px"><input id="rec" type="checkbox" style="width:auto"> Recordarme en este dispositivo</label>
+    <div class="msg" id="lmsg" role="alert"></div>
+    <button class="p" id="lbtn" type="submit">Ingresar</button>
+  </form>
+</section>
+
+<main id="app" hidden>
+  <div class="top">
+    <div class="tit"><img src="../logo.png" alt=""><div><h1>Cuartos</h1><p class="sub" id="hoy"></p></div></div>
+    <div class="who"><span id="whoem"></span><span class="role" id="whorole"></span><a href="../" class="chip" style="text-decoration:none">Ir a Internos</a><button id="out">Salir</button></div>
+  </div>
+  <div class="estado" id="estado" role="status"></div>
+
+  <nav class="tabs" role="tablist">
+    <button id="t-cuartos" class="on" role="tab">Cuartos</button>
+    <button id="t-sectores" role="tab">Sectores</button>
+    <button id="t-hist" role="tab">Historial</button>
+  </nav>
+
+  <section id="v-cuartos">
+    <div class="bar" id="acciones">
+      <button class="p" id="rotar">Rotar cuartos</button>
+      <button id="guardar">Guardar rotación</button>
+      <button id="recargar">Actualizar</button>
+      <span class="note" id="nota">Tocá a cualquier persona y elegí a qué cuarto mandarla.</span>
+    </div>
+    <div class="sum" id="sum"></div>
+    <div class="hint" id="hint" hidden></div>
+    <div class="trop">
+      <div class="hd"><h2>Tropilla</h2><span class="cap" id="tcap"></span></div>
+      <div class="secs" id="secs"></div>
+    </div>
+    <div class="sincama" id="sincama"></div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <section id="v-sectores" hidden>
+    <p class="sub" style="margin:0 0 12px">Los nombres vienen de la lista de Internos. Elegí el sector de cada uno: los que tienen sector van solos a Tropilla.</p>
+    <div class="sum" id="sum2"></div>
+    <div class="wrap"><table>
+      <thead><tr><th>Nombre</th><th>Lleva</th><th>Sector</th><th>Dónde duerme</th></tr></thead>
+      <tbody id="srows"></tbody>
+    </table></div>
+  </section>
+
+  <section id="v-hist" hidden>
+    <div class="hist" id="hlist"></div>
+  </section>
+</main>
+
+<dialog id="menu"><div class="mn">
+  <h2 id="mnom"></h2>
+  <p class="sub2" id="mdonde"></p>
+  <div class="ops" id="mops"></div>
+  <div class="row">
+    <button id="mswap">Intercambiar con otro</button>
+    <button id="msacar">Dejar sin cama</button>
+    <button id="mcerrar">Cancelar</button>
+  </div>
+</div></dialog>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/* ===== Configuración ===== */
+const DEFAULT_API="https://script.google.com/macros/s/AKfycbzYLuWCtvRv-sQobVzwXxUhTbjfhDuul9raoOD4RbxFOkBVaPI5FLEOU4TI5z3pQl9_/exec";
+let API=DEFAULT_API;
+const SECTORES=["Cocina","Huerta","Animales","Almox","Panadería"];
+const CUARTOS=[{id:"0",camas:4},{id:"1",camas:6},{id:"2",camas:6},{id:"3",camas:4,manual:true},{id:"4",camas:8}];
+const CAMAS_TROPILLA=14, MESES_C3=6;
+const HOJA_CUARTOS="Cuartos", HOJA_ROT="Rotaciones";
+
+/* ===== Estado ===== */
+let email="",pass="",role="",gente=[],historial=[],sel=null,menuP=null;
+const $=id=>document.getElementById(id);
+const el=(t,c,txt)=>{const e=document.createElement(t);if(c)e.className=c;if(txt!=null)e.textContent=txt;return e};
+const isAdmin=()=>/admin/i.test(role);
+const HOY=(()=>{const n=new Date();return new Date(n.getFullYear(),n.getMonth(),n.getDate())})();
+const fd=d=>String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+d.getFullYear();
+const parse=s=>{const[y,m,d]=String(s).slice(0,10).split("-").map(Number);return new Date(y,(m||1)-1,d||1)};
+function toISO(v){v=String(v||"").trim();if(/^\d{4}-\d{2}-\d{2}/.test(v))return v.slice(0,10);const m=v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);return m?m[3]+"-"+m[2].padStart(2,"0")+"-"+m[1].padStart(2,"0"):""}
+function toast(t){const e=$("toast");e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,2600)}
+function estado(t,err){$("estado").textContent=t||"";$("estado").classList.toggle("err",!!err)}
+
+/* ===== Comunicación con la hoja (mismo script que Internos) ===== */
+async function api(datos){
+  const r=await fetch(API,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(Object.assign({email,password:pass},datos))});
+  if(!r.ok)throw new Error("HTTP "+r.status);
+  const t=await r.text(); try{return JSON.parse(t)}catch(e){throw new Error("respuesta inesperada de la hoja")}
+}
+async function cargar(){
+  estado("Cargando…");
+  const [int,cu,rot]=await Promise.all([api({action:"getInternos"}),api({action:"getSheet",sheet:HOJA_CUARTOS}),api({action:"getSheet",sheet:HOJA_ROT})]);
+  if(!Array.isArray(int))throw new Error((int&&int.error)||"no se pudo leer Internos");
+  const guardado={};((cu&&cu.data)||[]).forEach(o=>{if(o.id)guardado[String(o.id)]=o});
+  gente=int.filter(o=>String(o.nombre||"").trim()&&o.ingreso).map(o=>{const g=guardado[String(o.id)]||{};
+    return{id:String(o.id),nombre:String(o.nombre).trim(),cedula:String(o.cedula||""),ingreso:parse(toISO(o.ingreso)),
+      sector:SECTORES.includes(g.sector)?g.sector:"",cuarto:CUARTOS.some(c=>c.id===String(g.cuarto))?String(g.cuarto):"",antes:String(g.antes||"")}})
+    .sort((a,b)=>a.nombre.localeCompare(b.nombre,"es"));
+  historial=((rot&&rot.data)||[]).slice().reverse();
+  estado(""); render();
+}
+// Guarda el reparto actual (todo junto, medio segundo después del último cambio)
+let tGuardar=null;
+function guardarPronto(){if(!isAdmin())return;clearTimeout(tGuardar);estado("Guardando…");tGuardar=setTimeout(guardarYa,600)}
+async function guardarYa(){
+  try{const r=await api({action:"setSheet",sheet:HOJA_CUARTOS,columns:["id","nombre","cedula","sector","cuarto","antes"],
+      rows:gente.map(p=>({id:p.id,nombre:p.nombre,cedula:p.cedula,sector:p.sector,cuarto:p.sector?"":p.cuarto,antes:p.antes}))});
+    if(!r||r.ok!==true)throw new Error((r&&r.error)||"no se confirmó");
+    estado("Guardado ✔"); setTimeout(()=>{if($("estado").textContent==="Guardado ✔")estado("")},2000);
+  }catch(e){estado("No se pudo guardar ("+e.message+"). Revisá la conexión y tocá Actualizar.",true)}
+}
+
+/* ===== Reglas ===== */
+const sinSector=()=>gente.filter(p=>!p.sector);
+const enCuarto=id=>gente.filter(p=>!p.sector&&p.cuarto===id);
+function meses(p){const a=p.ingreso;let m=(HOY.getFullYear()-a.getFullYear())*12+HOY.getMonth()-a.getMonth();if(HOY.getDate()<a.getDate())m--;return Math.max(0,m)}
+const puede3=p=>meses(p)>=MESES_C3;
+const llevaTxt=p=>{const m=meses(p);return m===1?"1 mes":m+" meses"};
+const nom1=p=>p.nombre.split(" ")[0];
+function donde(p){return p.sector?"Tropilla ("+p.sector+")":p.cuarto?"Cuarto "+p.cuarto:"Sin cama"}
+
+// Rotación: cada uno a un cuarto distinto del que tenía, parejo y sin pasar camas. El cuarto 3 no se toca.
+function rotar(){
+  const fijos=CUARTOS.filter(c=>c.manual).map(c=>c.id), rot=CUARTOS.filter(c=>!c.manual);
+  const lista=sinSector().filter(p=>!fijos.includes(p.cuarto));
+  for(let i=lista.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[lista[i],lista[j]]=[lista[j],lista[i]]}
+  lista.sort((a,b)=>(a.cuarto?0:1)-(b.cuarto?0:1));
+  const libres={};rot.forEach(c=>libres[c.id]=c.camas);const nuevo={};
+  for(const p of lista){
+    const c=rot.filter(c=>libres[c.id]>0&&c.id!==p.cuarto).sort((a,b)=>libres[b.id]/b.camas-libres[a.id]/a.camas)[0]||rot.find(c=>libres[c.id]>0);
+    if(!c)break;nuevo[p.id]=c.id;libres[c.id]--;
+  }
+  lista.forEach(p=>{p.antes=p.cuarto;p.cuarto=nuevo[p.id]||""});
+  sel=null;render();guardarPronto();
+  const sin=lista.filter(p=>!p.cuarto).length;
+  toast(sin?"Faltan "+sin+" cama(s): ubicalos a mano o en el cuarto 3":"Cuartos rotados. Revisalos y tocá «Guardar rotación»");
+}
+
+/* ===== Pantalla ===== */
+function personaBtn(p,cls,extra){
+  const b=el("div",cls+(sel===p.id?" sel":""));b.append(el("span","n",p.nombre));if(extra)b.append(extra);
+  if(isAdmin()){b.tabIndex=0;b.setAttribute("role","button");b.onclick=()=>tocar(p);b.onkeydown=e=>{if(e.key==="Enter")tocar(p)}}
+  return b;
+}
+function render(){
+  $("hoy").textContent="Hoy es "+fd(HOY)+".";
+  $("v-cuartos").classList.toggle("edit",isAdmin()); $("acciones").hidden=!isAdmin();
+  const sp=sinSector(),conS=gente.filter(p=>p.sector),camas=CUARTOS.reduce((a,c)=>a+c.camas,0),sueltos=sp.filter(p=>!p.cuarto);
+  const pills=[["Internos",gente.length],["En Tropilla",conS.length],["En cuartos",sp.length-sueltos.length],["Sin cama",sueltos.length],["Camas libres",camas-(sp.length-sueltos.length)]];
+  $("sum").replaceChildren(...pills.map(([l,n])=>{const s=el("span","pill");s.append(l+": ",el("b","",String(n)));return s}));
+  const avisos=[],c3=CUARTOS.find(c=>c.manual),lib3=c3.camas-enCuarto(c3.id).length;
+  if(!gente.some(p=>p.sector||p.cuarto)&&gente.length)avisos.push("Primera vez: elegí el sector de cada uno en la pestaña Sectores, armá el cuarto 3 y después tocá «Rotar cuartos».");
+  if(conS.length>CAMAS_TROPILLA)avisos.push("Tropilla tiene "+conS.length+" personas y "+CAMAS_TROPILLA+" camas: sobran "+(conS.length-CAMAS_TROPILLA)+".");
+  if(lib3>0&&isAdmin())avisos.push("El cuarto 3 tiene "+lib3+" cama(s) libre(s): elegí quién va antes de rotar.");
+  if(sp.length>camas)avisos.push("Hay "+(sp.length-camas)+" persona(s) más que camas en los cuartos.");
+  $("hint").hidden=!avisos.length;$("hint").replaceChildren(...avisos.map(t=>el("div","",t)));
+  // Tropilla
+  $("tcap").className="cap"+(conS.length===CAMAS_TROPILLA?" full":conS.length>CAMAS_TROPILLA?" over":"");
+  $("tcap").textContent=conS.length+"/"+CAMAS_TROPILLA+" camas";
+  $("secs").replaceChildren(...SECTORES.map(s=>{const d=el("div","sec"),ps=conS.filter(p=>p.sector===s);d.append(el("h3","",s+" · "+ps.length));
+    if(!ps.length)d.append(el("div","cap","Nadie"));
+    ps.forEach(p=>{const b=el(isAdmin()?"button":"span","chip"+(isAdmin()?" btn":""),p.nombre);if(isAdmin()){b.type="button";b.onclick=()=>tocar(p)}d.append(b)});return d}));
+  // Sin cama
+  const sc=$("sincama");sc.classList.toggle("vacio",!sueltos.length);
+  const nota=el("p","cap",sueltos.length?(isAdmin()?"Tocá a cada uno para mandarlo a un cuarto. Acá aparecen también los que ingresan nuevos.":"Todavía no tienen cama asignada."):"Todos tienen cama. Si ingresa alguien nuevo, aparece acá.");nota.style.margin="0 0 8px";
+  const h=el("h2","","Sin cama · "+sueltos.length);h.style.marginBottom="6px";
+  sc.replaceChildren(h,nota,...sueltos.map(p=>personaBtn(p,"bed occ")));
+  // Cuartos
+  $("grid").replaceChildren(...CUARTOS.map(c=>{
+    const ps=enCuarto(c.id),card=el("div","room"+(c.manual?" man":"")),hd=el("div","hd");
+    hd.append(el("h2","","Cuarto "+c.id),el("span","cap"+(ps.length===c.camas?" full":ps.length>c.camas?" over":""),ps.length+"/"+c.camas+" camas"));
+    card.append(hd);if(c.manual)card.append(el("div","man-tag","Sin tranca · lo elegís vos, no rota · recomendado 6 meses o más"));
+    const beds=el("div","beds");
+    ps.forEach(p=>{let tag=null;
+      if(c.manual)tag=el("span","tag "+(puede3(p)?"sigue":"nuevo"),(puede3(p)?"":"⚠ ")+llevaTxt(p));
+      else if(p.antes&&p.antes!==p.cuarto)tag=el("span","tag nuevo","antes "+p.antes);
+      else if(p.antes)tag=el("span","tag sigue","sigue");
+      beds.append(personaBtn(p,"bed occ",tag))});
+    for(let k=ps.length;k<c.camas;k++){const b=el("div","bed free"+(sel?" target":""),"Cama libre");if(sel){b.tabIndex=0;b.setAttribute("role","button");b.onclick=()=>mover(sel,c.id);b.onkeydown=e=>{if(e.key==="Enter")mover(sel,c.id)}}beds.append(b)}
+    card.append(beds);return card}));
+  $("nota").textContent=sel?"Tocá a la otra persona para intercambiarlos, o una cama libre para moverlo. Tocalo de nuevo para cancelar.":"Tocá a cualquier persona y elegí a qué cuarto mandarla.";
+  renderSectores();renderHist();
+}
+function renderSectores(){
+  $("sum2").replaceChildren(...[...SECTORES.map(s=>[s,gente.filter(p=>p.sector===s).length]),["Sin sector",sinSector().length]]
+    .map(([l,n])=>{const s=el("span","pill");s.append(l+": ",el("b","",String(n)));return s}));
+  $("srows").replaceChildren(...gente.map(p=>{
+    const tr=el("tr");tr.append(el("td","",p.nombre),el("td","",llevaTxt(p)+(puede3(p)?" ✓":"")));
+    const td=el("td"),s=el("select");s.id="sec-"+p.id;s.setAttribute("aria-label","Sector de "+p.nombre);s.disabled=!isAdmin();
+    ["",...SECTORES].forEach(x=>{const o=el("option","",x||"Sin sector");o.value=x;s.append(o)});s.value=p.sector;
+    s.onchange=()=>{p.sector=s.value;if(p.sector){p.cuarto="";p.antes=""}render();guardarPronto()};
+    td.append(s);tr.append(td,el("td","",donde(p)));return tr}));
+}
+function renderHist(){
+  const l=$("hlist");
+  if(!historial.length){l.replaceChildren(el("div","empty","Todavía no hay rotaciones guardadas. Cuando rotes y toques «Guardar rotación», queda acá."));return}
+  l.replaceChildren(...historial.map(h=>{const d=el("div","h");
+    d.append(el("h2","",h.fecha?fd(parse(toISO(h.fecha))):"Sin fecha"),el("div","meta",(h.cambios||0)+" cambiaron de cuarto · guardó "+(h.guardadopor||"—")));
+    [["Cuarto 0","cuarto0"],["Cuarto 1","cuarto1"],["Cuarto 2","cuarto2"],["Cuarto 3","cuarto3"],["Cuarto 4","cuarto4"],["Tropilla","tropilla"]]
+      .forEach(([t,k])=>{const r=el("div");r.append(el("b","",t+": "),document.createTextNode(h[k]||"—"));d.append(r)});return d}));
+}
+
+/* ===== Acciones ===== */
+function tocar(p){
+  if(!isAdmin())return;
+  if(sel&&sel!==p.id){
+    const a=gente.find(x=>x.id===sel);
+    if(p.sector||a.sector||!p.cuarto){toast("Para intercambiar, los dos tienen que estar en un cuarto");return}
+    const c3=CUARTOS.find(c=>c.manual).id, ojo=(p.cuarto===c3&&!puede3(a))?a:(a.cuarto===c3&&!puede3(p))?p:null;
+    [a.cuarto,p.cuarto]=[p.cuarto,a.cuarto];sel=null;render();guardarPronto();
+    toast(ojo?"Ojo: "+nom1(ojo)+" lleva "+llevaTxt(ojo)+" y queda en el cuarto 3":"Intercambiados: "+nom1(a)+" y "+nom1(p));return}
+  if(sel===p.id){sel=null;render();return}
+  abrirMenu(p);
+}
+function abrirMenu(p){
+  menuP=p;$("mnom").textContent=p.nombre;$("mdonde").textContent="Ahora: "+donde(p)+" · lleva "+llevaTxt(p)+". ¿A dónde lo mandás?";
+  $("mops").replaceChildren(...CUARTOS.map(c=>{
+    const libres=c.camas-enCuarto(c.id).length,aca=!p.sector&&p.cuarto===c.id,ojo=c.manual&&!puede3(p);
+    const b=el("button",aca?"act":"");b.type="button";
+    b.append(el("b","","Cuarto "+c.id),el("small","",aca?"Está acá":libres<=0?"Lleno · usá Intercambiar":(libres+(libres===1?" cama libre":" camas libres"))+(ojo?" · ⚠ lleva "+llevaTxt(p):"")));
+    b.disabled=aca||libres<=0;b.onclick=()=>{$("menu").close();mandar(p,c.id)};return b}));
+  $("mswap").hidden=!!p.sector||!p.cuarto;$("msacar").hidden=!!p.sector||!p.cuarto;
+  $("menu").showModal();
+}
+function mandar(p,cuarto){
+  const tenia=p.sector;if(tenia)p.sector="";p.cuarto=cuarto;sel=null;render();guardarPronto();
+  const ojo=CUARTOS.find(c=>c.id===cuarto).manual&&!puede3(p);
+  toast((ojo?"Ojo: lleva "+llevaTxt(p)+". ":"")+nom1(p)+" va al cuarto "+cuarto+(tenia?" (deja "+tenia+")":""));
+}
+function mover(id,cuarto){const p=gente.find(x=>x.id===id);mandar(p,cuarto)}
+$("mcerrar").onclick=()=>$("menu").close();
+$("msacar").onclick=()=>{const p=menuP;$("menu").close();p.cuarto="";render();guardarPronto();toast(nom1(p)+" quedó sin cama")};
+$("mswap").onclick=()=>{const p=menuP;$("menu").close();sel=p.id;render();toast("Tocá a la otra persona para intercambiarlos")};
+$("rotar").onclick=rotar;
+$("recargar").onclick=()=>cargar().catch(e=>estado("No se pudo actualizar: "+e.message,true));
+$("guardar").onclick=async()=>{
+  const b=$("guardar");b.disabled=true;b.textContent="Guardando…";
+  try{
+    const lista=c=>enCuarto(c).map(p=>p.nombre).join(", ");
+    const fila={fecha:HOY.getFullYear()+"-"+String(HOY.getMonth()+1).padStart(2,"0")+"-"+String(HOY.getDate()).padStart(2,"0"),
+      guardadopor:email,cambios:sinSector().filter(p=>p.antes&&p.antes!==p.cuarto).length,
+      cuarto0:lista("0"),cuarto1:lista("1"),cuarto2:lista("2"),cuarto3:lista("3"),cuarto4:lista("4"),
+      tropilla:SECTORES.map(s=>s+": "+gente.filter(p=>p.sector===s).map(p=>p.nombre).join(", ")).join(" | ")};
+    const r=await api({action:"addRow",sheet:HOJA_ROT,record:fila});
+    if(!r||r.ok!==true)throw new Error((r&&r.error)||"no se confirmó");
+    sinSector().forEach(p=>p.antes=p.cuarto);historial.unshift(fila);render();await guardarYa();toast("Rotación guardada en el historial");
+  }catch(e){toast("No se pudo guardar la rotación: "+e.message)}
+  finally{b.disabled=false;b.textContent="Guardar rotación"}
+};
+function verTab(k){["cuartos","sectores","hist"].forEach(x=>{$("v-"+x).hidden=x!==k;$("t-"+x).classList.toggle("on",x===k)})}
+$("t-cuartos").onclick=()=>verTab("cuartos");$("t-sectores").onclick=()=>verTab("sectores");$("t-hist").onclick=()=>verTab("hist");
+
+/* ===== Ingreso (igual que Internos) ===== */
+function modoSetup(on){$("setup").hidden=!on;$("pwrow").hidden=on;$("ltxt").textContent=on?"Es tu primera vez: elegí una contraseña para tu usuario.":"Ingresá con el mismo correo y contraseña de la app de Internos.";$("lbtn").textContent=on?"Crear contraseña e ingresar":"Ingresar"}
+$("lf").addEventListener("submit",async e=>{
+  e.preventDefault();email=$("em").value.trim().toLowerCase();$("lmsg").textContent="";
+  const setup=!$("setup").hidden;$("lbtn").disabled=true;
+  try{
+    if(setup){const a=$("np1").value,b=$("np2").value;
+      if(a.length<6){$("lmsg").textContent="La contraseña tiene que tener al menos 6 caracteres.";return}
+      if(a!==b){$("lmsg").textContent="Las dos contraseñas no coinciden.";return}
+      pass="";const r=await api({action:"setPassword",newPassword:a});
+      if(!r||r.ok!==true){$("lmsg").textContent=(r&&r.error)||"No se pudo guardar la contraseña.";return}
+      pass=a;modoSetup(false);
+    }else pass=$("pw").value;
+    const res=await api({action:"checkUser"});
+    if(res&&res.needsSetup){modoSetup(true);return}
+    if(!res||!res.allowed){$("lmsg").textContent=(res&&res.error)||"Ese correo no está autorizado.";return}
+    role=String(res.role||"");
+    try{localStorage.setItem("internos-email",email);if($("rec").checked)localStorage.setItem("internos-pw",pass);else localStorage.removeItem("internos-pw")}catch(x){}
+    $("pw").value="";$("whoem").textContent=email;$("whorole").textContent=role;
+    $("login").hidden=true;$("app").hidden=false;await cargar();
+  }catch(err){$("lmsg").textContent="No se pudo conectar con la hoja ("+err.message+"). Probá de nuevo."}
+  finally{$("lbtn").disabled=false;if($("setup").hidden)$("lbtn").textContent="Ingresar"}
+});
+$("out").onclick=()=>{email="";pass="";role="";gente=[];try{localStorage.removeItem("internos-pw")}catch(x){}$("app").hidden=true;$("login").hidden=false;modoSetup(false)};
+try{$("em").value=localStorage.getItem("internos-email")||"";const sp=localStorage.getItem("internos-pw");if(sp){$("pw").value=sp;$("rec").checked=true}const su=localStorage.getItem("internos-api");if(su)API=su}catch(e){}
+if("serviceWorker" in navigator&&location.protocol.startsWith("http"))window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+</script>
+</body>
+</html>
