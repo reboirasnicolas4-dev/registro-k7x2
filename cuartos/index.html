@@ -269,7 +269,8 @@ function render(){
   $("hoy").textContent="Hoy es "+fd(HOY)+".";
   $("v-cuartos").classList.toggle("edit",isAdmin()); $("acciones").hidden=!isAdmin();
   const sp=sinSector(),conS=gente.filter(p=>p.sector),camas=CUARTOS.reduce((a,c)=>a+c.camas,0),sueltos=sp.filter(p=>!p.cuarto);
-  const pills=[["Internos",gente.length],["En Tropilla",conS.length],["En cuartos",sp.length-sueltos.length],["Sin cama",sueltos.length],["Camas libres",camas-(sp.length-sueltos.length)]];
+  const camasTot=camas+CAMAS_TROPILLA, ocup=Math.min(conS.length,CAMAS_TROPILLA)+(sp.length-sueltos.length);
+  const pills=[["Internos",gente.length],["Camas en total",camasTot],["Camas ocupadas",ocup],["Camas libres",camasTot-ocup],["En Tropilla",conS.length+"/"+CAMAS_TROPILLA],["En cuartos",(sp.length-sueltos.length)+"/"+camas],["Sin cama",sueltos.length]];
   $("sum").replaceChildren(...pills.map(([l,n])=>{const s=el("span","pill");s.append(l+": ",el("b","",String(n)));return s}));
   const avisos=[],c3=CUARTOS.find(c=>c.manual),lib3=c3.camas-enCuarto(c3.id).length;
   if(!gente.some(p=>p.sector||p.cuarto)&&gente.length)avisos.push("Primera vez: elegí el sector de cada uno en la pestaña Sectores, armá el cuarto 3 y después tocá «Rotar cuartos».");
@@ -279,7 +280,8 @@ function render(){
   $("hint").hidden=!avisos.length;$("hint").replaceChildren(...avisos.map(t=>el("div","",t)));
   // Tropilla
   $("tcap").className="cap"+(conS.length===CAMAS_TROPILLA?" full":conS.length>CAMAS_TROPILLA?" over":"");
-  $("tcap").textContent=conS.length+"/"+CAMAS_TROPILLA+" camas";
+  const libT=CAMAS_TROPILLA-conS.length;
+  $("tcap").textContent=conS.length+"/"+CAMAS_TROPILLA+" camas"+(libT>0?" · "+libT+(libT===1?" libre":" libres"):"");
   $("secs").replaceChildren(...SECTORES.map(s=>{const d=el("div","sec"),ps=conS.filter(p=>p.sector===s);d.append(el("h3","",s+" · "+ps.length));
     if(!ps.length)d.append(el("div","cap","Nadie"));
     ps.forEach(p=>{const b=el(isAdmin()?"button":"span","chip"+(isAdmin()?" btn":""),p.nombre);if(isAdmin()){b.type="button";b.onclick=()=>tocar(p)}d.append(b)});return d}));
