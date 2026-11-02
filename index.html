@@ -29,6 +29,10 @@ h1{font:700 34px/1.1 Fraunces,Georgia,serif;margin:0}
 .stat b{font:700 26px/1 Fraunces,Georgia,serif;display:block}.stat span{color:var(--mut);font-size:13px}
 .stat.w b{background:var(--warn);color:var(--warnx);padding:0 8px;border-radius:6px;display:inline-block}
 .bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.tabs{display:flex;gap:6px;margin:4px 0 16px;border-bottom:2px solid var(--line)}
+.tabs button{border:0;border-radius:8px 8px 0 0;background:transparent;padding:10px 18px;font-weight:700;color:var(--mut);margin-bottom:-2px;border-bottom:3px solid transparent}
+.tabs button.on{color:var(--ink);border-bottom-color:var(--acc)}
+.cnt{color:var(--mut);font-size:13px;margin:-4px 0 10px}
 input,select,textarea,button{font:inherit;color:var(--ink)}
 input,select,textarea{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:9px 11px;width:100%}
 input:disabled,select:disabled,textarea:disabled{opacity:.85;background:transparent}
@@ -127,6 +131,11 @@ details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{mar
     <div><h1>Internos</h1><p class="sub" id="hoy"></p></div>
     <div class="who"><span id="whoem"></span><span class="role" id="whorole"></span><button id="chpw">Cambiar contraseña</button><button id="out">Salir</button></div>
   </div>
+  <div class="tabs" role="tablist">
+    <button id="tabI" class="on" role="tab">Internos</button>
+    <button id="tabE" role="tab">Egresados</button>
+  </div>
+  <section id="vInt">
   <div class="stats" id="stats"></div>
   <div class="bar">
     <input id="q" type="search" placeholder="Buscar por nombre o cédula…" aria-label="Buscar">
@@ -141,7 +150,38 @@ details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{mar
     <thead><tr><th>Nombre</th><th>Cédula</th><th class="s" id="sort">Ingreso ▲</th><th>Lleva</th><th>Le falta</th><th>Finalización</th><th>Próxima salida</th><th>Falta para salir</th><th>Vuelve en</th><th>Tipo</th></tr></thead>
     <tbody id="rows"></tbody>
   </table><div class="empty" id="empty" hidden>No hay internos para mostrar.</div></div>
+  </section>
+  <section id="vEgr" hidden>
+    <div class="bar">
+      <input id="eq" type="search" placeholder="Buscar por nombre o cédula…" aria-label="Buscar egresado">
+      <select id="em2" aria-label="Motivo"><option value="">Todos los motivos</option></select>
+      <select id="et" aria-label="Tipo"><option value="">Todos los tipos</option><option>Privado</option><option>MIDES</option></select>
+      <button id="erefresh">Actualizar</button>
+    </div>
+    <p class="cnt" id="ecnt"></p>
+    <div class="msg" id="emsg" role="alert"></div>
+    <div class="wrap"><table>
+      <thead><tr><th>Nombre</th><th>Cédula</th><th>Ingreso</th><th>Egreso</th><th>Motivo</th><th>Tipo</th><th>Nota</th></tr></thead>
+      <tbody id="erows"></tbody>
+    </table><div class="empty" id="eempty" hidden>No hay egresados para mostrar.</div></div>
+  </section>
 </main>
+
+<dialog id="edlg"><form id="ef" class="ff">
+  <h2>Dar de egreso</h2>
+  <p id="enom" style="margin:0;font-weight:700"></p>
+  <div class="g2">
+    <label>Fecha de egreso<input name="fecha" type="date" required></label>
+    <label>Motivo<select name="motivo" required></select></label>
+  </div>
+  <label>Nota<textarea name="nota" placeholder="Opcional"></textarea></label>
+  <p style="margin:0;color:var(--mut);font-size:13px">Sale de la lista de internos y pasa a Egresados. No se borra nada.</p>
+  <div class="msg" id="emsg2" role="alert"></div>
+  <div class="acts">
+    <button type="button" id="ecancel">Cancelar</button>
+    <button type="submit" class="p" id="esave">Dar de egreso</button>
+  </div>
+</form></dialog>
 
 <dialog id="dlg"><form id="f" class="ff">
   <h2 id="ft2">Interno</h2>
@@ -174,6 +214,7 @@ details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{mar
   <div class="msg" id="msg" role="alert"></div>
   <div class="acts">
     <button type="button" class="d" id="del" hidden>Eliminar</button>
+    <button type="button" id="egr" hidden>Dar de egreso</button>
     <button type="button" id="cancel">Cancelar</button>
     <button type="submit" class="p" id="save">Guardar</button>
   </div>
@@ -323,7 +364,7 @@ function openDlg(it){
   $("salhoy").hidden=$("nosal").hidden=$("volvio").hidden=!isAdmin();
   const ro=!isAdmin();
   [...f.elements].forEach(x=>{if(x.tagName!=="BUTTON")x.disabled=ro});
-  $("save").hidden=ro; $("del").hidden=ro||!it; $("cancel").textContent=ro?"Cerrar":"Cancelar";
+  $("save").hidden=ro; $("del").hidden=ro||!it; $("egr").hidden=ro||!it; $("cancel").textContent=ro?"Cerrar":"Cancelar";
   $("ft2").textContent=it?it.nombre.trim():"Agregar interno";
   $("dlg").showModal();
 }
@@ -398,7 +439,6 @@ $("del").onclick=async()=>{
 };
 $("cancel").onclick=()=>$("dlg").close();
 /* ===== Salida registrada a mano ===== */
-const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 function numSalida(ingISO,salISO){return !ingISO||!salISO?1:numSalidaD(parse(ingISO),parse(salISO))}
 function salidaCercana(ingISO){if(!ingISO)return null;const ing=parse(ingISO);const pl=planSalidas(ing,addM(ing,DUR));
   return pl.length?pl.reduce((a,b)=>Math.abs(b.d-hoy)<Math.abs(a.d-hoy)?b:a):null}
@@ -416,6 +456,50 @@ $("nosal").onclick=()=>{const f=$("f"),c=salidaCercana(f.ingreso.value);if(!c){$
   f.nosalioel.value=iso(c.d);f.salioel.value="";f.vuelveel.value="";salInfo()};
 $("add").onclick=()=>openDlg(null);
 $("refresh").onclick=reload;
+/* ===== Egresados ===== */
+const MOTIVOS=["Terminó tratamiento","Se fue antes","Estalló","Derivado","Otro"];
+let egr=[], egrCargado=false;
+const fdi=s=>s?fd(parse(s)):"";
+async function loadEgr(){
+  $("emsg").textContent="Cargando…";
+  try{
+    const r=await api({action:"getSheet",sheet:"Egresados"});
+    if(!r||r.ok!==true) throw new Error((r&&r.error)||"respuesta inesperada");
+    egr=(r.data||[]).map(o=>({nombre:String(o.nombre||""),cedula:String(o.cedula||""),ingreso:toISO(o.fechadeingreso),egreso:toISO(o.fechadeegreso),
+      motivo:String(o.motivo||""),tipo:String(o.tipo||""),nota:String(o.nota||"")})).filter(o=>o.nombre.trim());
+    egrCargado=true; $("emsg").textContent=""; renderEgr();
+  }catch(e){$("emsg").textContent="No se pudo cargar Egresados: "+e.message}
+}
+function renderEgr(){
+  const sel=$("em2"), v=sel.value, ms=[...new Set([...MOTIVOS,...egr.map(o=>o.motivo).filter(Boolean)])];
+  sel.replaceChildren(el("option","","Todos los motivos"),...ms.map(m=>el("option","",m))); sel.options[0].value=""; sel.value=ms.includes(v)?v:"";
+  const q=$("eq").value.trim().toLowerCase(), fm=sel.value, ft=$("et").value;
+  const list=egr.filter(o=>(!fm||o.motivo===fm)&&(!ft||o.tipo===ft)&&(!q||(o.nombre+" "+o.cedula).toLowerCase().includes(q)))
+    .sort((a,b)=>(b.egreso||"").localeCompare(a.egreso||""));
+  $("ecnt").textContent=list.length+(list.length===1?" egresado":" egresados")+(list.length!==egr.length?" (de "+egr.length+")":"");
+  const tb=$("erows"); tb.replaceChildren(); $("eempty").hidden=list.length>0;
+  list.forEach(o=>{const tr=el("tr");cell(tr,o.nombre.trim(),"n");cell(tr,o.cedula);cell(tr,fdi(o.ingreso));cell(tr,fdi(o.egreso));cell(tr,o.motivo);
+    const t=el("td");if(o.tipo)t.append(el("span","t",o.tipo));tr.append(t);cell(tr,o.nota);tb.append(tr)});
+}
+function verTab(e){$("vInt").hidden=e;$("vEgr").hidden=!e;$("tabI").classList.toggle("on",!e);$("tabE").classList.toggle("on",e);if(e&&!egrCargado)loadEgr()}
+$("tabI").onclick=()=>verTab(false); $("tabE").onclick=()=>verTab(true);
+$("eq").oninput=renderEgr; $("em2").onchange=renderEgr; $("et").onchange=renderEgr; $("erefresh").onclick=loadEgr;
+const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+$("egr").onclick=()=>{
+  if(!cur) return; const f=$("ef"); f.reset();
+  f.motivo.replaceChildren(...MOTIVOS.map(m=>el("option","",m))); f.fecha.value=iso(hoy);
+  $("enom").textContent=cur.nombre.trim(); $("emsg2").textContent=""; $("dlg").close(); $("edlg").showModal();
+};
+$("ecancel").onclick=()=>$("edlg").close();
+$("ef").addEventListener("submit",async e=>{
+  e.preventDefault(); if(!isAdmin()||!cur) return; const f=$("ef");
+  $("esave").disabled=true; $("esave").textContent="Guardando…";
+  try{
+    const r=await api({action:"darEgreso",id:cur.id,fecha:f.fecha.value,motivo:f.motivo.value,nota:f.nota.value.trim()});
+    confirmar(r); $("edlg").close(); egrCargado=false; await reload();
+  }catch(err){$("emsg2").textContent="No se pudo dar de egreso: "+err.message}
+  finally{$("esave").disabled=false;$("esave").textContent="Dar de egreso"}
+});
 /* ===== Imprimir lista de residentes ===== */
 function buildPrint(){
   const tb=$("prows"); tb.replaceChildren();
