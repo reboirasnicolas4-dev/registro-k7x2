@@ -98,9 +98,15 @@ details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{mar
     <div class="org">Alas de Libertad</div>
     <h1>Internos</h1>
   </div>
-  <p>Ingresá tu correo electrónico para continuar.</p>
+  <p id="ltxt">Ingresá tu correo y tu contraseña.</p>
   <form id="lf" style="display:grid;gap:12px">
-    <label>Correo electrónico<input id="em" type="email" required autocomplete="email" placeholder="nombre@correo.com"></label>
+    <label>Correo electrónico<input id="em" type="email" required autocomplete="username" placeholder="nombre@correo.com"></label>
+    <label id="pwrow">Contraseña<input id="pw" type="password" autocomplete="current-password"></label>
+    <div id="setup" hidden style="display:grid;gap:12px">
+      <label>Elegí tu contraseña (mínimo 6 caracteres)<input id="np1" type="password" autocomplete="new-password" minlength="6"></label>
+      <label>Repetila<input id="np2" type="password" autocomplete="new-password" minlength="6"></label>
+    </div>
+    <label class="chk" style="display:flex;gap:8px;align-items:center;font-size:14px"><input id="rec" type="checkbox" style="width:auto"> Recordarme en este dispositivo</label>
     <details><summary>Conexión con Google (avanzado)</summary>
       <label>URL de la Web App<input id="apiurl" type="url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off"></label>
     </details>
@@ -119,7 +125,7 @@ details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{mar
 <main id="app" hidden>
   <div class="top">
     <div><h1>Internos</h1><p class="sub" id="hoy"></p></div>
-    <div class="who"><span id="whoem"></span><span class="role" id="whorole"></span><button id="out">Salir</button></div>
+    <div class="who"><span id="whoem"></span><span class="role" id="whorole"></span><button id="chpw">Cambiar contraseña</button><button id="out">Salir</button></div>
   </div>
   <div class="stats" id="stats"></div>
   <div class="bar">
@@ -209,15 +215,15 @@ const DIAS_SAL=n=>n<=3?4:7; // salidas 1.ª a 3.ª: 4 días; de la 4.ª en adela
 const MEALS=["desayuno","almuerzo","merienda","cena"];
 
 /* ===== Estado ===== */
-let email="", role="", items=[], asc=true, cur=null, delArm=false, scriptViejo=false;
+let email="", pass="", role="", items=[], asc=true, cur=null, delArm=false, scriptViejo=false;
 const $=id=>document.getElementById(id);
 const isAdmin=()=>role==="Admin";
 
 /* ===== Comunicación con Google Sheets (Apps Script) ===== */
 async function api(params, body){
-  const r = body
-    ? await fetch(API,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(body)})
-    : await fetch(API+"?"+new URLSearchParams(params));
+  // todo va por POST con correo y contraseña (la contraseña nunca va en la dirección)
+  const datos=Object.assign({email,password:pass},params||{},body||{});
+  const r = await fetch(API,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(datos)});
   if(!r.ok) throw new Error("HTTP "+r.status);
   const t=await r.text();
   if(/^\s*</.test(t)) throw new Error("la Web App devolvió una página en vez de datos; revisá que el acceso sea «Cualquier persona» y que el enlace sea el de la implementación activa");
@@ -248,7 +254,7 @@ function confirmar(res){
   throw new Error("el script no confirmó el cambio y respondió: "+JSON.stringify(res).slice(0,140)+". Probablemente sigue publicado el código viejo: pegá el código nuevo, guardalo y publicá una Nueva versión");
 }
 async function load(){
-  const res=await api({action:ACT.list,email});
+  const res=await api({action:ACT.list});
   if(typeof res==="string") throw new Error(res||"Respuesta vacía");
   if(res&&res.error) throw new Error(res.error);
   const arr=Array.isArray(res)?res:(res.data||res.internos||res.records||[]);
@@ -324,21 +330,49 @@ function openDlg(it){
 async function reload(){try{await load();$("amsg").textContent="";render()}catch(e){$("amsg").textContent="No se pudo actualizar la lista: "+e.message}}
 
 /* ===== Eventos ===== */
+function guardarSesion(){try{if($("rec").checked){localStorage.setItem("internos-pw",pass)}else{localStorage.removeItem("internos-pw")}}catch(x){}}
+function modoSetup(on){$("setup").hidden=!on;$("pwrow").hidden=on;$("ltxt").textContent=on?"Es tu primera vez: elegí una contraseña para tu usuario.":"Ingresá tu correo y tu contraseña.";$("lbtn").textContent=on?"Crear contraseña e ingresar":"Ingresar"}
 $("lf").addEventListener("submit",async e=>{
   e.preventDefault(); email=$("em").value.trim().toLowerCase(); $("lmsg").textContent="";
+  const setup=!$("setup").hidden;
   const u=$("apiurl").value.trim();
   if(!u||u===DEFAULT_API){API=DEFAULT_API;try{localStorage.removeItem("internos-api")}catch(x){}}
   else if(/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(u)){API=u;try{localStorage.setItem("internos-api",u)}catch(x){}}
   else{$("lmsg").textContent="Esa URL no parece la de una Web App de Google (tiene que terminar en /exec).";return} $("lbtn").disabled=true; $("lbtn").textContent="Verificando…";
   try{
-    role=parseRole(await api({action:ACT.check,email}));
+    if(setup){
+      const a=$("np1").value,b=$("np2").value;
+      if(a.length<6){$("lmsg").textContent="La contraseña tiene que tener al menos 6 caracteres.";return}
+      if(a!==b){$("lmsg").textContent="Las dos contraseñas no coinciden.";return}
+      pass="";
+      const r=await api({action:"setPassword",newPassword:a});
+      if(!r||r.ok!==true){$("lmsg").textContent=(r&&r.error)||"No se pudo guardar la contraseña.";return}
+      pass=a; $("np1").value=$("np2").value=""; modoSetup(false);
+    }else pass=$("pw").value;
+    const res=await api({action:ACT.check});
+    if(res&&res.needsSetup){modoSetup(true);$("lmsg").textContent="";return}
+    if(res&&res.needsPassword){$("lmsg").textContent=res.error||"Contraseña incorrecta.";return}
+    role=parseRole(res);
     if(!role){$("dtxt").textContent="El correo "+email+" no está autorizado para usar esta aplicación.";show("denied");return}
+    guardarSesion(); $("pw").value="";
     await load(); show("app"); render();
   }catch(err){$("lmsg").textContent="No se pudo conectar con la hoja de cálculo ("+err.message+"). Probá de nuevo."}
-  finally{$("lbtn").disabled=false;$("lbtn").textContent="Ingresar"}
+  finally{$("lbtn").disabled=false;if($("setup").hidden)$("lbtn").textContent="Ingresar"}
 });
-$("retry").onclick=()=>{email="";role="";$("em").value="";show("login")};
-$("out").onclick=()=>{email="";role="";items=[];$("em").value="";show("login")};
+$("em").addEventListener("input",()=>{if(!$("setup").hidden)modoSetup(false)});
+$("retry").onclick=()=>{email="";pass="";role="";$("em").value="";modoSetup(false);show("login")};
+$("out").onclick=()=>{email="";pass="";role="";items=[];$("pw").value="";try{localStorage.removeItem("internos-pw")}catch(x){}modoSetup(false);show("login")};
+$("chpw").onclick=async()=>{
+  const actual=prompt("Contraseña actual:"); if(actual==null)return;
+  const nueva=prompt("Nueva contraseña (mínimo 6 caracteres):"); if(nueva==null)return;
+  if(nueva.length<6){alert("La contraseña tiene que tener al menos 6 caracteres.");return}
+  if(prompt("Repetí la nueva contraseña:")!==nueva){alert("Las contraseñas no coinciden.");return}
+  try{const r=await api({action:"setPassword",password:actual,newPassword:nueva});
+    if(!r||r.ok!==true){alert((r&&r.error)||"No se pudo cambiar.");return}
+    pass=nueva; try{if(localStorage.getItem("internos-pw"))localStorage.setItem("internos-pw",nueva)}catch(x){}
+    alert("Listo, tu contraseña quedó cambiada.");
+  }catch(err){alert("No se pudo cambiar: "+err.message)}
+};
 $("f").addEventListener("submit",async e=>{
   e.preventDefault(); if(!isAdmin()) return; const f=$("f");
   const rec={id:cur?.id||("i"+Date.now().toString(36)),nombre:f.nombre.value.trim(),cedula:f.cedula.value.trim(),tipo:f.tipo.value,ingreso:f.ingreso.value};
@@ -348,7 +382,7 @@ $("f").addEventListener("submit",async e=>{
   if(!rec.nombre||!rec.ingreso){$("msg").textContent="Completá el nombre y la fecha de ingreso.";return}
   $("save").disabled=true; $("save").textContent="Guardando…";
   try{
-    const res=await api(null,{action:cur?ACT.update:ACT.add,email,record:rec});
+    const res=await api(null,{action:cur?ACT.update:ACT.add,record:rec});
     confirmar(res);
     $("dlg").close(); await reload();
   }catch(err){$("msg").textContent="No se pudo guardar: "+err.message}
@@ -357,7 +391,7 @@ $("f").addEventListener("submit",async e=>{
 $("del").onclick=async()=>{
   if(!delArm){delArm=true;$("del").textContent="¿Seguro? Tocá de nuevo";return}
   try{
-    const res=await api(null,{action:ACT.remove,email,id:cur.id});
+    const res=await api(null,{action:ACT.remove,id:cur.id});
     confirmar(res);
     $("dlg").close(); await reload();
   }catch(err){$("msg").textContent="No se pudo eliminar: "+err.message}
@@ -480,7 +514,7 @@ $("sshare").onclick=async()=>{
 };
 $("q").oninput=render; $("ft").onchange=render;
 $("sort").onclick=()=>{asc=!asc;$("sort").textContent="Ingreso "+(asc?"▲":"▼");render()};
-try{$("em").value=localStorage.getItem("internos-email")||"";const su=localStorage.getItem("internos-api");if(su)API=su}catch(e){}
+try{$("em").value=localStorage.getItem("internos-email")||"";const sp=localStorage.getItem("internos-pw");if(sp){$("pw").value=sp;$("rec").checked=true}const su=localStorage.getItem("internos-api");if(su)API=su}catch(e){}
 $("apiurl").value=API;
 $("lf").addEventListener("submit",()=>{try{localStorage.setItem("internos-email",$("em").value.trim())}catch(e){}});
 </script>
