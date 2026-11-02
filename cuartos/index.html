@@ -160,6 +160,11 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
   <section id="v-sectores" hidden>
     <p class="sub" style="margin:0 0 12px">Los nombres vienen de la lista de Internos. Elegí el sector de cada uno: los que tienen sector van solos a Tropilla.</p>
     <div class="sum" id="sum2"></div>
+    <div class="bar">
+      <input id="sq" type="search" placeholder="Buscar interno por nombre o cédula…" aria-label="Buscar interno" style="flex:1 1 240px;min-width:0">
+      <select id="sf" aria-label="Filtrar por sector"><option value="*">Todos</option><option value="">Sin sector</option></select>
+    </div>
+    <p class="cap" id="scnt" style="margin:-4px 0 10px"></p>
     <div class="wrap"><table>
       <thead><tr><th>Nombre</th><th>Lleva</th><th>Sector</th><th>Dónde duerme</th></tr></thead>
       <tbody id="srows"></tbody>
@@ -309,7 +314,12 @@ function render(){
 function renderSectores(){
   $("sum2").replaceChildren(...[...SECTORES.map(s=>[s,gente.filter(p=>p.sector===s).length]),["Sin sector",sinSector().length]]
     .map(([l,n])=>{const s=el("span","pill");s.append(l+": ",el("b","",String(n)));return s}));
-  $("srows").replaceChildren(...gente.map(p=>{
+  const fs=$("sf");if(fs.options.length===2)SECTORES.forEach(x=>{const o=el("option","",x);o.value=x;fs.append(o)});
+  const q=$("sq").value.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""), f=fs.value;
+  const lista=gente.filter(p=>(f==="*"||p.sector===f)&&(!q||(p.nombre+" "+p.cedula).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").includes(q)));
+  $("scnt").textContent=lista.length===gente.length?gente.length+" internos":lista.length+" de "+gente.length+" internos";
+  $("srows").replaceChildren(...(lista.length?lista:[null]).map(p=>{
+    if(!p){const tr=el("tr"),td=el("td","","No hay internos que coincidan con la búsqueda.");td.colSpan=4;td.style.color="var(--mut)";tr.append(td);return tr}
     const tr=el("tr");tr.append(el("td","",p.nombre),el("td","",llevaTxt(p)+(puede3(p)?" ✓":"")));
     const td=el("td"),s=el("select");s.id="sec-"+p.id;s.setAttribute("aria-label","Sector de "+p.nombre);s.disabled=!isAdmin();
     ["",...SECTORES].forEach(x=>{const o=el("option","",x||"Sin sector");o.value=x;s.append(o)});s.value=p.sector;
@@ -357,6 +367,7 @@ $("mcerrar").onclick=()=>$("menu").close();
 $("msacar").onclick=()=>{const p=menuP;$("menu").close();p.cuarto="";render();guardarPronto();toast(nom1(p)+" quedó sin cama")};
 $("mswap").onclick=()=>{const p=menuP;$("menu").close();sel=p.id;render();toast("Tocá a la otra persona para intercambiarlos")};
 $("rotar").onclick=rotar;
+$("sq").oninput=renderSectores; $("sf").onchange=renderSectores;
 $("recargar").onclick=()=>cargar().catch(e=>estado("No se pudo actualizar: "+e.message,true));
 $("guardar").onclick=async()=>{
   const b=$("guardar");b.disabled=true;b.textContent="Guardando…";
