@@ -128,7 +128,7 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
       <label>Elegí tu contraseña (mínimo 6 caracteres)<input id="np1" type="password" autocomplete="new-password"></label>
       <label>Repetila<input id="np2" type="password" autocomplete="new-password"></label>
     </div>
-    <label style="display:flex;gap:8px;align-items:center;font-size:14px"><input id="rec" type="checkbox" style="width:auto"> Recordarme en este dispositivo</label>
+    <label style="display:flex;gap:8px;align-items:center;font-size:14px"><input id="rec" type="checkbox" style="width:auto"> Recordarme en este dispositivo (30 días)</label>
     <div class="msg" id="lmsg" role="alert"></div>
     <button class="p" id="lbtn" type="submit">Ingresar</button>
   </form>
@@ -244,12 +244,24 @@ function toISO(v){v=String(v||"").trim();if(/^\d{4}-\d{2}-\d{2}/.test(v))return 
 function toast(t){const e=$("toast");e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,2600)}
 function estado(t,err){$("estado").textContent=t||"";$("estado").classList.toggle("err",!!err)}
 
+/* ===== Sesión: se guarda un código que vence a los 30 días, nunca la contraseña ===== */
+let token="";
+function credenciales(){return token?{email,token}:{email,password:pass}}
+function guardarSesion(){try{const rec=$("rec").checked;sessionStorage.setItem("alas-sesion",JSON.stringify(token?{email,token}:{email,pass}));
+  if(rec&&token)localStorage.setItem("alas-token",JSON.stringify({email,token}));else localStorage.removeItem("alas-token");localStorage.removeItem("internos-pw")}catch(x){}}
+function sesionGuardada(){try{return JSON.parse(sessionStorage.getItem("alas-sesion")||"null")||JSON.parse(localStorage.getItem("alas-token")||"null")}catch(x){return null}}
+function borrarSesion(){try{localStorage.removeItem("alas-token");localStorage.removeItem("internos-pw");sessionStorage.removeItem("alas-sesion")}catch(x){}}
+function cerrarSesion(){if(token)api({action:"logout"}).catch(()=>{});borrarSesion();token="";pass=""}
+
 /* ===== Comunicación con la hoja (mismo script que Internos) ===== */
 async function api(datos){
-  const r=await fetch(API,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(Object.assign({email,password:pass},datos))});
+  const r=await fetch(API,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(Object.assign(credenciales(),datos))});
   if(!r.ok)throw new Error("HTTP "+r.status);
-  const t=await r.text(); try{return JSON.parse(t)}catch(e){throw new Error("respuesta inesperada de la hoja")}
+  const t=await r.text(); let o; try{o=JSON.parse(t)}catch(e){throw new Error("respuesta inesperada de la hoja")}
+  if(o&&o.auth===false&&datos.action!=="logout"){sesionVencida(o.error);throw new Error(o.error||"sesión vencida")}
+  return o;
 }
+function sesionVencida(txt){borrarSesion();token="";pass="";role="";gente=[];$("app").hidden=true;$("login").hidden=false;modoSetup(false);$("lmsg").textContent=txt||"Tu sesión venció. Ingresá de nuevo con tu contraseña."}
 async function cargar(){
   estado("Cargando…");
   const [int,cu,rot,nj]=await Promise.all([api({action:"getInternos"}),api({action:"getSheet",sheet:HOJA_CUARTOS}),api({action:"getSheet",sheet:HOJA_ROT}),api({action:"getSheet",sheet:HOJA_NJ})]);
@@ -525,25 +537,27 @@ $("lf").addEventListener("submit",async e=>{
     if(setup){const a=$("np1").value,b=$("np2").value;
       if(a.length<6){$("lmsg").textContent="La contraseña tiene que tener al menos 6 caracteres.";return}
       if(a!==b){$("lmsg").textContent="Las dos contraseñas no coinciden.";return}
-      pass="";const r=await api({action:"setPassword",newPassword:a});
+      pass="";token="";const r=await api({action:"setPassword",newPassword:a});
       if(!r||r.ok!==true){$("lmsg").textContent=(r&&r.error)||"No se pudo guardar la contraseña.";return}
-      pass=a;modoSetup(false);
-    }else pass=$("pw").value;
+      if(r.token){token=r.token;pass=""}else pass=a;modoSetup(false);
+    }else{token="";pass=$("pw").value}
     const res=await api({action:"checkUser"});
+    if(res&&res.token){token=res.token;pass=""}
     if(res&&res.needsSetup){modoSetup(true);return}
     if(!res||!res.allowed){$("lmsg").textContent=(res&&res.error)||"Ese correo no está autorizado.";return}
     role=String(res.role||"");
-    try{localStorage.setItem("internos-email",email);if($("rec").checked)localStorage.setItem("internos-pw",pass);else localStorage.removeItem("internos-pw");sessionStorage.setItem("alas-sesion",JSON.stringify({email,pass}))}catch(x){}
+    try{localStorage.setItem("internos-email",email)}catch(x){} guardarSesion();
     $("pw").value="";$("whoem").textContent=email;$("whorole").textContent=role;
     $("login").hidden=true;$("app").hidden=false;await cargar();
   }catch(err){$("lmsg").textContent="No se pudo conectar con la hoja ("+err.message+"). Probá de nuevo."}
   finally{$("lbtn").disabled=false;if($("setup").hidden)$("lbtn").textContent="Ingresar"}
 });
-$("out").onclick=()=>{email="";pass="";role="";gente=[];try{localStorage.removeItem("internos-pw");sessionStorage.removeItem("alas-sesion")}catch(x){}$("app").hidden=true;$("login").hidden=false;modoSetup(false)};
-try{$("em").value=localStorage.getItem("internos-email")||"";const sp=localStorage.getItem("internos-pw");if(sp){$("pw").value=sp;$("rec").checked=true}const su=localStorage.getItem("internos-api");if(su)API=su}catch(e){}
-(async()=>{try{const ses=JSON.parse(sessionStorage.getItem("alas-sesion")||"null");if(!ses||!ses.email)return;
-  email=ses.email;pass=ses.pass;const res=await api({action:"checkUser"});if(!res||!res.allowed){email="";pass="";sessionStorage.removeItem("alas-sesion");return}
-  role=String(res.role||"");$("whoem").textContent=email;$("whorole").textContent=role;$("login").hidden=true;$("app").hidden=false;await cargar()}catch(e){}})();
+$("out").onclick=()=>{cerrarSesion();email="";role="";gente=[];$("lmsg").textContent="";$("app").hidden=true;$("login").hidden=false;modoSetup(false)};
+try{$("em").value=localStorage.getItem("internos-email")||"";localStorage.removeItem("internos-pw");if(localStorage.getItem("alas-token"))$("rec").checked=true;const su=localStorage.getItem("internos-api");if(su)API=su}catch(e){}
+(async()=>{const ses=sesionGuardada();if(!ses||!ses.email||!(ses.token||ses.pass))return;
+  try{email=ses.email;token=ses.token||"";pass=ses.pass||"";const res=await api({action:"checkUser"});
+  if(!res||!res.allowed){const t=res&&res.error;borrarSesion();token="";pass="";email="";if(t)$("lmsg").textContent=t;return}
+  guardarSesion();role=String(res.role||"");$("whoem").textContent=email;$("whorole").textContent=role;$("login").hidden=true;$("app").hidden=false;await cargar()}catch(e){}})();
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
 </script>
 </body>
