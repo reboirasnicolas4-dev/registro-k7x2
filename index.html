@@ -370,7 +370,7 @@ function pasarSesion(){try{if(token)sessionStorage.setItem("alas-paso",JSON.stri
 function sesionGuardada(){try{const p=JSON.parse(sessionStorage.getItem("alas-paso")||"null");sessionStorage.removeItem("alas-paso");sessionStorage.removeItem("alas-sesion");
   if(p&&p.token&&Date.now()-p.t<60000)return p;return JSON.parse(localStorage.getItem("alas-token")||"null")}catch(x){return null}}
 function borrarSesion(){try{localStorage.removeItem("alas-token");localStorage.removeItem("internos-pw");sessionStorage.removeItem("alas-sesion");sessionStorage.removeItem("alas-paso")}catch(x){}}
-function cerrarSesion(){if(token)api({action:"logout"}).catch(()=>{});borrarSesion();token="";pass=""}
+function cerrarSesion(){fotosChicas={};fotosGrandes={};fotosPedidas=new Set();if(token)api({action:"logout"}).catch(()=>{});borrarSesion();token="";pass=""}
 document.addEventListener("click",e=>{if(e.target.closest('a[href="cuartos/"]'))pasarSesion()});
 
 /* ===== Comunicación con Google Sheets (Apps Script) ===== */
@@ -385,7 +385,7 @@ async function api(params, body){
   if(o&&o.auth===false&&datos.action!=="logout"){sesionVencida(o.error);throw new Error(o.error||"sesión vencida")}
   return o;
 }
-function sesionVencida(txt){borrarSesion();token="";pass="";role="";items=[];try{$("dlg").close()}catch(x){}
+function sesionVencida(txt){borrarSesion();fotosChicas={};fotosGrandes={};fotosPedidas=new Set();token="";pass="";role="";items=[];try{$("dlg").close()}catch(x){}
   modoSetup(false);show("login");$("lmsg").textContent=txt||"Tu sesión venció. Ingresá de nuevo con tu contraseña."}
 function matchRole(s){s=String(s||"");return /admin/i.test(s)?"Admin":/usuario|user/i.test(s)?"Usuario":""}
 function parseRole(res){
@@ -418,6 +418,7 @@ async function load(){
   const arr=Array.isArray(res)?res:(res.data||res.internos||res.records||[]);
   scriptViejo=arr.length>0&&!arr.some(o=>Object.keys(o).some(k=>norm(k)==="id"));
   items=arr.map(toItem);
+  setTimeout(cargarFotos,0);
 }
 
 /* ===== Fechas ===== */
@@ -452,15 +453,27 @@ function calc(it){
 /* ===== Pantalla ===== */
 function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
 function iniciales(n){return n.trim().split(/\s+/).slice(0,2).map(x=>x[0]||"").join("").toUpperCase()}
-function avatar(it,cls){if(it&&it.foto){const im=el("img",cls);im.src=it.foto;im.alt="";im.loading="lazy";im.referrerPolicy="no-referrer";return im}return el("div",cls,iniciales(it?it.nombre:""))}
-function pintarFoto(it){const b=$("fotobig");b.replaceChildren();if(it&&it.foto){const im=el("img","big");im.src=it.foto.replace(/sz=w\d+/,"sz=w600");im.alt="Foto de "+it.nombre;im.referrerPolicy="no-referrer";b.replaceWith(im);im.id="fotobig"}else{const d=el("div","big","Sin foto");d.id="fotobig";b.replaceWith(d)}}
+// Las fotos son privadas: se piden al script con la sesión y quedan solo en la memoria de la app
+let fotosChicas={}, fotosGrandes={}, fotosPedidas=new Set();
+async function cargarFotos(){const ids=items.filter(i=>i.foto&&!fotosChicas[i.id]&&!fotosPedidas.has(i.id+i.foto)).map(i=>i.id);if(!ids.length)return;
+  const claves=items.filter(i=>ids.includes(i.id)).map(i=>i.id+i.foto);claves.forEach(k=>fotosPedidas.add(k));
+  try{const r=await api({action:"fotos",ids});if(r&&r.ok&&r.fotos){Object.assign(fotosChicas,r.fotos);render()}}catch(e){claves.forEach(k=>fotosPedidas.delete(k))}}
+function avatar(it,cls){const src=it&&it.foto&&fotosChicas[it.id];if(src){const im=el("img",cls);im.src=src;im.alt="";return im}return el("div",cls,iniciales(it?it.nombre:""))}
+function ponerFotoGrande(src,alt){const b=$("fotobig");const im=el("img","big");im.src=src;im.alt=alt;im.id="fotobig";b.replaceWith(im)}
+function pintarFoto(it){const b=$("fotobig");
+  if(!it||!it.foto){const d=el("div","big","Sin foto");d.id="fotobig";b.replaceWith(d);return}
+  const alt="Foto de "+it.nombre;
+  if(fotosGrandes[it.id]){ponerFotoGrande(fotosGrandes[it.id],alt);return}
+  if(fotosChicas[it.id])ponerFotoGrande(fotosChicas[it.id],alt);else{const d=el("div","big","Cargando foto…");d.id="fotobig";b.replaceWith(d)}
+  api({action:"foto",id:it.id}).then(r=>{if(r&&r.ok&&r.foto){fotosGrandes[it.id]=r.foto;if(cur&&cur.id===it.id)ponerFotoGrande(r.foto,alt)}
+    else if(cur&&cur.id===it.id&&!fotosChicas[it.id]){const d=el("div","big","Sin foto");d.id="fotobig";$("fotobig").replaceWith(d)}}).catch(()=>{})}
 // Achica la foto (máx. 900 px) para que suba rápido
 function achicar(file){return new Promise((ok,mal)=>{const r=new FileReader();r.onerror=()=>mal(new Error("no se pudo leer la imagen"));r.onload=()=>{const im=new Image();im.onerror=()=>mal(new Error("el archivo no es una imagen"));im.onload=()=>{const k=Math.min(1,900/Math.max(im.width,im.height));const c=document.createElement("canvas");c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext("2d").drawImage(im,0,0,c.width,c.height);ok(c.toDataURL("image/jpeg",0.82))};im.src=r.result};r.readAsDataURL(file)})}
 async function subirFoto(file){
   if(!file||!cur||!isAdmin())return; $("fmsg").textContent="Subiendo foto…";
   try{const dataUrl=await achicar(file);const r=await api({action:"subirFoto",id:cur.id,dataUrl});
     if(!r||r.ok!==true)throw new Error((r&&r.error)||"respuesta inesperada");
-    cur.foto=r.foto; const it=items.find(x=>x.id===cur.id); if(it)it.foto=r.foto; pintarFoto(cur); render(); $("fmsg").textContent="Foto guardada ✔";
+    cur.foto=r.foto; fotosChicas[cur.id]=fotosGrandes[cur.id]=dataUrl; const it=items.find(x=>x.id===cur.id); if(it)it.foto=r.foto; pintarFoto(cur); render(); $("fmsg").textContent="Foto guardada ✔";
   }catch(e){$("fmsg").textContent="No se pudo subir: "+e.message}
 }
 function cell(tr,txt,cls,hl){const td=el("td",cls);if(hl)td.append(el("span","y",txt));else td.textContent=txt;tr.append(td)}
