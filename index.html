@@ -51,6 +51,7 @@ h1{font:700 34px/1.1 Fraunces,Georgia,serif;margin:0}
 .mrow .tx b{display:block}.mrow .tx span{color:var(--mut);font-size:14px;white-space:pre-line}
 .mrow .bt{display:flex;gap:6px;flex-wrap:wrap}
 .est{font-size:12px;font-weight:700;border-radius:99px;padding:2px 10px}
+.est{color:var(--mut);border:1px solid var(--line)}
 .est.ok{color:#fff;background:#2f7d4f}.est.no{color:#fff;background:var(--bad)}
 .mrow input{width:auto;flex:1 1 160px;padding:7px 9px}
 .medh{display:grid;gap:6px;font-size:13px}
@@ -629,14 +630,15 @@ function renderMed(){
   const con=items.filter(i=>i.nombre&&i.ingreso&&String(i[k]||"").trim()&&parse(i.ingreso)<=f).sort((a,b)=>a.nombre.localeCompare(b.nombre,"es"));
   const fuera=con.filter(i=>fueraEl(i,f)),aca=con.filter(i=>!fueraEl(i,f));
   const hechas=aca.filter(i=>marcas[tomaSel+"|"+i.id]).length;
-  $("mcnt").textContent=aca.length?(hechas+" de "+aca.length+" marcadas · "+(aca.length-hechas===0?"¡completo! ✔":"faltan "+(aca.length-hechas))):"Nadie toma medicación en el "+tomaSel.toLowerCase()+".";
+  $("mcnt").textContent=(aca.length?(hechas+" de "+aca.length+" marcadas · "+(aca.length-hechas===0?"¡completo! ✔":"faltan "+(aca.length-hechas))):"Nadie toma medicación en el "+tomaSel.toLowerCase()+".")+(isAdmin()?"":" · Solo los Admin pueden marcar.");
   $("mbar").style.width=(aca.length?Math.round(hechas/aca.length*100):0)+"%";
   const fila=i=>{
     const m=marcas[tomaSel+"|"+i.id],r=el("div","mrow"+(m?(m.estado==="Dada"?" dada":""):" falta")),t=el("div","tx");
     t.append(el("b","",i.nombre.trim()),el("span","",String(i[k]).trim()));r.append(t);
     const bt=el("div","bt");
     if(m){bt.append(el("span","est "+(m.estado==="Dada"?"ok":"no"),(m.estado==="Dada"?"✓ Dada":"✗ No la tomó"+(m.motivo?": "+m.motivo:""))+" · "+m.hora+" · "+String(m.usuario).split("@")[0]));
-      const u=el("button","","Desmarcar");u.type="button";u.onclick=()=>marcar(i,"");bt.append(u)}
+      if(isAdmin()){const u=el("button","","Desmarcar");u.type="button";u.onclick=()=>marcar(i,"");bt.append(u)}}
+    else if(!isAdmin()){bt.append(el("span","est","Sin marcar"))}
     else if(abiertoNo===i.id){const inp=el("input");inp.placeholder="Motivo (opcional)";inp.id="mot-"+i.id;
       const ok=el("button","d","Guardar «No la tomó»");ok.type="button";ok.onclick=()=>marcar(i,"no",inp.value.trim());
       const c=el("button","","Cancelar");c.type="button";c.onclick=()=>{abiertoNo=null;renderMed()};bt.append(inp,ok,c)}
@@ -647,6 +649,7 @@ function renderMed(){
   $("mfuerah").hidden=!fuera.length;$("mfuera").replaceChildren(...fuera.map(i=>{const r=el("div","mrow"),t=el("div","tx");t.append(el("b","",i.nombre.trim()),el("span","",String(i[k]).trim()));r.append(t);return r}));
 }
 async function marcar(i,estado,motivo){
+  if(!isAdmin())return;
   const key=tomaSel+"|"+i.id,antes=marcas[key];abiertoNo=null;
   if(estado)marcas[key]={toma:tomaSel,id:i.id,estado:estado==="dada"?"Dada":"No la tomó",motivo:motivo||"",hora:new Date().toTimeString().slice(0,5),usuario:email};else delete marcas[key];
   renderMed();
