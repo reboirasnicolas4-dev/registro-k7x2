@@ -33,6 +33,15 @@ h1{font:700 34px/1.1 Fraunces,Georgia,serif;margin:0}
 .tabs button{border:0;border-radius:8px 8px 0 0;background:transparent;padding:10px 18px;font-weight:700;color:var(--mut);margin-bottom:-2px;border-bottom:3px solid transparent}
 .tabs button.on{color:var(--ink);border-bottom-color:var(--acc)}
 .cnt{color:var(--mut);font-size:13px;margin:-4px 0 10px}
+.finbox{background:var(--card);border:2px solid var(--acc);border-radius:14px;padding:12px 14px;margin-bottom:16px;display:grid;gap:8px}
+.finbox h3{margin:0;font:700 17px Fraunces,Georgia,serif}
+.finbox .fr{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:8px}
+.finbox .fr .tx{flex:1 1 220px;min-width:0}
+.finbox .fr .tx small{color:var(--mut)}
+.finbox .tarde{color:var(--bad);font-weight:700}
+.medh{display:grid;gap:6px;font-size:13px}
+.medh div{border-left:3px solid var(--acc);padding:2px 8px}
+.medh small{color:var(--mut)}
 input,select,textarea,button{font:inherit;color:var(--ink)}
 input,select,textarea{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:9px 11px;width:100%}
 input:disabled,select:disabled,textarea:disabled{opacity:.85;background:transparent}
@@ -140,9 +149,11 @@ details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{mar
   <div class="tabs" role="tablist">
     <button id="tabI" class="on" role="tab">Internos</button>
     <button id="tabE" role="tab">Egresados</button>
+    <button id="tabR" role="tab" hidden>Registro</button>
   </div>
   <section id="vInt">
   <div class="stats" id="stats"></div>
+  <div class="finbox" id="finbox" hidden></div>
   <div class="bar">
     <input id="q" type="search" placeholder="Buscar por nombre o cédula…" aria-label="Buscar">
     <select id="ft" aria-label="Tipo"><option value="">Todos los tipos</option><option>Privado</option><option>MIDES</option></select>
@@ -170,6 +181,19 @@ details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{mar
       <thead><tr><th>Nombre</th><th>Cédula</th><th>Ingreso</th><th>Egreso</th><th>Motivo</th><th>Tipo</th><th>Nota</th></tr></thead>
       <tbody id="erows"></tbody>
     </table><div class="empty" id="eempty" hidden>No hay egresados para mostrar.</div></div>
+  </section>
+  <section id="vReg" hidden>
+    <div class="bar">
+      <input id="rq" type="search" placeholder="Buscar por interno, usuario o detalle…" aria-label="Buscar en el registro">
+      <select id="ra" aria-label="Acción"><option value="">Todas las acciones</option></select>
+      <button id="rrefresh">Actualizar</button>
+    </div>
+    <p class="cnt" id="rcnt"></p>
+    <div class="msg" id="rmsg" role="alert"></div>
+    <div class="wrap"><table>
+      <thead><tr><th>Fecha</th><th>Usuario</th><th>Acción</th><th>Interno</th><th>Detalle</th></tr></thead>
+      <tbody id="rrows"></tbody>
+    </table><div class="empty" id="rempty" hidden>Todavía no hay cambios registrados.</div></div>
   </section>
 </main>
 
@@ -224,6 +248,8 @@ details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{mar
     <label>Almuerzo<textarea name="almuerzo"></textarea></label>
     <label>Merienda<textarea name="merienda"></textarea></label>
     <label>Cena<textarea name="cena"></textarea></label>
+    <div><button type="button" id="medver">Ver cambios de medicación</button></div>
+    <div class="medh" id="medh" hidden></div>
   </fieldset>
   <div class="msg" id="msg" role="alert"></div>
   <div class="acts">
@@ -370,6 +396,7 @@ function render(){
   const all=items.filter(i=>i.nombre&&i.ingreso).map(i=>({i,c:calc(i)}));
   $("stats").replaceChildren(...[[all.length,"internos",""],[all.filter(x=>x.c.salSoon).length,"salen en "+AV_SAL+" días o menos","w"],[all.filter(x=>x.c.finSoon).length,"terminan en "+AV_FIN+" días o menos","w"]]
     .map(([n,l,k])=>{const s=el("div","stat "+k);s.append(el("b","",String(n)),el("span","",l));return s}));
+  renderFin(all); $("tabR").hidden=!isAdmin();
   const list=all.filter(({i})=>(!ft||i.tipo===ft)&&(!q||(i.nombre+" "+i.cedula).toLowerCase().includes(q))).sort((a,b)=>(a.c.ing-b.c.ing)*(asc?1:-1));
   const tb=$("rows"); tb.replaceChildren(); $("empty").hidden=list.length>0;
   list.forEach(({i,c})=>{
@@ -386,6 +413,7 @@ function openDlg(it){
   const f=$("f"); f.reset();
   f.nombre.value=it?it.nombre.trim():""; f.cedula.value=it?.cedula||""; f.tipo.value=it?.tipo||"Privado"; f.ingreso.value=it?.ingreso||"";
   MEALS.forEach(m=>f[m].value=it?.[m]||"");
+  $("medh").hidden=true; $("medver").hidden=!it;
   pintarFoto(it); $("fotobox").hidden=!it; $("fotobt").hidden=!isAdmin(); $("fmsg").textContent="";
   f.salioel.value=it?.salio||""; f.vuelveel.value=it?.vuelve||""; f.nosalioel.value=it?.nosalio||""; salInfo();
   $("salhoy").hidden=$("nosal").hidden=$("volvio").hidden=!isAdmin();
@@ -398,7 +426,7 @@ function openDlg(it){
 async function reload(){try{await load();$("amsg").textContent="";render()}catch(e){$("amsg").textContent="No se pudo actualizar la lista: "+e.message}}
 
 /* ===== Eventos ===== */
-function guardarSesion(){try{if($("rec").checked){localStorage.setItem("internos-pw",pass)}else{localStorage.removeItem("internos-pw")}}catch(x){}}
+function guardarSesion(){try{if($("rec").checked){localStorage.setItem("internos-pw",pass)}else{localStorage.removeItem("internos-pw")}sessionStorage.setItem("alas-sesion",JSON.stringify({email,pass}))}catch(x){}}
 function modoSetup(on){$("setup").hidden=!on;$("pwrow").hidden=on;$("ltxt").textContent=on?"Es tu primera vez: elegí una contraseña para tu usuario.":"Ingresá tu correo y tu contraseña.";$("lbtn").textContent=on?"Crear contraseña e ingresar":"Ingresar"}
 $("lf").addEventListener("submit",async e=>{
   e.preventDefault(); email=$("em").value.trim().toLowerCase(); $("lmsg").textContent="";
@@ -429,7 +457,7 @@ $("lf").addEventListener("submit",async e=>{
 });
 $("em").addEventListener("input",()=>{if(!$("setup").hidden)modoSetup(false)});
 $("retry").onclick=()=>{email="";pass="";role="";$("em").value="";modoSetup(false);show("login")};
-$("out").onclick=()=>{email="";pass="";role="";items=[];$("pw").value="";try{localStorage.removeItem("internos-pw")}catch(x){}modoSetup(false);show("login")};
+$("out").onclick=()=>{email="";pass="";role="";items=[];$("pw").value="";try{localStorage.removeItem("internos-pw");sessionStorage.removeItem("alas-sesion")}catch(x){}modoSetup(false);verTab("I");regCargado=false;egrCargado=false;show("login")};
 $("chpw").onclick=async()=>{
   const actual=prompt("Contraseña actual:"); if(actual==null)return;
   const nueva=prompt("Nueva contraseña (mínimo 6 caracteres):"); if(nueva==null)return;
@@ -509,14 +537,56 @@ function renderEgr(){
   list.forEach(o=>{const tr=el("tr");cell(tr,o.nombre.trim(),"n");cell(tr,o.cedula);cell(tr,fdi(o.ingreso));cell(tr,fdi(o.egreso));cell(tr,o.motivo);
     const t=el("td");if(o.tipo)t.append(el("span","t",o.tipo));tr.append(t);cell(tr,o.nota);tb.append(tr)});
 }
-function verTab(e){$("vInt").hidden=e;$("vEgr").hidden=!e;$("tabI").classList.toggle("on",!e);$("tabE").classList.toggle("on",e);if(e&&!egrCargado)loadEgr()}
-$("tabI").onclick=()=>verTab(false); $("tabE").onclick=()=>verTab(true);
+function verTab(k){[["I","vInt"],["E","vEgr"],["R","vReg"]].forEach(([t,v])=>{$(v).hidden=t!==k;$("tab"+t).classList.toggle("on",t===k)});
+  if(k==="E"&&!egrCargado)loadEgr(); if(k==="R"&&!regCargado)loadReg()}
+$("tabI").onclick=()=>verTab("I"); $("tabE").onclick=()=>verTab("E"); $("tabR").onclick=()=>verTab("R");
 $("eq").oninput=renderEgr; $("em2").onchange=renderEgr; $("et").onchange=renderEgr; $("erefresh").onclick=loadEgr;
 const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-$("egr").onclick=()=>{
-  if(!cur) return; const f=$("ef"); f.reset();
-  f.motivo.replaceChildren(...MOTIVOS.map(m=>el("option","",m))); f.fecha.value=iso(hoy);
-  $("enom").textContent=cur.nombre.trim(); $("emsg2").textContent=""; $("dlg").close(); $("edlg").showModal();
+function abrirEgreso(it,motivo,fecha){
+  if(!it) return; cur=it; const f=$("ef"); f.reset();
+  f.motivo.replaceChildren(...MOTIVOS.map(m=>el("option","",m))); f.fecha.value=fecha||iso(hoy); if(motivo)f.motivo.value=motivo;
+  $("enom").textContent=it.nombre.trim(); $("emsg2").textContent=""; if($("dlg").open)$("dlg").close(); $("edlg").showModal();
+}
+$("egr").onclick=()=>abrirEgreso(cur);
+/* ===== Terminan pronto ===== */
+function renderFin(all){
+  const prox=all.filter(x=>x.c.fin>=hoy&&days(hoy,x.c.fin)<=AV_FIN).sort((a,b)=>a.c.fin-b.c.fin);
+  const tarde=all.filter(x=>x.c.fin<hoy).sort((a,b)=>a.c.fin-b.c.fin);
+  const box=$("finbox"); box.hidden=!prox.length&&!tarde.length; if(box.hidden){box.replaceChildren();return}
+  const fila=(x,txt,cls)=>{const r=el("div","fr"),t=el("div","tx");t.append(el("b","",x.i.nombre.trim()),document.createTextNode(" "),el("span",cls||"",txt));r.append(t);
+    if(isAdmin()){const b=el("button","",x.c.fin<=hoy?"Dar de egreso":"Dar de egreso");b.type="button";b.onclick=()=>abrirEgreso(x.i,"Terminó tratamiento",iso(x.c.fin<hoy?x.c.fin:x.c.fin));r.append(b)}return r};
+  const out=[];
+  if(prox.length){out.push(el("h3","","Terminan pronto ("+prox.length+")"));prox.forEach(x=>{const d=days(hoy,x.c.fin);out.push(fila(x,"termina el "+fd(x.c.fin)+(d===0?" (hoy)":" (faltan "+d+(d===1?" día)":" días)"))))})}
+  if(tarde.length){out.push(el("h3","","Ya cumplieron y siguen en la lista ("+tarde.length+")"));tarde.forEach(x=>{const d=days(x.c.fin,hoy);out.push(fila(x,"terminó el "+fd(x.c.fin)+" (hace "+d+(d===1?" día)":" días)"),"tarde"))})}
+  box.replaceChildren(...out);
+}
+/* ===== Registro de cambios ===== */
+let reg=[], regCargado=false;
+async function loadReg(){
+  $("rmsg").textContent="Cargando…";
+  try{const r=await api({action:"getSheet",sheet:"Registro"});
+    if(!r||r.ok!==true)throw new Error((r&&r.error)||"respuesta inesperada");
+    reg=(r.data||[]).map(o=>({fecha:String(o.fecha||""),usuario:String(o.usuario||""),accion:String(o.accion||""),id:String(o.id||""),interno:String(o.interno||""),detalle:String(o.detalle||"")})).reverse();
+    regCargado=true; $("rmsg").textContent=""; renderReg();
+  }catch(e){$("rmsg").textContent="No se pudo cargar el registro: "+e.message}
+}
+const fdh=s=>{const m=String(s).match(/^(\d{4})-(\d{2})-(\d{2})(?: (\d{2}:\d{2}))?/);return m?m[3]+"/"+m[2]+"/"+m[1]+(m[4]?" "+m[4]:""):s};
+function renderReg(){
+  const sel=$("ra"),v=sel.value,acc=[...new Set(reg.map(o=>o.accion).filter(Boolean))].sort();
+  sel.replaceChildren(el("option","","Todas las acciones"),...acc.map(a=>el("option","",a)));sel.options[0].value="";sel.value=acc.includes(v)?v:"";
+  const q=$("rq").value.trim().toLowerCase(),fa=sel.value;
+  const list=reg.filter(o=>(!fa||o.accion===fa)&&(!q||(o.interno+" "+o.usuario+" "+o.detalle).toLowerCase().includes(q)));
+  $("rcnt").textContent=list.length+" cambios"+(list.length!==reg.length?" (de "+reg.length+")":"");
+  const tb=$("rrows");tb.replaceChildren();$("rempty").hidden=list.length>0;
+  list.slice(0,500).forEach(o=>{const tr=el("tr");cell(tr,fdh(o.fecha));cell(tr,o.usuario);cell(tr,o.accion,"n");cell(tr,o.interno);cell(tr,o.detalle);tb.append(tr)});
+}
+$("rq").oninput=renderReg;$("ra").onchange=renderReg;$("rrefresh").onclick=loadReg;
+$("medver").onclick=async()=>{
+  const box=$("medh");box.hidden=false;box.replaceChildren(el("small","","Cargando…"));
+  try{if(!regCargado)await loadReg();
+    const l=reg.filter(o=>o.id===cur.id&&o.accion==="Medicación");
+    box.replaceChildren(...(l.length?l.map(o=>{const d=el("div");d.append(el("small","",fdh(o.fecha)+" · "+o.usuario),el("br"),document.createTextNode(o.detalle));return d}):[el("small","","Sin cambios registrados todavía (se registran desde ahora).")]));
+  }catch(e){box.replaceChildren(el("small","","No se pudo cargar: "+e.message))}
 };
 $("ecancel").onclick=()=>$("edlg").close();
 $("ef").addEventListener("submit",async e=>{
@@ -626,6 +696,10 @@ $("sshare").onclick=async()=>{
 };
 $("q").oninput=render; $("ft").onchange=render;
 $("sort").onclick=()=>{asc=!asc;$("sort").textContent="Ingreso "+(asc?"▲":"▼");render()};
+(async()=>{try{const ses=JSON.parse(sessionStorage.getItem("alas-sesion")||"null");if(!ses||!ses.email)return;
+  email=ses.email;pass=ses.pass;const res=await api({action:ACT.check});role=parseRole(res);
+  if(!role){email="";pass="";sessionStorage.removeItem("alas-sesion");return}
+  await load();show("app");render()}catch(e){}})();
 try{$("em").value=localStorage.getItem("internos-email")||"";const sp=localStorage.getItem("internos-pw");if(sp){$("pw").value=sp;$("rec").checked=true}const su=localStorage.getItem("internos-api");if(su)API=su}catch(e){}
 $("apiurl").value=API;
 $("lf").addEventListener("submit",()=>{try{localStorage.setItem("internos-email",$("em").value.trim())}catch(e){}});
