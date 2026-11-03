@@ -74,6 +74,8 @@ td.n{font-weight:700}
 .nm{display:flex;align-items:center;gap:10px}
 .av{width:36px;height:36px;border-radius:50%;object-fit:cover;flex:none;background:var(--line);display:grid;place-items:center;font-size:13px;font-weight:700;color:var(--mut)}
 .foto{display:flex;gap:14px;align-items:center}
+.cuinfo{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:10px 0 4px;font-size:14px}
+.cuinfo b{font-weight:700}.cuinfo a{margin-left:auto;color:var(--ink);font-weight:600;font-size:13px}
 .foto .big{width:120px;height:120px;border-radius:14px;object-fit:cover;background:var(--line);display:grid;place-items:center;color:var(--mut);font-size:13px;text-align:center;flex:none}
 .foto .bt{display:grid;gap:8px}
 .foto input[type=file]{display:none}
@@ -280,6 +282,7 @@ details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{mar
       <small id="fmsg" style="color:var(--mut)"></small>
     </div>
   </div>
+  <div class="cuinfo" id="cuinfo" hidden></div>
   <label>Nombre<input name="nombre" required autocomplete="off"></label>
   <div class="g2">
     <label>Cédula<input name="cedula" autocomplete="off" placeholder="1.234.567-8"></label>
@@ -411,8 +414,15 @@ function confirmar(res){
   if(res&&typeof res==="object"){if(res.error)throw new Error(res.error);if(res.ok===true)return}
   throw new Error("el script no confirmó el cambio y respondió: "+JSON.stringify(res).slice(0,140)+". Probablemente sigue publicado el código viejo: pegá el código nuevo, guardalo y publicá una Nueva versión");
 }
+let camas={};   // id del interno -> {cuarto, sector} de la pestaña Cuartos
+async function cargarCamas(){try{const r=await api({action:"getSheet",sheet:"Cuartos"});const m={};
+  ((r&&r.data)||[]).forEach(o=>{if(o.id)m[String(o.id)]={cuarto:String(o.cuarto??""),sector:String(o.sector||"")}});camas=m}catch(e){}}
+function textoCama(id){const c=camas[id];if(!c||(!c.sector&&!c.cuarto))return null;
+  return c.sector?["Tropilla","Sector: "+c.sector]:["Cuarto "+c.cuarto,""]}
 async function load(){
+  const pc=cargarCamas();
   const res=await api({action:ACT.list});
+  await pc;
   if(typeof res==="string") throw new Error(res||"Respuesta vacía");
   if(res&&res.error) throw new Error(res.error);
   const arr=Array.isArray(res)?res:(res.data||res.internos||res.records||[]);
@@ -504,7 +514,10 @@ function openDlg(it){
   f.nombre.value=it?it.nombre.trim():""; f.cedula.value=it?.cedula||""; f.tipo.value=it?.tipo||"Privado"; f.ingreso.value=it?.ingreso||"";
   MEALS.forEach(m=>f[m].value=it?.[m]||"");
   $("medh").hidden=true; $("medver").hidden=!it; $("entver").hidden=!it;
-  pintarFoto(it); $("fotobox").hidden=!it; $("fotobt").hidden=!isAdmin(); $("fmsg").textContent="";
+  pintarFoto(it); $("fotobox").hidden=!it;
+  {const b=$("cuinfo");b.hidden=!it;if(it){const t=textoCama(it.id);b.replaceChildren(el("span","","🛏️"));
+    if(t){b.append(el("b","",t[0]));if(t[1])b.append(el("span","",t[1]))}else b.append(el("span","","Sin cama asignada"));
+    const a=el("a","","Ver en Cuartos →");a.href="cuartos/";b.append(a)}} $("fotobt").hidden=!isAdmin(); $("fmsg").textContent="";
   f.salioel.value=it?.salio||""; f.vuelveel.value=it?.vuelve||""; f.nosalioel.value=it?.nosalio||""; salInfo();
   $("salhoy").hidden=$("nosal").hidden=$("volvio").hidden=!isAdmin();
   const ro=!isAdmin();
@@ -752,7 +765,8 @@ $("ef").addEventListener("submit",async e=>{
   $("esave").disabled=true; $("esave").textContent="Guardando…";
   try{
     const r=await api({action:"darEgreso",id:cur.id,fecha:f.fecha.value,motivo:f.motivo.value,nota:f.nota.value.trim()});
-    confirmar(r); $("edlg").close(); egrCargado=false; await reload();
+    confirmar(r); const nom=cur.nombre.trim(); $("edlg").close(); egrCargado=false; await reload();
+    $("amsg").textContent="Egreso de "+nom+" guardado."+(r.cama?" Se liberó su cama en "+r.cama+".":"");
   }catch(err){$("emsg2").textContent="No se pudo dar de egreso: "+err.message}
   finally{$("esave").disabled=false;$("esave").textContent="Dar de egreso"}
 });
