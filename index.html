@@ -175,7 +175,7 @@ details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{mar
     <label>Correo electrónico<input id="em" type="email" required autocomplete="username" placeholder="nombre@correo.com"></label>
     <label id="pwrow">Contraseña<input id="pw" type="password" autocomplete="current-password"></label>
     <div id="setup" hidden style="display:grid;gap:12px">
-      <label id="coderow" hidden>Código que te dio un Admin<input id="ncode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6 números"></label>
+      <label id="coderow" hidden>Código de 6 números que te pasaron<input id="ncode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6 números"></label>
       <label>Elegí tu contraseña (mínimo 6 caracteres)<input id="np1" type="password" autocomplete="new-password" minlength="6"></label>
       <label>Repetila<input id="np2" type="password" autocomplete="new-password" minlength="6"></label>
     </div>
@@ -185,7 +185,7 @@ details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{mar
     </details>
     <div class="msg" id="lmsg" role="alert"></div>
     <button class="p" id="lbtn" type="submit">Ingresar</button>
-    <small style="color:var(--mut);text-align:center">¿Te olvidaste la contraseña? Pedile a un Admin un código nuevo desde la pestaña Usuarios.</small>
+    <small style="color:var(--mut);text-align:center">¿Te olvidaste la contraseña? Pedile un código nuevo a Nicolás.</small>
   </form>
 </section>
 
@@ -518,7 +518,7 @@ function render(){
   const all=items.filter(i=>i.nombre&&i.ingreso).map(i=>({i,c:calc(i)}));
   $("stats").replaceChildren(...[[all.length,"internos",""],[all.filter(x=>x.c.salSoon).length,"salen en "+AV_SAL+" días o menos","w"],[all.filter(x=>x.c.finSoon).length,"terminan en "+AV_FIN+" días o menos","w"]]
     .map(([n,l,k])=>{const s=el("div","stat "+k);s.append(el("b","",String(n)),el("span","",l));return s}));
-  renderFin(all); $("tabR").hidden=!isAdmin(); $("tabU").hidden=!isAdmin();
+  renderFin(all); $("tabR").hidden=!isAdmin(); $("tabU").hidden=email!=="reboirasnicolas4@gmail.com";
   const list=all.filter(({i})=>(!ft||i.tipo===ft)&&(!q||(i.nombre+" "+i.cedula).toLowerCase().includes(q))).sort((a,b)=>(a.c.ing-b.c.ing)*(asc?1:-1));
   const tb=$("rows"); tb.replaceChildren(); $("empty").hidden=list.length>0;
   list.forEach(({i,c})=>{
@@ -560,7 +560,7 @@ document.querySelectorAll(".wrap.cards table").forEach(t=>{
 });
 
 /* ===== Eventos ===== */
-function modoSetup(on,codigo){$("setup").hidden=!on;$("pwrow").hidden=on;$("coderow").hidden=!(on&&codigo);if(!on)$("ncode").value="";$("ltxt").textContent=on?(codigo?"Escribí el código que te pasó un Admin y elegí tu contraseña nueva.":"Es tu primera vez: elegí una contraseña para tu usuario."):"Ingresá tu correo y tu contraseña.";$("lbtn").textContent=on?"Crear contraseña e ingresar":"Ingresar"}
+function modoSetup(on,codigo){$("setup").hidden=!on;$("pwrow").hidden=on;$("coderow").hidden=!(on&&codigo);if(!on)$("ncode").value="";$("ltxt").textContent=on?(codigo?"Escribí el código que te pasaron y elegí tu contraseña nueva.":"Es tu primera vez: elegí una contraseña para tu usuario."):"Ingresá tu correo y tu contraseña.";$("lbtn").textContent=on?"Crear contraseña e ingresar":"Ingresar"}
 $("lf").addEventListener("submit",async e=>{
   e.preventDefault(); email=$("em").value.trim().toLowerCase(); $("lmsg").textContent="";
   const setup=!$("setup").hidden;
@@ -571,7 +571,7 @@ $("lf").addEventListener("submit",async e=>{
   try{
     if(setup){
       const a=$("np1").value,b=$("np2").value;
-      if(!$("coderow").hidden&&!/^\d{6}$/.test($("ncode").value.trim())){$("lmsg").textContent="Escribí el código de 6 números que te pasó un Admin.";return}
+      if(!$("coderow").hidden&&!/^\d{6}$/.test($("ncode").value.trim())){$("lmsg").textContent="Escribí el código de 6 números que te pasaron.";return}
       if(a.length<6){$("lmsg").textContent="La contraseña tiene que tener al menos 6 caracteres.";return}
       if(a!==b){$("lmsg").textContent="Las dos contraseñas no coinciden.";return}
       pass="";token="";
