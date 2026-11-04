@@ -102,6 +102,14 @@ textarea{min-height:56px;resize:vertical}
 .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}.acts .d{margin-right:auto}
 details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{margin-top:8px}
 .msg{color:var(--bad);font-size:13px;min-height:1em}
+.ulist{display:grid;gap:10px}
+.uc{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;gap:10px 14px;align-items:center;flex-wrap:wrap}
+.uc .em{font-weight:700;flex:1 1 220px;overflow-wrap:anywhere}.uc .st{font-size:13px;color:var(--mut);flex:1 1 100%}
+.uc .st.w{color:var(--ink)}.uc select{width:auto}.uc button{font-size:13px;padding:8px 10px}
+.uc button.del{color:var(--bad)}
+.codebox{background:var(--card);border:2px solid var(--acc);border-radius:14px;padding:16px;margin-bottom:14px;display:grid;gap:10px}
+.codebox .cd{font:700 34px/1 Fraunces,Georgia,serif;letter-spacing:.18em}
+.codebox .bt{display:flex;gap:8px;flex-wrap:wrap}
 .opts{display:grid;gap:8px}
 .opts label{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--ink);font-size:15px;cursor:pointer}
 .opts label small{display:block;color:var(--mut);font-size:12px;font-weight:400}
@@ -167,6 +175,7 @@ details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{mar
     <label>Correo electrónico<input id="em" type="email" required autocomplete="username" placeholder="nombre@correo.com"></label>
     <label id="pwrow">Contraseña<input id="pw" type="password" autocomplete="current-password"></label>
     <div id="setup" hidden style="display:grid;gap:12px">
+      <label id="coderow" hidden>Código que te dio un Admin<input id="ncode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6 números"></label>
       <label>Elegí tu contraseña (mínimo 6 caracteres)<input id="np1" type="password" autocomplete="new-password" minlength="6"></label>
       <label>Repetila<input id="np2" type="password" autocomplete="new-password" minlength="6"></label>
     </div>
@@ -176,6 +185,7 @@ details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{mar
     </details>
     <div class="msg" id="lmsg" role="alert"></div>
     <button class="p" id="lbtn" type="submit">Ingresar</button>
+    <small style="color:var(--mut);text-align:center">¿Te olvidaste la contraseña? Pedile a un Admin un código nuevo desde la pestaña Usuarios.</small>
   </form>
 </section>
 
@@ -196,6 +206,7 @@ details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{mar
     <button id="tabM" role="tab">Medicación</button>
     <button id="tabE" role="tab">Egresados</button>
     <button id="tabR" role="tab" hidden>Registro</button>
+    <button id="tabU" role="tab" hidden>Usuarios</button>
   </div>
   <section id="vInt">
   <div class="stats" id="stats"></div>
@@ -240,6 +251,17 @@ details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{mar
     <div class="mlist" id="mlist"></div>
     <h3 id="mfuerah" style="font:700 17px Fraunces,Georgia,serif;margin:18px 0 8px" hidden>De salida (no cuentan)</h3>
     <div class="mlist" id="mfuera"></div>
+  </section>
+  <section id="vUsu" hidden>
+    <form id="uf" class="bar">
+      <input id="unew" type="email" required placeholder="Correo del usuario nuevo (Gmail)" aria-label="Correo del usuario nuevo" autocomplete="off">
+      <select id="urol" aria-label="Rol"><option>Usuario</option><option>Admin</option></select>
+      <button class="p" id="uadd" type="submit">Agregar usuario</button>
+    </form>
+    <p class="sub" style="margin:-4px 0 12px">Usuario puede ver todo; Admin además puede cambiar datos. Al agregar a alguien o si se olvida la contraseña, la app da un código de 6 números para pasarle.</p>
+    <div class="msg" id="umsg" role="alert"></div>
+    <div class="codebox" id="ucode" hidden></div>
+    <div class="ulist" id="ulist"></div>
   </section>
   <section id="vReg" hidden>
     <div class="bar">
@@ -496,7 +518,7 @@ function render(){
   const all=items.filter(i=>i.nombre&&i.ingreso).map(i=>({i,c:calc(i)}));
   $("stats").replaceChildren(...[[all.length,"internos",""],[all.filter(x=>x.c.salSoon).length,"salen en "+AV_SAL+" días o menos","w"],[all.filter(x=>x.c.finSoon).length,"terminan en "+AV_FIN+" días o menos","w"]]
     .map(([n,l,k])=>{const s=el("div","stat "+k);s.append(el("b","",String(n)),el("span","",l));return s}));
-  renderFin(all); $("tabR").hidden=!isAdmin();
+  renderFin(all); $("tabR").hidden=!isAdmin(); $("tabU").hidden=!isAdmin();
   const list=all.filter(({i})=>(!ft||i.tipo===ft)&&(!q||(i.nombre+" "+i.cedula).toLowerCase().includes(q))).sort((a,b)=>(a.c.ing-b.c.ing)*(asc?1:-1));
   const tb=$("rows"); tb.replaceChildren(); $("empty").hidden=list.length>0;
   list.forEach(({i,c})=>{
@@ -538,7 +560,7 @@ document.querySelectorAll(".wrap.cards table").forEach(t=>{
 });
 
 /* ===== Eventos ===== */
-function modoSetup(on){$("setup").hidden=!on;$("pwrow").hidden=on;$("ltxt").textContent=on?"Es tu primera vez: elegí una contraseña para tu usuario.":"Ingresá tu correo y tu contraseña.";$("lbtn").textContent=on?"Crear contraseña e ingresar":"Ingresar"}
+function modoSetup(on,codigo){$("setup").hidden=!on;$("pwrow").hidden=on;$("coderow").hidden=!(on&&codigo);if(!on)$("ncode").value="";$("ltxt").textContent=on?(codigo?"Escribí el código que te pasó un Admin y elegí tu contraseña nueva.":"Es tu primera vez: elegí una contraseña para tu usuario."):"Ingresá tu correo y tu contraseña.";$("lbtn").textContent=on?"Crear contraseña e ingresar":"Ingresar"}
 $("lf").addEventListener("submit",async e=>{
   e.preventDefault(); email=$("em").value.trim().toLowerCase(); $("lmsg").textContent="";
   const setup=!$("setup").hidden;
@@ -549,17 +571,18 @@ $("lf").addEventListener("submit",async e=>{
   try{
     if(setup){
       const a=$("np1").value,b=$("np2").value;
+      if(!$("coderow").hidden&&!/^\d{6}$/.test($("ncode").value.trim())){$("lmsg").textContent="Escribí el código de 6 números que te pasó un Admin.";return}
       if(a.length<6){$("lmsg").textContent="La contraseña tiene que tener al menos 6 caracteres.";return}
       if(a!==b){$("lmsg").textContent="Las dos contraseñas no coinciden.";return}
       pass="";token="";
-      const r=await api({action:"setPassword",newPassword:a});
+      const r=await api({action:"setPassword",newPassword:a,code:$("ncode").value.trim()});
       if(!r||r.ok!==true){$("lmsg").textContent=(r&&r.error)||"No se pudo guardar la contraseña.";return}
       if(r.token){token=r.token;pass=""}else pass=a;
       $("np1").value=$("np2").value=""; modoSetup(false);
     }else{token="";pass=$("pw").value}
     const res=await api({action:ACT.check});
     if(res&&res.token){token=res.token;pass=""}
-    if(res&&res.needsSetup){modoSetup(true);$("lmsg").textContent="";return}
+    if(res&&res.needsSetup){modoSetup(true,res.needsCode);$("lmsg").textContent="";return}
     if(res&&res.needsPassword){$("lmsg").textContent=res.error||"Contraseña incorrecta.";return}
     role=parseRole(res);
     if(!role){$("dtxt").textContent="El correo "+email+" no está autorizado para usar esta aplicación.";show("denied");return}
@@ -570,7 +593,7 @@ $("lf").addEventListener("submit",async e=>{
 });
 $("em").addEventListener("input",()=>{if(!$("setup").hidden)modoSetup(false)});
 $("retry").onclick=()=>{email="";pass="";role="";$("em").value="";modoSetup(false);show("login")};
-$("out").onclick=()=>{cerrarSesion();email="";role="";items=[];$("pw").value="";$("lmsg").textContent="";modoSetup(false);verTab("I");regCargado=false;egrCargado=false;show("login")};
+$("out").onclick=()=>{cerrarSesion();usuarios=[];$("ulist").replaceChildren();$("ucode").hidden=true;$("ucode").replaceChildren();email="";role="";items=[];$("pw").value="";$("lmsg").textContent="";modoSetup(false);verTab("I");regCargado=false;egrCargado=false;show("login")};
 $("chpw").onclick=async()=>{
   const actual=prompt("Contraseña actual:"); if(actual==null)return;
   const nueva=prompt("Nueva contraseña (mínimo 6 caracteres):"); if(nueva==null)return;
@@ -651,9 +674,9 @@ function renderEgr(){
   list.forEach(o=>{const tr=el("tr");cell(tr,o.nombre.trim(),"n");cell(tr,o.cedula);cell(tr,fdi(o.ingreso));cell(tr,fdi(o.egreso));cell(tr,o.motivo);
     const t=el("td");if(o.tipo)t.append(el("span","t",o.tipo));tr.append(t);cell(tr,o.nota);tb.append(tr)});
 }
-function verTab(k){[["I","vInt"],["M","vMed"],["E","vEgr"],["R","vReg"]].forEach(([t,v])=>{$(v).hidden=t!==k;$("tab"+t).classList.toggle("on",t===k)});
-  if(k==="E"&&!egrCargado)loadEgr(); if(k==="R"&&!regCargado)loadReg(); if(k==="M")loadMed()}
-$("tabI").onclick=()=>verTab("I"); $("tabM").onclick=()=>verTab("M"); $("tabE").onclick=()=>verTab("E"); $("tabR").onclick=()=>verTab("R");
+function verTab(k){[["I","vInt"],["M","vMed"],["E","vEgr"],["R","vReg"],["U","vUsu"]].forEach(([t,v])=>{$(v).hidden=t!==k;$("tab"+t).classList.toggle("on",t===k)});
+  if(k==="E"&&!egrCargado)loadEgr(); if(k==="R"&&!regCargado)loadReg(); if(k==="M")loadMed(); if(k==="U")loadUsu()}
+$("tabI").onclick=()=>verTab("I"); $("tabM").onclick=()=>verTab("M"); $("tabE").onclick=()=>verTab("E"); $("tabR").onclick=()=>verTab("R"); $("tabU").onclick=()=>verTab("U");
 $("eq").oninput=renderEgr; $("em2").onchange=renderEgr; $("et").onchange=renderEgr; $("erefresh").onclick=loadEgr;
 const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 function abrirEgreso(it,motivo,fecha){
@@ -770,6 +793,41 @@ $("ef").addEventListener("submit",async e=>{
   }catch(err){$("emsg2").textContent="No se pudo dar de egreso: "+err.message}
   finally{$("esave").disabled=false;$("esave").textContent="Dar de egreso"}
 });
+/* ===== Usuarios (solo Admin): agregar, quitar, cambiar rol y código para contraseña olvidada ===== */
+let usuarios=[], uArm="";
+async function loadUsu(){$("umsg").textContent="Cargando…";
+  try{const r=await api({action:"listUsuarios"});if(!r||r.ok!==true)throw new Error((r&&r.error)||"respuesta inesperada");
+    usuarios=r.data||[];$("umsg").textContent="";renderUsu()}catch(e){$("umsg").textContent="No se pudo cargar: "+e.message}}
+function mostrarCodigo(quien,cod,dias,nuevo){const b=$("ucode");b.hidden=false;b.replaceChildren();
+  const txt="Hola! Para entrar a la app de Internos de Alas de Libertad: abrí "+location.origin+location.pathname.replace(/cuartos\/?$/,"")+" , poné tu correo ("+quien+"), este código: "+cod+" y elegí tu contraseña. El código vence en "+dias+" días.";
+  b.append(el("div","",(nuevo?"Usuario agregado. ":"Contraseña borrada. ")+"Pasale este código a "+quien+":"),el("div","cd",cod),
+    el("small","","Tiene que abrir la app, poner su correo, este código y elegir su contraseña. Sirve una sola vez y vence en "+dias+" días. No lo vas a poder ver de nuevo."));
+  const bt=el("div","bt"),wa=el("a","","Mandar por WhatsApp");wa.href="https://wa.me/?text="+encodeURIComponent(txt);wa.target="_blank";wa.rel="noopener";wa.className="role";wa.style.cssText="text-decoration:none;padding:8px 12px;border-radius:8px";
+  const cp=el("button","","Copiar mensaje");cp.type="button";cp.onclick=async()=>{try{await navigator.clipboard.writeText(txt);cp.textContent="Copiado ✔"}catch(e){cp.textContent="No se pudo copiar"}};
+  const ok=el("button","","Listo");ok.type="button";ok.onclick=()=>{b.hidden=true;b.replaceChildren()};
+  bt.append(wa,cp,ok);b.append(bt);b.scrollIntoView({behavior:"smooth",block:"center"})}
+function estadoUsu(u){if(u.codigo==="pendiente")return["Esperando que ponga su código (vence el "+fd(new Date(u.vence))+")",true];
+  if(u.codigo==="vencido")return["El código venció: generá uno nuevo",true];
+  return u.tieneClave?["Tiene contraseña",false]:["Todavía no eligió contraseña",true]}
+async function accionUsu(datos,txtOk){$("umsg").textContent="Guardando…";
+  try{const r=await api(datos);if(!r||r.ok!==true)throw new Error((r&&r.error)||"respuesta inesperada");
+    $("umsg").textContent="";if(r.codigo)mostrarCodigo(datos.quien,r.codigo,r.dias,datos.action==="addUsuario");else if(txtOk){$("ucode").hidden=true}
+    await loadUsu();if(txtOk)$("umsg").textContent=txtOk}catch(e){$("umsg").textContent="No se pudo: "+e.message}}
+function renderUsu(){const L=$("ulist");L.replaceChildren();
+  usuarios.slice().sort((a,b)=>(b.email===email)-(a.email===email)||a.email.localeCompare(b.email)).forEach(u=>{
+    const yo=u.email===email,c=el("div","uc");c.append(el("span","em",u.email+(yo?" (vos)":"")));
+    const sel=el("select");["Usuario","Admin"].forEach(r=>{const o=el("option","",r);o.selected=(/admin/i.test(u.rol)?"Admin":"Usuario")===r;sel.append(o)});
+    sel.disabled=yo;sel.setAttribute("aria-label","Rol de "+u.email);sel.onchange=()=>accionUsu({action:"cambiarRol",quien:u.email,rolNuevo:sel.value},u.email+" ahora es "+sel.value+".");c.append(sel);
+    if(!yo){const nc=el("button","",u.tieneClave?"Se olvidó la contraseña":"Nuevo código");nc.type="button";
+      nc.onclick=()=>{if(uArm!=="c"+u.email){uArm="c"+u.email;nc.textContent="¿Borrar su contraseña y dar código?";return}uArm="";accionUsu({action:"nuevoCodigo",quien:u.email})};
+      const q=el("button","del","Quitar");q.type="button";
+      q.onclick=()=>{if(uArm!=="q"+u.email){uArm="q"+u.email;q.textContent="¿Seguro? Tocá de nuevo";return}uArm="";accionUsu({action:"quitarUsuario",quien:u.email},u.email+" ya no puede entrar.")};
+      c.append(nc,q)}
+    const [t,w]=estadoUsu(u);c.append(el("span","st"+(w?" w":""),(w?"⚠️ ":"✔ ")+t));L.append(c)});
+  if(!usuarios.length)L.append(el("p","sub","No hay usuarios."))}
+$("uf").addEventListener("submit",e=>{e.preventDefault();const q=$("unew").value.trim().toLowerCase();if(!q)return;
+  accionUsu({action:"addUsuario",quien:q,rolNuevo:$("urol").value}).then(()=>{if(!$("ucode").hidden)$("unew").value=""})});
+
 /* ===== Imprimir lista de residentes ===== */
 function buildPrint(){
   const tb=$("prows"); tb.replaceChildren();
