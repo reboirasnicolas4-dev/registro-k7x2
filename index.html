@@ -25,7 +25,10 @@ h1{font:700 34px/1.1 Fraunces,Georgia,serif;margin:0}
 .who{display:flex;gap:10px;align-items:center;color:var(--mut);font-size:13px}
 .role{font-weight:700;font-size:12px;border:1px solid var(--line);border-radius:99px;padding:2px 10px;color:var(--ink)}
 .stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
-.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 16px;min-width:150px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 16px;min-width:150px;text-align:left;font:inherit;color:inherit;cursor:pointer}
+.stat:hover{border-color:var(--acc)}.stat.on{border:2px solid var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 25%,transparent)}
+.fstat{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:color-mix(in srgb,var(--acc) 14%,var(--card));border:1px solid var(--acc);border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:14px;font-weight:600}
+.fstat button{margin-left:auto;padding:6px 10px;font-size:13px}
 .stat b{font:700 26px/1 Fraunces,Georgia,serif;display:block}.stat span{color:var(--mut);font-size:13px}
 .stat.w b{background:var(--warn);color:var(--warnx);padding:0 8px;border-radius:6px;display:inline-block}
 .bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
@@ -220,6 +223,7 @@ details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{mar
     <button class="p" id="add" hidden>Agregar interno</button>
   </div>
   <div class="msg" id="amsg" role="alert"></div>
+  <div class="fstat" id="fstat" hidden></div>
   <div class="wrap cards"><table>
     <thead><tr><th>Nombre</th><th>Cédula</th><th class="s" id="sort">Ingreso ▲</th><th>Lleva</th><th>Le falta</th><th>Finalización</th><th>Próxima salida</th><th>Falta para salir</th><th>Vuelve en</th><th>Tipo</th></tr></thead>
     <tbody id="rows"></tbody>
@@ -378,7 +382,7 @@ const DIAS_SAL=n=>n<=3?4:7; // salidas 1.ª a 3.ª: 4 días; de la 4.ª en adela
 const MEALS=["desayuno","almuerzo","merienda","cena"];
 
 /* ===== Estado ===== */
-let email="", pass="", role="", items=[], asc=true, cur=null, delArm=false, scriptViejo=false;
+let filtroStat="", email="", pass="", role="", items=[], asc=true, cur=null, delArm=false, scriptViejo=false;
 const $=id=>document.getElementById(id);
 const isAdmin=()=>role==="Admin";
 
@@ -516,10 +520,14 @@ function render(){
   $("whoem").textContent=email; $("whorole").textContent=role; $("add").hidden=!isAdmin();
   const q=$("q").value.trim().toLowerCase(), ft=$("ft").value;
   const all=items.filter(i=>i.nombre&&i.ingreso).map(i=>({i,c:calc(i)}));
-  $("stats").replaceChildren(...[[all.length,"internos",""],[all.filter(x=>x.c.salSoon).length,"salen en "+AV_SAL+" días o menos","w"],[all.filter(x=>x.c.finSoon).length,"terminan en "+AV_FIN+" días o menos","w"]]
-    .map(([n,l,k])=>{const s=el("div","stat "+k);s.append(el("b","",String(n)),el("span","",l));return s}));
+  $("stats").replaceChildren(...[[all.length,"internos","",""],[all.filter(x=>x.c.salSoon).length,"salen en "+AV_SAL+" días o menos","w","sal"],[all.filter(x=>x.c.finSoon).length,"terminan en "+AV_FIN+" días o menos","w","fin"]]
+    .map(([n,l,k,f])=>{const s=el("button","stat "+k+(filtroStat===f&&f?" on":""));s.type="button";s.setAttribute("aria-pressed",String(filtroStat===f&&!!f));
+      s.append(el("b","",String(n)),el("span","",l));s.onclick=()=>{filtroStat=(filtroStat===f?"":f);render();if(filtroStat)$("rows").closest(".wrap").scrollIntoView({behavior:"smooth",block:"start"})};return s}));
+  {const fb=$("fstat");fb.hidden=!filtroStat;if(filtroStat){fb.replaceChildren(el("span","",filtroStat==="sal"?"Mostrando solo los que salen en "+AV_SAL+" días o menos":"Mostrando solo los que terminan en "+AV_FIN+" días o menos"));
+    const x=el("button","","Ver todos");x.type="button";x.onclick=()=>{filtroStat="";render()};fb.append(x)}}
   renderFin(all); $("tabR").hidden=!isAdmin(); $("tabU").hidden=email!=="reboirasnicolas4@gmail.com";
-  const list=all.filter(({i})=>(!ft||i.tipo===ft)&&(!q||(i.nombre+" "+i.cedula).toLowerCase().includes(q))).sort((a,b)=>(a.c.ing-b.c.ing)*(asc?1:-1));
+  const list=all.filter(({i,c})=>(!ft||i.tipo===ft)&&(!q||(i.nombre+" "+i.cedula).toLowerCase().includes(q))&&(filtroStat!=="sal"||c.salSoon)&&(filtroStat!=="fin"||c.finSoon))
+    .sort(filtroStat==="sal"?(a,b)=>a.c.sal-b.c.sal:filtroStat==="fin"?(a,b)=>a.c.fin-b.c.fin:(a,b)=>(a.c.ing-b.c.ing)*(asc?1:-1));
   const tb=$("rows"); tb.replaceChildren(); $("empty").hidden=list.length>0;
   list.forEach(({i,c})=>{
     const tr=el("tr","r"); tr.tabIndex=0;
