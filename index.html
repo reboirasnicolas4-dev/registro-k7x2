@@ -363,7 +363,8 @@ label.opt:has(input:checked){border:2px solid var(--acc)}
   </section>
   <section id="vDet" hidden>
     <button type="button" class="back" data-back>‹ Más</button>
-    <div class="bar"><input id="dq" type="search" placeholder="Buscar por nombre o cédula…" aria-label="Buscar destallo"></div>
+    <div class="bar"><input id="dq" type="search" placeholder="Buscar por nombre o cédula…" aria-label="Buscar en Destallo"></div>
+    <div class="chips" id="dchips"><button type="button" class="chip on" data-f="">Todos</button><button type="button" class="chip" data-f="act">Haciendo el destallo</button><button type="button" class="chip" data-f="Terminó el destallo">Terminaron</button><button type="button" class="chip" data-f="Se fue antes">Se fueron antes</button></div>
     <div class="msg" id="dmsg" role="alert"></div>
     <div class="mlist" id="dlist"></div>
   </section>
@@ -397,6 +398,18 @@ label.opt:has(input:checked){border:2px solid var(--acc)}
   <label>Nota<textarea name="nota" placeholder="Opcional"></textarea></label>
   <div class="msg" id="dmsg2" role="alert"></div>
   <div class="acts"><button type="button" class="d" id="ddel" hidden>Borrar</button><button type="button" id="dcancel">Cancelar</button><button type="submit" class="p" id="dsave">Guardar</button></div>
+</form></dialog>
+<dialog id="tdlg"><form id="tf" class="ff">
+  <h2>Dar de baja del destallo</h2>
+  <p id="tnom" style="margin:0;font-weight:700"></p>
+  <div class="g2">
+    <label>Fecha<input name="fecha" type="date" required></label>
+    <label>Motivo<select name="motivo" required><option>Terminó el destallo</option><option>Se fue antes</option><option>Otro</option></select></label>
+  </div>
+  <label>Nota<textarea name="nota" placeholder="Opcional (por ejemplo, por qué se fue)"></textarea></label>
+  <p style="margin:0;color:var(--mut);font-size:13px">Pasa a "Ya salieron del destallo" con el motivo. No se borra nada y queda anotado en Registro.</p>
+  <div class="msg" id="tmsg" role="alert"></div>
+  <div class="acts"><button type="button" id="tcancel">Cancelar</button><button type="submit" class="p" id="tsave">Guardar</button></div>
 </form></dialog>
 <dialog id="cdlg"><div class="ff">
   <div class="cuenta"><div class="me big" id="meBig">N</div><div style="min-width:0"><b id="whoem" style="overflow-wrap:anywhere"></b><div><span class="role" id="whorole"></span></div></div></div>
@@ -887,27 +900,31 @@ $("egr").onclick=()=>abrirEgreso(cur);
 let dets=[], detCargado=false, detArm="", detCur=null;
 async function loadDet(){if(detCargado){renderDet();return}$("dmsg").textContent="Cargando…";
   try{const r=await api({action:"getSheet",sheet:"Destallo"});if(!r||r.ok!==true)throw new Error((r&&r.error)||"respuesta inesperada");
-    dets=(r.data||[]).map(o=>({fila:o._fila,nombre:String(o.nombre||"").trim(),cedula:String(o.cedula||""),fecha:toISO(o.fecha),nota:String(o.nota||""),fin:toISO(o.terminoel)})).filter(d=>d.nombre);
+    dets=(r.data||[]).map(o=>({fila:o._fila,nombre:String(o.nombre||"").trim(),cedula:String(o.cedula||""),fecha:toISO(o.fecha),nota:String(o.nota||""),fin:toISO(o.terminoel),mot:String(o.motivodesalida||""),nsal:String(o.notadesalida||"")})).filter(d=>d.nombre);
     detCargado=true;$("dmsg").textContent="";renderDet()}catch(e){$("dmsg").textContent="No se pudo cargar: "+e.message}}
 function renderDet(){const q=nq($("dq").value.trim()),L=$("dlist"),out=[];
   const ok=d=>!q||nq(d.nombre+" "+d.cedula).includes(q);
-  const act=dets.filter(d=>!d.fin&&ok(d)).sort((a,b)=>(a.fecha||"9")<(b.fecha||"9")?1:-1),ter=dets.filter(d=>d.fin&&ok(d)).sort((a,b)=>a.fin<b.fin?1:-1);
+  const fsel=renderDet.f||"";document.querySelectorAll("#dchips .chip").forEach(b=>b.classList.toggle("on",b.dataset.f===fsel));
+  const act=dets.filter(d=>!d.fin&&ok(d)&&(!fsel||fsel==="act")).sort((a,b)=>(a.fecha||"9")<(b.fecha||"9")?1:-1),ter=dets.filter(d=>d.fin&&ok(d)&&fsel!=="act"&&(!fsel||(d.mot||"Terminó el destallo")===fsel)).sort((a,b)=>a.fin<b.fin?1:-1);
   const tarjeta=d=>{const r=el("div","drow"+(d.fin?" fin":""));r.append(el("div","av",iniciales(d.nombre)),el("b","",d.nombre));
     const pl=el("div","pl");
-    if(d.fin)pl.append(el("span","pill",(d.fecha?fd(parse(d.fecha)).slice(0,5):"¿?")+" → "+fd(parse(d.fin))));
+    if(d.fin){const m=d.mot||"Terminó el destallo";pl.append(el("span","pill"+(m==="Se fue antes"?" w":""),m),el("span","pill",(d.fecha?fd(parse(d.fecha)):"¿?")+" → "+fd(parse(d.fin))))}
     else if(d.fecha){const n=days(parse(d.fecha),hoy);pl.append(el("span","pill o",n<=0?"Desde hoy":"Desde el "+fd(parse(d.fecha))+" · hace "+n+(n===1?" día":" días")))}
     else pl.append(el("span","pill w","Falta la fecha"));
     if(d.cedula)pl.append(el("span","pill",d.cedula));r.append(pl);
     if(d.nota)r.append(el("div","nt",d.nota));
+    if(d.fin&&d.nsal)r.append(el("div","nt","Al salir: "+d.nsal));
     if(isAdmin()){const bt=el("div","bt");
-      if(!d.fin){const t=el("button","",detArm===d.fila?"¿Seguro? Tocá de nuevo":"Terminó el destallo");t.type="button";
-        t.onclick=()=>{if(detArm!==d.fila){detArm=d.fila;renderDet();return}detArm="";guardarDet(d,{"Terminó el":iso(hoy)},"Terminó el destallo: "+d.nombre)};bt.append(t)}
-      else{const u=el("button","","Volver a Destallo");u.type="button";u.onclick=()=>guardarDet(d,{"Terminó el":""},"Volvió a Destallo: "+d.nombre);bt.append(u)}
+      if(!d.fin){const t=el("button","p","Dar de baja del destallo");t.type="button";t.onclick=()=>abrirSalida(d);bt.append(t)}
+      else{const u=el("button","","Volver a Destallo");u.type="button";u.onclick=()=>{if(detArm!=="v"+d.fila){detArm="v"+d.fila;u.textContent="¿Seguro? Tocá de nuevo";return}detArm="";
+        guardarDet(d,{"Terminó el":"","Motivo de salida":"","Nota de salida":""},"Volvió a Destallo: "+d.nombre+" (antes: "+(d.mot||"Terminó el destallo")+" el "+fd(parse(d.fin))+")")};bt.append(u)}
       const e=el("button","","Editar");e.type="button";e.onclick=()=>abrirDet(d);bt.append(e);r.append(bt)}
     return r};
   out.push(el("div","msec","Haciendo el destallo ("+act.length+")"));act.forEach(d=>out.push(tarjeta(d)));
   if(!act.length)out.push(el("p","empty",q?"Nadie coincide con la búsqueda.":"Nadie está haciendo el destallo ahora."));
-  if(ter.length){out.push(el("div","msec","Ya terminaron ("+ter.length+")"));ter.forEach(d=>out.push(tarjeta(d)))}
+  if(fsel&&fsel!=="act"&&!act.length)out.length=0;
+  if(ter.length){out.push(el("div","msec","Ya salieron del destallo ("+ter.length+")"));ter.forEach(d=>out.push(tarjeta(d)))}
+  else if(fsel&&fsel!=="act")out.push(el("p","empty","No hay nadie con ese motivo."));
   L.replaceChildren(...out)}
 async function guardarDet(d,rec,log){$("dmsg").textContent="Guardando…";
   try{const r=d?await api({action:"updateRow",sheet:"Destallo",fila:d.fila,record:rec,log}):await api({action:"addRow",sheet:"Destallo",record:rec,log});
@@ -921,6 +938,15 @@ $("df").addEventListener("submit",async e=>{e.preventDefault();const f=$("df");
 $("dcancel").onclick=()=>$("ddlg").close();
 $("dadd").onclick=()=>abrirDet(null);
 $("dq").oninput=renderDet;
+document.querySelectorAll("#dchips .chip").forEach(b=>b.onclick=()=>{renderDet.f=b.dataset.f;renderDet()});
+// Dar de baja del destallo: fecha, motivo y nota (queda en la planilla y en Registro)
+let detSal=null;
+function abrirSalida(d){detSal=d;const f=$("tf");f.reset();f.fecha.value=iso(hoy);$("tnom").textContent=d.nombre;$("tmsg").textContent="";$("tdlg").showModal()}
+$("tf").addEventListener("submit",async e=>{e.preventDefault();const f=$("tf"),d=detSal;if(!d)return;
+  const mot=f.motivo.value,nota=f.nota.value.trim();$("tsave").disabled=true;
+  const ok=await guardarDet(d,{"Terminó el":f.fecha.value,"Motivo de salida":mot,"Nota de salida":nota},"Salió del destallo: "+d.nombre+" · "+mot+" · "+fd(parse(f.fecha.value))+(nota?" · "+nota:""));
+  $("tsave").disabled=false;if(ok)$("tdlg").close();else $("tmsg").textContent=$("dmsg").textContent});
+$("tcancel").onclick=()=>$("tdlg").close();
 /* ===== Terminan pronto ===== */
 function renderFin(all){
   const prox=all.filter(x=>x.c.fin>=hoy&&days(hoy,x.c.fin)<=AV_FIN).sort((a,b)=>a.c.fin-b.c.fin);
