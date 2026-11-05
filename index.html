@@ -172,6 +172,7 @@ a.btn.p{background:var(--acc);color:var(--accx);border-color:var(--acc)}
 .dseg{margin-bottom:10px;grid-template-columns:1fr 1fr}.dseg button{font-size:13.5px}
 .delbox{border:2px solid var(--bad);border-radius:12px;padding:12px;display:grid;gap:8px;background:var(--bg)}
 .delbox small{color:var(--mut)}.delbox b{color:var(--bad)}
+.sfil{margin:0;font-size:13.5px;font-weight:600;background:color-mix(in srgb,var(--acc) 14%,var(--card));border:1px solid var(--acc);border-radius:10px;padding:8px 10px}
 label.opt{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:var(--bg);color:var(--ink);font-size:14.5px;font-weight:600;cursor:pointer}
 label.opt input{width:auto;margin-top:3px}label.opt small{display:block;font-weight:400;color:var(--mut);font-size:12.5px}
 label.opt:has(input:checked){border:2px solid var(--acc)}
@@ -519,6 +520,7 @@ label.opt:has(input:checked){border:2px solid var(--acc)}
     <label><input type="radio" name="tipo" value="hoy"><span>De salida hoy<small>Quién está afuera y cuándo vuelve</small></span></label>
     <label><input type="radio" name="tipo" value="fin"><span>Terminan pronto<small>Finalizan en 10 días o menos</small></span></label>
   </div>
+  <p class="sfil" id="sfil"></p>
   <div class="msg" id="smsg" role="alert"></div>
   <div class="acts">
     <button type="button" id="scancel">Cancelar</button>
@@ -1138,7 +1140,7 @@ $("uf").addEventListener("submit",e=>{e.preventDefault();const q=$("unew").value
 /* ===== Imprimir lista de residentes ===== */
 function buildPrint(){
   const tb=$("prows"); tb.replaceChildren();
-  const all=items.filter(i=>i.nombre&&i.ingreso).map(i=>({i,ing:parse(i.ingreso)})).sort((a,b)=>a.ing-b.ing);
+  const all=items.filter(i=>i.nombre&&i.ingreso&&conTipo(i)).map(i=>({i,ing:parse(i.ingreso)})).sort((a,b)=>a.ing-b.ing);
   all.forEach(({i,ing},k)=>{
     const tr=el("tr",i.tipo==="MIDES"?"mides":"");
     tr.append(el("td","c",String(k+1)),el("td","nm",i.nombre.trim().toUpperCase()),el("td","ce",i.cedula),el("td","f",fd(ing)));
@@ -1162,8 +1164,14 @@ function loadLibs(){
 const fdc=d=>String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0");
 const DSEM=["dom","lun","mar","mié","jue","vie","sáb"];
 const enDias=n=>n===0?"Hoy":n===1?"Mañana":"En "+n+" días";
+// Compartir e imprimir respetan el filtro Todos / MIDES / Privado elegido en la lista
+const tipoFiltro=()=>$("ft").value;
+const conTipo=i=>!tipoFiltro()||i.tipo===tipoFiltro();
+const sufTipo=()=>tipoFiltro()==="MIDES"?" · MIDES":tipoFiltro()==="Privado"?" · PRIVADOS":"";
 function datosPDF(kind){
-  const all=items.filter(i=>i.nombre&&i.ingreso).map(i=>({i,c:calc(i)})).sort((a,b)=>a.c.ing-b.c.ing);
+  const D=datosPDF0(kind);D.titulo+=sufTipo();if(tipoFiltro())D.archivo+="_"+tipoFiltro();return D}
+function datosPDF0(kind){
+  const all=items.filter(i=>i.nombre&&i.ingreso&&conTipo(i)).map(i=>({i,c:calc(i)})).sort((a,b)=>a.c.ing-b.c.ing);
   const nom=i=>i.nombre.trim();
   if(kind==="todos") return{titulo:"RESIDENTES COMUNIDAD 1",archivo:"Residentes",
     head:["","Residentes","Cédula","Fecha de ingreso"],mides:true,
@@ -1218,7 +1226,10 @@ function prepLibs(){
   loadLibs().then(()=>{$("sshare").textContent="Compartir"},e=>{$("sshare").textContent="Compartir";$("smsg").textContent="No se pudo preparar el PDF ("+e.message+"). Revisá internet y abrí de nuevo."})
     .finally(()=>{$("sshare").disabled=$("sdesc").disabled=!listoPDF()});
 }
-$("compartir").onclick=()=>{if($("dlg").open)$("dlg").close();$("sdlg").showModal();prepLibs()};
+$("compartir").onclick=()=>{if($("dlg").open)$("dlg").close();
+  const n=items.filter(i=>i.nombre&&i.ingreso&&conTipo(i)).length;
+  $("sfil").textContent=tipoFiltro()?"Se comparten solo los "+(tipoFiltro()==="MIDES"?"MIDES":"privados")+" ("+n+"), como tenés filtrada la lista. Para mandar todos, elegí «Todos» antes de compartir.":"Se comparten todos los internos ("+n+").";
+  $("sdlg").showModal();prepLibs()};
 $("scancel").onclick=()=>$("sdlg").close();
 const kindSel=()=>$("sf").querySelector("input[name=tipo]:checked").value;
 $("sdesc").onclick=()=>{try{const r=armarPDF(kindSel());bajar(r.blob,r.nombre)}catch(e){$("smsg").textContent="No se pudo armar el PDF: "+e.message}};
