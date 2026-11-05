@@ -188,9 +188,23 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
 }
 @media (max-width:700px) and (prefers-reduced-motion:reduce){.chev{transition:none}}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:700;max-width:92vw;text-align:center;z-index:5}
+/* Pantalla de espera mientras entra solo (sin mostrar el ingreso) */
+#splash{display:none;position:fixed;inset:0;z-index:50;background:var(--bg);place-items:center;align-content:center;gap:18px;text-align:center}
+html.cargando #splash{display:grid}
+html.cargando #login{display:none!important}
+#splash .ave{width:120px;height:120px;border-radius:50%;box-shadow:0 6px 24px rgba(0,0,0,.3);animation:vuelo 1.6s ease-in-out infinite}
+#splash .anillo{position:absolute;width:120px;height:120px;border-radius:50%;border:3px solid var(--acc);animation:ola 1.6s ease-out infinite}
+#splash .cont{position:relative;display:grid;place-items:center}
+#splash p{margin:0;font:700 22px/1.2 Fraunces,Georgia,serif;color:var(--ink)}
+#splash small{color:var(--mut);font-size:14px}
+@keyframes vuelo{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-10px) rotate(3deg)}}
+@keyframes ola{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.6);opacity:0}}
+@media (prefers-reduced-motion:reduce){#splash .ave,#splash .anillo{animation:none}}
 </style>
 </head>
 <body>
+<script>try{var p=JSON.parse(sessionStorage.getItem("alas-paso")||"null");if((p&&p.token&&Date.now()-p.t<60000)||localStorage.getItem("alas-token"))document.documentElement.classList.add("cargando")}catch(e){}</script>
+<div id="splash" role="status" aria-live="polite"><div class="cont"><span class="anillo"></span><img class="ave" src="../logo.png" alt=""></div><p>Alas de Libertad</p><small>Cargando…</small></div>
 
 <!-- Ingreso -->
 <section id="login" class="box">
@@ -670,15 +684,16 @@ $("lf").addEventListener("submit",async e=>{
 });
 $("out").onclick=()=>{cerrarSesion();email="";role="";gente=[];$("lmsg").textContent="";$("app").hidden=true;$("login").hidden=false;modoSetup(false)};
 try{$("em").value=localStorage.getItem("internos-email")||"";localStorage.removeItem("internos-pw");if(localStorage.getItem("alas-token"))$("rec").checked=true;const su=localStorage.getItem("internos-api");if(su)API=su}catch(e){}
-(async()=>{const ses=sesionGuardada();if(!ses||!ses.email||!ses.token)return;
+(async()=>{const ses=sesionGuardada();if(!ses||!ses.email||!ses.token){document.documentElement.classList.remove("cargando");return}
   try{email=ses.email;token=ses.token||"";pass=ses.pass||"";const res=await api({action:"checkUser"});
   if(!res||!res.allowed){const t=res&&res.error;borrarSesion();token="";pass="";email="";if(t)$("lmsg").textContent=t;return}
-  guardarSesion();role=String(res.role||"");$("whoem").textContent=email;$("whorole").textContent=role;$("login").hidden=true;$("app").hidden=false;await cargar()}catch(e){}})();
+  guardarSesion();role=String(res.role||"");$("whoem").textContent=email;$("whorole").textContent=role;$("login").hidden=true;$("app").hidden=false;await cargar()}catch(e){}
+  finally{document.documentElement.classList.remove("cargando")}})();
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="202611051723";
+const APP_VER="20261105201644";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
