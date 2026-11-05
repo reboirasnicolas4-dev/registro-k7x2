@@ -337,7 +337,9 @@ label.opt:has(input:checked){border:2px solid var(--acc)}
     <div class="msg" id="mmsg" role="alert"></div>
     <div class="mlist" id="mlist"></div>
     <h3 id="mfuerah" style="font:700 17px Fraunces,Georgia,serif;margin:18px 0 8px" hidden>De salida (no cuentan)</h3>
+    <p class="cnt" style="margin:-4px 0 8px">Marcá quién le dio la medicación para llevarse: esas iniciales van en la planilla del mes los días de salida.</p>
     <div class="mlist" id="mfuera"></div>
+    <div class="acts" style="justify-content:flex-start;margin-top:18px"><button type="button" id="pabrir">🖨️ Planilla del mes</button></div>
   </section>
   <section id="vUsu" hidden>
     <button type="button" class="back" data-back>‹ Más</button>
@@ -420,6 +422,20 @@ label.opt:has(input:checked){border:2px solid var(--acc)}
   <div class="msg" id="tmsg" role="alert"></div>
   <div class="acts"><button type="button" id="tcancel">Cancelar</button><button type="submit" class="p" id="tsave">Guardar</button></div>
 </form></dialog>
+<dialog id="pdlg"><form id="pf" class="ff" method="dialog">
+  <h2>Planilla de suministros</h2>
+  <p style="margin:0;color:var(--mut);font-size:13px">Una hoja por interno que toma medicación, igual a la planilla de papel, para imprimir.</p>
+  <label>Mes<select id="pmes"></select></label>
+  <label id="pquienl">Quiénes<select id="pquien"><option value="">Todos los que toman medicación</option></select></label>
+  <p class="sfil" id="pinfo" hidden></p>
+  <div class="msg" id="pmsg" role="alert"></div>
+  <div class="acts">
+    <button type="button" id="pcancel">Cerrar</button>
+    <button type="button" id="parmar" class="p">Armar planilla</button>
+    <button type="button" id="pdesc" hidden>Descargar</button>
+    <button type="button" id="pshare" class="p" hidden>Compartir / imprimir</button>
+  </div>
+</form></dialog>
 <dialog id="cdlg"><div class="ff">
   <div class="cuenta"><div class="me big" id="meBig">N</div><div style="min-width:0"><b id="whoem" style="overflow-wrap:anywhere"></b><div><span class="role" id="whorole"></span></div></div></div>
   <div class="menu-list">
@@ -491,7 +507,7 @@ label.opt:has(input:checked){border:2px solid var(--acc)}
     <label>Almuerzo<textarea name="almuerzo"></textarea></label>
     <label>Merienda<textarea name="merienda"></textarea></label>
     <label>Cena<textarea name="cena"></textarea></label>
-    <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" id="medver">Ver cambios de medicación</button><button type="button" id="entver">Ver entregas (30 días)</button></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" id="medver">Ver cambios de medicación</button><button type="button" id="entver">Ver entregas (30 días)</button><button type="button" id="pficha">🖨️ Planilla del mes</button></div>
     <div class="medh" id="medh" hidden></div>
   </fieldset>
   <div class="delbox" id="delbox" hidden>
@@ -969,6 +985,87 @@ $("tf").addEventListener("submit",async e=>{e.preventDefault();const f=$("tf"),d
   const ok=await guardarDet(d,{"Terminó el":f.fecha.value,"Motivo de salida":mot,"Nota de salida":nota},"Salió del destallo: "+d.nombre+" · "+mot+" · "+fd(parse(f.fecha.value))+(nota?" · "+nota:""));
   $("tsave").disabled=false;if(ok)$("tdlg").close();else $("tmsg").textContent=$("dmsg").textContent});
 $("tcancel").onclick=()=>$("tdlg").close();
+/* ===== Planilla mensual de suministros (igual a la de papel) ===== */
+const MESES=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+let planPDF=null, logoData=null;
+function abrirPlanilla(id){
+  const s=$("pmes");s.replaceChildren();
+  for(let k=0;k<4;k++){const d=new Date(hoy.getFullYear(),hoy.getMonth()-k,1);const o=el("option","",MESES[d.getMonth()][0].toUpperCase()+MESES[d.getMonth()].slice(1)+" "+d.getFullYear());o.value=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");s.append(o)}
+  const q=$("pquien");q.replaceChildren(el("option","","Todos los que toman medicación"));q.firstChild.value="";
+  items.filter(i=>i.nombre&&i.ingreso).sort((a,b)=>a.nombre.localeCompare(b.nombre,"es")).forEach(i=>{const o=el("option","",i.nombre.trim());o.value=i.id;q.append(o)});
+  q.value=id||"";planPDF=null;$("pinfo").hidden=true;$("pmsg").textContent="";$("pdesc").hidden=$("pshare").hidden=true;$("parmar").hidden=false;
+  if($("dlg").open)$("dlg").close();$("pdlg").showModal();loadLibs().catch(()=>{})}
+$("pabrir").onclick=()=>abrirPlanilla("");
+$("pficha").onclick=()=>abrirPlanilla(cur?cur.id:"");
+$("pcancel").onclick=()=>$("pdlg").close();
+["pmes","pquien"].forEach(k=>$(k).onchange=()=>{planPDF=null;$("pinfo").hidden=true;$("pdesc").hidden=$("pshare").hidden=true;$("parmar").hidden=false});
+async function cargarLogo(){if(logoData)return logoData;try{const b=await fetch("logo.png").then(r=>r.blob());logoData=await new Promise(ok=>{const f=new FileReader();f.onload=()=>ok(f.result);f.readAsDataURL(b)})}catch(e){logoData=""}return logoData}
+const partirMeds=t=>String(t||"").split(/[,;\n]+|\s·\s/).map(x=>x.trim()).filter(Boolean);
+function medDosis(t){const m=t.match(/^(.*?)\s+(\d[\d.,\/]*\s*(mg|mcg|ml|g|gotas?|comp\.?|cc)?\b.*)$/i);return m?[m[1],m[2]]:[t,""]}
+$("parmar").onclick=async()=>{
+  $("pmsg").textContent="Armando…";$("parmar").disabled=true;
+  try{
+    await loadLibs();const logo=await cargarLogo();
+    const [Y,M]=$("pmes").value.split("-").map(Number),N=new Date(Y,M,0).getDate(),d1=new Date(Y,M-1,1),dN=new Date(Y,M-1,N);
+    const r=await api({action:"planillaMes",desde:iso(new Date(Y,M-1,-12)),hasta:iso(dN)});
+    if(!r||r.ok!==true)throw new Error((r&&r.error)||"respuesta inesperada");
+    const recs=r.data||[],INI=r.iniciales||{},ini=u=>INI[String(u||"").toLowerCase()]||String(u||"").slice(0,2).toUpperCase();
+    const mes=recs.filter(m=>m.fecha>=iso(d1)&&m.fecha<=iso(dN));
+    // internos actuales + egresados que tuvieron marcas ese mes
+    let gente=items.filter(i=>i.nombre&&i.ingreso).map(i=>({i,egreso:""}));
+    const ids=new Set(gente.map(g=>String(g.i.id)));
+    (r.egresados||[]).forEach(e=>{const id=String(e.id||"");if(!id||ids.has(id)||!mes.some(m=>String(m.id)===id))return;
+      ids.add(id);gente.push({i:{id,nombre:String(e.nombre||""),ingreso:toISO(e.fechadeingreso),desayuno:"",almuerzo:"",merienda:"",cena:"",salio:"",vuelve:"",nosalio:""},egreso:toISO(e.fechadeegreso)})});
+    const sel=$("pquien").value;if(sel)gente=gente.filter(g=>String(g.i.id)===String(sel));
+    const TOM=[["DESAYUNO","Desayuno","desayuno",6],["ALMUERZO","Almuerzo","almuerzo",5],["MERIENDA","Merienda","merienda",6],["CENA","Cena","cena",8]];
+    const hojas=[];
+    gente.sort((a,b)=>a.i.nombre.localeCompare(b.i.nombre,"es")).forEach(({i,egreso})=>{
+      const mios=mes.filter(m=>String(m.id)===String(i.id));
+      const medsT=TOM.map(([,T,k])=>{const vistos=new Map();[String(i[k]||""),...mios.filter(m=>m.toma===T).map(m=>m.medicacion)].forEach(t=>partirMeds(t).forEach(x=>{const kk=nq(x);if(!vistos.has(kk))vistos.set(kk,x)}));return [...vistos.values()].map(medDosis)});
+      if(!medsT.some(x=>x.length))return;
+      const ing=parse(i.ingreso),eg=egreso?parse(egreso):null,c=calc(i);
+      const presente=d=>d>=ing&&(!eg||d<=eg)&&d<=hoy;
+      const body=[],estilo=[];
+      TOM.forEach(([LAB,T,k,n],ti)=>{const meds=medsT[ti];let usados=1;
+        body.push(["",LAB,"",...Array(N).fill("")]);estilo.push("lab");
+        meds.forEach(([nm,ds])=>{body.push([nm,ds,"",...Array.from({length:N},(_,x)=>presente(new Date(Y,M-1,x+1))?"X":"")]);estilo.push("med");usados++});
+        if(meds.length){body.push(["","","",...Array.from({length:N},(_,x)=>{const d=new Date(Y,M-1,x+1);if(!presente(d))return"";
+            const m=mios.find(z=>z.toma===T&&z.fecha===iso(d));if(m)return ini(m.usuario);
+            const e=c.evs.find(z=>d>=z.d&&d<z.v);if(e){const l=llevarDe(i,e,recs);if(l)return ini(l.usuario)}return""})]);estilo.push("ini");usados++}
+        for(;usados<n;usados++){body.push(Array(N+3).fill(""));estilo.push("")}});
+      body.push(["DEPOSICIONES","","",...Array(N).fill("")]);estilo.push("dep");
+      hojas.push({nombre:i.nombre.trim(),body,estilo});
+    });
+    if(!hojas.length)throw new Error("nadie tiene medicación cargada en ese mes");
+    const doc=new window.jspdf.jsPDF({unit:"mm",format:"a4",orientation:"landscape"}),W=297,H=210,mx=10;
+    hojas.forEach((h,hi)=>{if(hi)doc.addPage();
+      if(logo)try{doc.addImage(logo,"PNG",W/2-6,5,12,12)}catch(e){}
+      let y=19;doc.setLineWidth(.5);doc.setDrawColor(0);
+      doc.rect(mx,y,W-2*mx,7);doc.setFont("helvetica","bold");doc.setFontSize(10.5);doc.text("PLANILLA DE SUMINISTROS DIARIOS DE MEDICACIÓN",W-mx-3,y+5,{align:"right"});y+=7;
+      doc.rect(mx,y,W-2*mx,7);doc.setFontSize(9);doc.text("NOMBRE DE RESIDENTE:",mx+3,y+5);doc.setFont("helvetica","normal");doc.setFontSize(11);doc.text(h.nombre,mx+46,y+5);y+=7;
+      doc.rect(mx,y,W-2*mx,7);doc.setFont("helvetica","bold");doc.setFontSize(9);doc.text("MES:",mx+3,y+5);doc.text("AÑO:",mx+35,y+5);doc.text("DIAS",mx+68,y+5);
+      doc.setFont("helvetica","normal");doc.setFontSize(11);doc.text(String(M),mx+14,y+5);doc.text(String(Y).slice(2),mx+46,y+5);doc.text(String(N),mx+78,y+5);y+=7;
+      const filas=h.body.length+1,rh=Math.min(6.2,(H-y-6)/filas),fs=Math.max(5.5,Math.min(8.5,rh*1.45)),dw=(W-2*mx-48-30-14)/N;
+      const cs={0:{cellWidth:48,halign:"left"},1:{cellWidth:30,halign:"left"},2:{cellWidth:14}};for(let x=0;x<N;x++)cs[x+3]={cellWidth:dw};
+      doc.autoTable({startY:y,margin:{left:mx,right:mx,top:5,bottom:4},tableWidth:W-2*mx,
+        head:[["MEDICACIÓN","HORA","DOSIS",...Array.from({length:N},(_,x)=>String(x+1))]],body:h.body,theme:"grid",columnStyles:cs,
+        styles:{font:"helvetica",fontSize:fs,textColor:0,lineColor:0,lineWidth:.25,cellPadding:{top:0,bottom:0,left:1.2,right:1.2},minCellHeight:rh,valign:"middle",halign:"center",overflow:"ellipsize"},
+        headStyles:{fillColor:255,textColor:0,fontStyle:"bold",lineWidth:.35},
+        didParseCell:q=>{if(q.section!=="body")return;const t=h.estilo[q.row.index];
+          if((t==="lab"&&q.column.index===1)||(t==="dep"&&q.column.index===0)){q.cell.styles.fontStyle="bold"}
+          if(t==="ini"&&q.column.index>2){q.cell.styles.fontSize=Math.max(4.5,fs-1.6);q.cell.styles.fontStyle="bold"}
+          if(t==="dep")q.cell.styles.minCellHeight=rh*1.3}});
+    });
+    const nombre="Planilla_suministros_"+MESES[M-1]+"_"+Y+(sel?"_"+hojas[0].nombre.replace(/\s+/g,"_"):"")+".pdf";
+    planPDF={blob:doc.output("blob"),nombre,titulo:"Planilla de suministros "+MESES[M-1]+" "+Y};
+    $("pinfo").hidden=false;$("pinfo").textContent="Lista: "+hojas.length+(hojas.length===1?" hoja":" hojas")+", una por interno ("+MESES[M-1]+" "+Y+", del 1 al "+N+").";
+    $("pmsg").textContent="";$("parmar").hidden=true;$("pdesc").hidden=$("pshare").hidden=false;
+  }catch(e){$("pmsg").textContent="No se pudo armar: "+e.message}
+  finally{$("parmar").disabled=false}};
+$("pdesc").onclick=()=>{if(planPDF)bajar(planPDF.blob,planPDF.nombre)};
+$("pshare").onclick=async()=>{if(!planPDF)return;const file=new File([planPDF.blob],planPDF.nombre,{type:"application/pdf"});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:planPDF.titulo})}catch(e){if(e.name!=="AbortError")bajar(planPDF.blob,planPDF.nombre)}}
+  else bajar(planPDF.blob,planPDF.nombre)};
 /* ===== Terminan pronto ===== */
 function renderFin(all){
   const prox=all.filter(x=>x.c.fin>=hoy&&days(hoy,x.c.fin)<=AV_FIN).sort((a,b)=>a.c.fin-b.c.fin);
@@ -1006,14 +1103,27 @@ $("rq").oninput=renderReg;$("ra").onchange=renderReg;$("rrefresh").onclick=loadR
 const TOMAS=["Desayuno","Almuerzo","Merienda","Cena"];
 const tomaHora=()=>{const n=new Date(),h=n.getHours()+n.getMinutes()/60;return h<11?"Desayuno":h<15.5?"Almuerzo":h<19?"Merienda":"Cena"};
 let tomaSel=tomaHora(), tomaAMano=false;
-let marcas={}, abiertoNo=null;
+let marcas={}, abiertoNo=null, llevar=[];
+// Registro de "le di la medicación para llevar" de la salida actual
+function salidaActual(i,f){return calc(i).evs.find(e=>f>=e.d&&f<e.v)}
+function llevarDe(i,e,lista){const a=iso(new Date(e.d.getFullYear(),e.d.getMonth(),e.d.getDate()-2)),b=iso(e.v);return (lista||llevar).filter(m=>String(m.id)===String(i.id)&&m.toma==="Salida"&&m.fecha>=a&&m.fecha<=b).pop()}
+async function marcarLlevar(i,quitar){if(!isAdmin())return;
+  const meds=["desayuno","almuerzo","merienda","cena"].map(k=>String(i[k]||"").trim()).filter(Boolean).join(" · ");
+  const prev=llevar.slice();
+  if(quitar)llevar=llevar.filter(m=>!(String(m.id)===String(i.id)&&m.toma==="Salida"&&m.fecha===iso(hoy)));
+  else llevar.push({fecha:iso(hoy),toma:"Salida",id:i.id,estado:"Para llevar",usuario:email,hora:new Date().toTimeString().slice(0,5)});
+  renderMed();
+  try{const r=await api({action:"marcarMed",fecha:iso(hoy),toma:"Salida",id:i.id,nombre:i.nombre.trim(),estado:quitar?"":"llevar",medicacion:meds});if(!r||r.ok!==true)throw new Error((r&&r.error)||"no se confirmó")}
+  catch(e){llevar=prev;renderMed();$("mmsg").textContent="No se guardó: "+e.message}}
 function fechaMed(){return $("mfecha").value||iso(hoy)}
 async function loadMed(){
   $("mfecha").value=iso(hoy); if(!tomaAMano)tomaSel=tomaHora();
   $("mmsg").textContent="Cargando…";
-  try{const r=await api({action:"getEntregas",fecha:fechaMed()});
+  try{const d0=new Date(hoy.getFullYear(),hoy.getMonth(),hoy.getDate()-12);
+    const [r,r2]=await Promise.all([api({action:"getEntregas",fecha:fechaMed()}),api({action:"getEntregas",desde:iso(d0),hasta:iso(hoy)})]);
     if(!r||r.ok!==true)throw new Error((r&&r.error)||"respuesta inesperada");
-    marcas={};(r.data||[]).forEach(m=>marcas[m.toma+"|"+m.id]=m);$("mmsg").textContent="";renderMed();
+    marcas={};(r.data||[]).forEach(m=>marcas[m.toma+"|"+m.id]=m);
+    llevar=((r2&&r2.data)||[]).filter(m=>m.toma==="Salida");$("mmsg").textContent="";renderMed();
   }catch(e){$("mmsg").textContent="No se pudo cargar: "+e.message}
 }
 function fueraEl(i,f){const c=calc(i);return c.evs.some(e=>f>=e.d&&f<e.v)}
@@ -1047,7 +1157,13 @@ function renderMed(){
   else if(!qm&&aca.length)L.push(el("p","empty","¡Listo! Ya pasaron todos en el "+tomaSel.toLowerCase()+"."));
   if(ya.length){L.push(el("div","msec","Ya marcados ("+ya.length+")"));ya.forEach(i=>L.push(fila(i)))}
   $("mlist").replaceChildren(...L);
-  const fuera2=fuera.filter(coincide);$("mfuerah").hidden=!fuera2.length;$("mfuera").replaceChildren(...fuera2.map(i=>{const r=el("div","mrow"),t=el("div","tx");t.append(el("b","",i.nombre.trim()),el("span","",String(i[k]).trim()));r.append(t);return r}));
+  const fuera2=fuera.filter(coincide);$("mfuerah").hidden=!fuera2.length;$("mfuera").replaceChildren(...fuera2.map(i=>{const r=el("div","mrow"),t=el("div","tx");t.append(el("b","",i.nombre.trim()),el("span","",String(i[k]).trim()));r.append(avatar(i,"av"),t);
+    const e=salidaActual(i,f),m=e&&llevarDe(i,e),bt=el("div","bt");
+    if(m){bt.append(el("span","est ok","✓ Se la llevó · "+m.fecha.slice(8,10)+"/"+m.fecha.slice(5,7)+" · "+String(m.usuario).split("@")[0]));
+      if(isAdmin()&&m.fecha===iso(hoy)){const u=el("button","","Deshacer");u.type="button";u.onclick=()=>marcarLlevar(i,true);bt.append(u)}}
+    else if(isAdmin()){const b=el("button","p","Le di la medicación para llevar");b.type="button";b.onclick=()=>marcarLlevar(i,false);bt.append(b)}
+    else bt.append(el("span","est","Sin marcar"));
+    r.append(bt);return r}));
 }
 async function marcar(i,estado,motivo){
   if(!isAdmin())return;
@@ -1125,6 +1241,8 @@ function renderUsu(){const L=$("ulist");L.replaceChildren();
   usuarios.slice().sort((a,b)=>(b.email===email)-(a.email===email)||a.email.localeCompare(b.email)).forEach(u=>{
     const yo=u.email===email,c=el("div","uc");c.append(el("span","em",u.email+(yo?" (vos)":"")));
     const sel=el("select");["Usuario","Admin"].forEach(r=>{const o=el("option","",r);o.selected=(/admin/i.test(u.rol)?"Admin":"Usuario")===r;sel.append(o)});
+    const ii=el("input");ii.value=u.iniciales||"";ii.placeholder="Iniciales";ii.maxLength=4;ii.style.cssText="width:92px;text-transform:uppercase";ii.setAttribute("aria-label","Iniciales de "+u.email);
+    ii.onchange=()=>accionUsu({action:"setIniciales",quien:u.email,iniciales:ii.value},"Iniciales de "+u.email+": "+(ii.value.trim().toUpperCase()||"—")+".");c.append(ii);
     sel.disabled=yo;sel.setAttribute("aria-label","Rol de "+u.email);sel.onchange=()=>accionUsu({action:"cambiarRol",quien:u.email,rolNuevo:sel.value},u.email+" ahora es "+sel.value+".");c.append(sel);
     if(!yo){const nc=el("button","",u.tieneClave?"Se olvidó la contraseña":"Nuevo código");nc.type="button";
       nc.onclick=()=>{if(uArm!=="c"+u.email){uArm="c"+u.email;nc.textContent="¿Borrar su contraseña y dar código?";return}uArm="";accionUsu({action:"nuevoCodigo",quien:u.email})};
