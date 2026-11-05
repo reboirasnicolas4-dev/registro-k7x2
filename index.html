@@ -934,7 +934,7 @@ function renderDet(){const q=nq($("dq").value.trim()),L=$("dlist"),out=[];
     else pl.append(el("span","pill w","Falta la fecha"));
     if(d.cedula)pl.append(el("span","pill",d.cedula));r.append(pl);
     if(d.nota)r.append(el("div","nt",d.nota));
-    if(d.fin&&d.nsal)r.append(el("div","nt","Al salir: "+d.nsal));
+    if(d.fin&&d.nsal)r.append(el("div","nt","Observación: "+d.nsal));
     if(isAdmin()){const bt=el("div","bt");
       if(!d.fin){const t=el("button","p","Dar de baja del destallo");t.type="button";t.onclick=()=>abrirSalida(d);bt.append(t)}
       else{const u=el("button","","Volver a Destallo");u.type="button";u.onclick=()=>{if(detArm!=="v"+d.fila){detArm="v"+d.fila;u.textContent="¿Seguro? Tocá de nuevo";return}detArm="";
