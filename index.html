@@ -131,9 +131,11 @@ main{padding-bottom:110px}
 .ptrb{display:block;width:100%;border:0;background:none;color:var(--mut);font-size:12px;padding:2px 0 8px;font-weight:400}
 .ptr{height:0;overflow:hidden;text-align:center;color:var(--mut);font-size:13px;transition:height .15s}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
-.chip{border:1px solid var(--line);background:var(--card);border-radius:99px;padding:6px 12px;font-weight:600;font-size:13px}
-.chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-.chip.share{margin-left:auto}
+.chip{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);background:var(--card);border-radius:99px;padding:7px 9px;white-space:nowrap;font-weight:600;font-size:13px;transition:background .15s,border-color .15s}
+#fchips{flex-wrap:nowrap;gap:5px}@media (max-width:370px){#fchips .chip svg{display:none}}.chip svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.chip .n{background:var(--line);color:var(--ink);border-radius:99px;padding:0 6px;font-size:11px;font-weight:700;line-height:1.5}
+.chip.on{background:var(--acc);color:var(--accx);border-color:var(--acc)}.chip.on .n{background:var(--accx);color:var(--acc)}
+.chip.share{margin-left:auto;flex:none;width:36px;height:36px;padding:0;justify-content:center;color:var(--acc);border-color:var(--acc);background:color-mix(in srgb,var(--acc) 12%,var(--card))}.chip.share svg{width:19px;height:19px}
 .pl{display:none;gap:5px;flex-wrap:wrap;margin-top:4px}
 .pill{font-size:11.5px;font-weight:700;border-radius:6px;padding:2px 7px;background:var(--line);color:var(--ink)}
 .pill.w{background:var(--warn);color:var(--warnx)}
@@ -147,8 +149,11 @@ main{padding-bottom:110px}
 @media (min-width:701px){.bnav{left:50%;right:auto;transform:translateX(-50%);width:min(560px,100%);border:1px solid var(--line);border-bottom:0;border-radius:16px 16px 0 0}}
 .back{border:0;background:none;padding:4px 0 10px;font-weight:700;color:var(--ink)}
 .menu-list{display:grid;gap:8px}
-.mi{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:14px;border-radius:12px;font-weight:600;font-size:15px}
-.mi span{flex:1;min-width:0}.mi small{display:block;font-weight:400;color:var(--mut);font-size:12.5px}.mi i{font-style:normal;color:var(--mut);font-size:20px}
+.mi{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px;border-radius:14px;font-weight:600;font-size:15px}
+.mi span{flex:1;min-width:0}.mi small{display:block;font-weight:400;color:var(--mut);font-size:12.5px}
+.mi i{font-style:normal;color:var(--acc);font-size:18px;line-height:1;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;flex:none;background:color-mix(in srgb,var(--acc) 12%,var(--card))}
+.mi b.ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:none;color:var(--c,var(--acc));background:color-mix(in srgb,var(--c,var(--acc)) 18%,var(--card))}
+.mi b.ic svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .rooms{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
 .room{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:6px}
 .room .h{display:flex;justify-content:space-between;gap:8px;font-weight:700}.room .h span{font-weight:600;color:var(--mut);font-size:13px}
@@ -289,8 +294,8 @@ label.opt:has(input:checked){border:2px solid var(--acc)}
     <select id="ft" aria-label="Tipo" hidden><option value="">Todos los tipos</option><option>Privado</option><option>MIDES</option></select>
   </div>
   <div class="chips" id="fchips">
-    <button type="button" class="chip on" data-t="">Todos</button><button type="button" class="chip" data-t="MIDES">MIDES</button><button type="button" class="chip" data-t="Privado">Privado</button>
-    <button type="button" class="chip share" id="compartir">⤴ Compartir</button>
+    <button type="button" class="chip on" data-t=""><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c.6-3.3 3-5 6-5s5.4 1.7 6 5"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14c2.6 0 4.4 1.5 5 4"/></svg>Todos <span class="n"></span></button><button type="button" class="chip" data-t="MIDES"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v16M15 9h4a1 1 0 0 1 1 1v11M3 21h18M8 8h3M8 12h3M8 16h3"/></svg>MIDES <span class="n"></span></button><button type="button" class="chip" data-t="Privado"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/></svg>Privado <span class="n"></span></button>
+    <button type="button" class="chip share" id="compartir" aria-label="Compartir" title="Compartir"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.2 10.9l7.6-3.8M8.2 13.1l7.6 3.8"/></svg></button>
   </div>
   <div class="msg" id="amsg" role="alert"></div>
   <div class="fstat" id="fstat" hidden></div>
@@ -372,12 +377,12 @@ label.opt:has(input:checked){border:2px solid var(--acc)}
   </section>
   <section id="vMas" hidden>
     <div class="menu-list">
-      <button type="button" class="mi" data-go="E"><span>Egresados<small>Los que ya se fueron, con motivo y nota</small></span><i>›</i></button>
-      <button type="button" class="mi" data-go="D"><span>Destallo<small>Los que están haciendo el destallo</small></span><i>›</i></button>
-      <button type="button" class="mi" data-go="R" id="miR" hidden><span>Registro<small>Quién cambió qué y cuándo</small></span><i>›</i></button>
-      <button type="button" class="mi" data-go="U" id="miU" hidden><span>Usuarios<small>Agregar, quitar y dar códigos (solo vos)</small></span><i>›</i></button>
-      <button type="button" class="mi" id="compartir2"><span>Compartir lista<small>PDF de la lista para mandar por WhatsApp</small></span><i>›</i></button>
-      <button type="button" class="mi" id="imprimir"><span>Imprimir lista<small>Desde la computadora</small></span><i>›</i></button>
+      <button type="button" class="mi" data-go="E" style="--c:#f7a823"><b class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 4H6a1 1 0 0 0-1 1v15h8M13 4v16M16 12h6M19 9l3 3-3 3"/></svg></b><span>Egresados<small>Los que ya se fueron</small></span><i>›</i></button>
+      <button type="button" class="mi" data-go="D" style="--c:#f0855a"><b class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21c-3.9 0-7-2.6-7-6.5 0-3.7 3-5.7 4-9.5 2 1.5 3 3.5 3 5.5 1-.7 1.7-1.8 2-3 2 1.8 5 4.6 5 7 0 3.9-3.1 6.5-7 6.5z"/></svg></b><span>Destallo<small>Los que están haciendo el destallo</small></span><i>›</i></button>
+      <button type="button" class="mi" data-go="R" id="miR" hidden style="--c:#d9b12f"><b class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg></b><span>Registro<small>Quién cambió qué y cuándo</small></span><i>›</i></button>
+      <button type="button" class="mi" data-go="U" id="miU" hidden style="--c:#f7a823"><b class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M11 12l8-8M16 7l3 3M14 9l2 2"/></svg></b><span>Usuarios<small>Agregar, quitar y códigos</small></span><i>›</i></button>
+      <button type="button" class="mi" id="compartir2" style="--c:#3fae68"><b class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.4-4A8 8 0 1 1 8 18.6L4 20z"/></svg></b><span>Compartir lista<small>PDF para WhatsApp</small></span><i>›</i></button>
+      <button type="button" class="mi" id="imprimir" style="--c:var(--mut)"><b class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V4h10v5M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2M7 14h10v6H7z"/></svg></b><span>Imprimir lista<small>Desde la computadora</small></span><i>›</i></button>
     </div>
   </section>
   <button type="button" class="fab" id="add" hidden aria-label="Agregar interno">+</button>
@@ -677,7 +682,7 @@ function render(){
     const x=el("button","","Ver todos");x.type="button";x.onclick=()=>{filtroStat="";render()};fb.append(x)}}
   $("finbox").hidden=true; $("miR").hidden=!isAdmin(); $("miU").hidden=$("goU").hidden=email!=="reboirasnicolas4@gmail.com";
   $("me").textContent=$("meBig").textContent=(email[0]||"?").toUpperCase(); $("add").hidden=!isAdmin()||vista!=="I";
-  document.querySelectorAll("#fchips .chip[data-t]").forEach(b=>b.classList.toggle("on",b.dataset.t===ft));
+  document.querySelectorAll("#fchips .chip[data-t]").forEach(b=>{b.classList.toggle("on",b.dataset.t===ft);const n=b.querySelector(".n");if(n)n.textContent=all.filter(x=>!b.dataset.t||x.i.tipo===b.dataset.t).length});
   $("ptrb").textContent="↓ Deslizá hacia abajo para actualizar · al día "+new Date().toTimeString().slice(0,5);
   const list=all.filter(({i,c})=>(!ft||i.tipo===ft)&&(!q||(i.nombre+" "+i.cedula).toLowerCase().includes(q))&&(filtroStat!=="sal"||c.salSoon)&&(filtroStat!=="fin"||c.finSoon))
     .sort(filtroStat==="sal"?(a,b)=>a.c.sal-b.c.sal:filtroStat==="fin"?(a,b)=>a.c.fin-b.c.fin:(a,b)=>(a.c.ing-b.c.ing)*(asc?1:-1));
