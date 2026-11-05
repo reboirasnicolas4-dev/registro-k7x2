@@ -164,6 +164,7 @@ a.btn.p{background:var(--acc);color:var(--accx);border-color:var(--acc)}
 .tl{display:grid;gap:6px}
 .tl div{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:14px}
 .tl span{color:var(--mut)}.tl .now{border-color:var(--acc)}
+.dseg{margin-bottom:10px;grid-template-columns:1fr 1fr}.dseg button{font-size:13.5px}
 label.opt{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:var(--bg);color:var(--ink);font-size:14.5px;font-weight:600;cursor:pointer}
 label.opt input{width:auto;margin-top:3px}label.opt small{display:block;font-weight:400;color:var(--mut);font-size:12.5px}
 label.opt:has(input:checked){border:2px solid var(--acc)}
@@ -364,7 +365,8 @@ label.opt:has(input:checked){border:2px solid var(--acc)}
   <section id="vDet" hidden>
     <button type="button" class="back" data-back>‹ Más</button>
     <div class="bar"><input id="dq" type="search" placeholder="Buscar por nombre o cédula…" aria-label="Buscar en Destallo"></div>
-    <div class="chips" id="dchips"><button type="button" class="chip on" data-f="">Todos</button><button type="button" class="chip" data-f="act">Haciendo el destallo</button><button type="button" class="chip" data-f="Terminó el destallo">Terminaron</button><button type="button" class="chip" data-f="Se fue antes">Se fueron antes</button></div>
+    <div class="seg dseg" id="dseg"><button type="button" data-t="act" class="on">Haciendo el destallo</button><button type="button" data-t="sal">Ya salieron</button></div>
+    <div class="chips" id="dchips" hidden><button type="button" class="chip on" data-f="">Todos</button><button type="button" class="chip" data-f="Terminó el destallo">Terminaron</button><button type="button" class="chip" data-f="Se fue antes">Se fueron antes</button><button type="button" class="chip" data-f="Otro">Otro</button></div>
     <div class="msg" id="dmsg" role="alert"></div>
     <div class="mlist" id="dlist"></div>
   </section>
@@ -904,8 +906,11 @@ async function loadDet(){if(detCargado){renderDet();return}$("dmsg").textContent
     detCargado=true;$("dmsg").textContent="";renderDet()}catch(e){$("dmsg").textContent="No se pudo cargar: "+e.message}}
 function renderDet(){const q=nq($("dq").value.trim()),L=$("dlist"),out=[];
   const ok=d=>!q||nq(d.nombre+" "+d.cedula).includes(q);
-  const fsel=renderDet.f||"";document.querySelectorAll("#dchips .chip").forEach(b=>b.classList.toggle("on",b.dataset.f===fsel));
-  const act=dets.filter(d=>!d.fin&&ok(d)&&(!fsel||fsel==="act")).sort((a,b)=>(a.fecha||"9")<(b.fecha||"9")?1:-1),ter=dets.filter(d=>d.fin&&ok(d)&&fsel!=="act"&&(!fsel||(d.mot||"Terminó el destallo")===fsel)).sort((a,b)=>a.fin<b.fin?1:-1);
+  const tab=renderDet.tab||"act",fsel=renderDet.f||"";
+  document.querySelectorAll("#dseg button").forEach(b=>b.classList.toggle("on",b.dataset.t===tab));
+  document.querySelectorAll("#dchips .chip").forEach(b=>b.classList.toggle("on",b.dataset.f===fsel));$("dchips").hidden=tab!=="sal";
+  const act=dets.filter(d=>!d.fin&&ok(d)).sort((a,b)=>(a.fecha||"9")<(b.fecha||"9")?1:-1),terT=dets.filter(d=>d.fin&&ok(d)),ter=terT.filter(d=>!fsel||(d.mot||"Terminó el destallo")===fsel).sort((a,b)=>a.fin<b.fin?1:-1);
+  $("dseg").children[0].textContent="Haciendo el destallo ("+act.length+")";$("dseg").children[1].textContent="Ya salieron ("+terT.length+")";
   const tarjeta=d=>{const r=el("div","drow"+(d.fin?" fin":""));r.append(el("div","av",iniciales(d.nombre)),el("b","",d.nombre));
     const pl=el("div","pl");
     if(d.fin){const m=d.mot||"Terminó el destallo";pl.append(el("span","pill"+(m==="Se fue antes"?" w":""),m),el("span","pill",(d.fecha?fd(parse(d.fecha)):"¿?")+" → "+fd(parse(d.fin))))}
@@ -920,11 +925,10 @@ function renderDet(){const q=nq($("dq").value.trim()),L=$("dlist"),out=[];
         guardarDet(d,{"Terminó el":"","Motivo de salida":"","Nota de salida":""},"Volvió a Destallo: "+d.nombre+" (antes: "+(d.mot||"Terminó el destallo")+" el "+fd(parse(d.fin))+")")};bt.append(u)}
       const e=el("button","","Editar");e.type="button";e.onclick=()=>abrirDet(d);bt.append(e);r.append(bt)}
     return r};
-  out.push(el("div","msec","Haciendo el destallo ("+act.length+")"));act.forEach(d=>out.push(tarjeta(d)));
-  if(!act.length)out.push(el("p","empty",q?"Nadie coincide con la búsqueda.":"Nadie está haciendo el destallo ahora."));
-  if(fsel&&fsel!=="act"&&!act.length)out.length=0;
-  if(ter.length){out.push(el("div","msec","Ya salieron del destallo ("+ter.length+")"));ter.forEach(d=>out.push(tarjeta(d)))}
-  else if(fsel&&fsel!=="act")out.push(el("p","empty","No hay nadie con ese motivo."));
+  if(tab==="act"){act.forEach(d=>out.push(tarjeta(d)));if(!act.length)out.push(el("p","empty",q?"Nadie coincide con la búsqueda.":"Nadie está haciendo el destallo ahora."))}
+  else{if(terT.length){const c={};terT.forEach(d=>{const m=d.mot||"Terminó el destallo";c[m]=(c[m]||0)+1});
+      out.push(el("p","cnt",ter.length+(ter.length===1?" persona":" personas")+" · terminaron "+(c["Terminó el destallo"]||0)+" · se fueron antes "+(c["Se fue antes"]||0)+(c["Otro"]?" · otro "+c["Otro"]:"")))}
+    ter.forEach(d=>out.push(tarjeta(d)));if(!ter.length)out.push(el("p","empty",q?"Nadie coincide con la búsqueda.":fsel?"No hay nadie con ese motivo.":"Todavía nadie salió del destallo."))}
   L.replaceChildren(...out)}
 async function guardarDet(d,rec,log){$("dmsg").textContent="Guardando…";
   try{const r=d?await api({action:"updateRow",sheet:"Destallo",fila:d.fila,record:rec,log}):await api({action:"addRow",sheet:"Destallo",record:rec,log});
@@ -939,6 +943,7 @@ $("dcancel").onclick=()=>$("ddlg").close();
 $("dadd").onclick=()=>abrirDet(null);
 $("dq").oninput=renderDet;
 document.querySelectorAll("#dchips .chip").forEach(b=>b.onclick=()=>{renderDet.f=b.dataset.f;renderDet()});
+document.querySelectorAll("#dseg button").forEach(b=>b.onclick=()=>{renderDet.tab=b.dataset.t;renderDet()});
 // Dar de baja del destallo: fecha, motivo y nota (queda en la planilla y en Registro)
 let detSal=null;
 function abrirSalida(d){detSal=d;const f=$("tf");f.reset();f.fecha.value=iso(hoy);$("tnom").textContent=d.nombre;$("tmsg").textContent="";$("tdlg").showModal()}
