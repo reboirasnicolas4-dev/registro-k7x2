@@ -48,6 +48,19 @@ h1{font:700 34px/1.1 Fraunces,Georgia,serif;margin:0}
 .prog{height:10px;border-radius:99px;background:var(--line);overflow:hidden;margin:4px 0 12px}
 .prog i{display:block;height:100%;background:var(--acc)}
 .mlist{display:grid;gap:8px}
+.mtop{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding:6px 0 4px;display:grid;gap:8px;margin-bottom:8px}
+#vMed .tomas{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+#vMed .tomas button{padding:9px 0;font-weight:600}
+.mauto{color:var(--mut);font-size:12px}
+.msb{position:relative}
+.msb input{font-size:17px;font-weight:500;padding:13px 44px 13px 42px;border:2px solid var(--acc);border-radius:12px}
+.msb svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);width:20px;height:20px;stroke:var(--mut);fill:none;stroke-width:2}
+.msb button{position:absolute;right:4px;top:50%;transform:translateY(-50%);border:0;background:none;color:var(--mut);font-size:22px;padding:4px 12px}
+#vMed .cnt{margin:0}
+.mok{font-size:14px;font-weight:700;min-height:1.2em;color:var(--ink)}
+.msec{font-size:13px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.05em;margin:10px 0 2px}
+.mrow .av{width:42px;height:42px}
+.mhl{background:color-mix(in srgb,var(--acc) 45%,transparent);border-radius:3px}
 .mrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
 .mrow.falta{border-left:5px solid var(--acc)}
 .mrow.dada{opacity:.75}
@@ -294,13 +307,17 @@ a.btn.p{background:var(--acc);color:var(--accx);border-color:var(--acc)}
     </table><div class="empty" id="eempty" hidden>No hay egresados para mostrar.</div></div>
   </section>
   <section id="vMed" hidden>
-    <div class="bar">
+    <div class="mtop">
       <div class="tomas" id="mtomas"></div>
-      <input id="mfecha" type="date" aria-label="Día" style="flex:0 0 auto;width:auto">
-      <button id="mrefresh">Actualizar</button>
+      <small class="mauto" id="mauto"></small>
+      <div class="msb"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+        <input id="mq" type="search" placeholder="¿Quién viene?" autocomplete="off" enterkeyhint="done" aria-label="Buscar al que viene a tomar la medicación">
+        <button type="button" id="mqx" aria-label="Borrar búsqueda" hidden>×</button></div>
+      <input id="mfecha" type="date" hidden>
+      <p class="cnt" id="mcnt"></p>
+      <div class="prog"><i id="mbar" style="width:0"></i></div>
+      <div class="mok" id="mok" role="status"></div>
     </div>
-    <p class="cnt" id="mcnt"></p>
-    <div class="prog"><i id="mbar" style="width:0"></i></div>
     <div class="msg" id="mmsg" role="alert"></div>
     <div class="mlist" id="mlist"></div>
     <h3 id="mfuerah" style="font:700 17px Fraunces,Georgia,serif;margin:18px 0 8px" hidden>De salida (no cuentan)</h3>
@@ -870,11 +887,12 @@ function renderReg(){
 $("rq").oninput=renderReg;$("ra").onchange=renderReg;$("rrefresh").onclick=loadReg;
 /* ===== Medicación: control con tilde ===== */
 const TOMAS=["Desayuno","Almuerzo","Merienda","Cena"];
-let tomaSel=(()=>{const h=new Date().getHours();return h<11?"Desayuno":h<15?"Almuerzo":h<19?"Merienda":"Cena"})();
+const tomaHora=()=>{const n=new Date(),h=n.getHours()+n.getMinutes()/60;return h<11?"Desayuno":h<15.5?"Almuerzo":h<19?"Merienda":"Cena"};
+let tomaSel=tomaHora(), tomaAMano=false;
 let marcas={}, abiertoNo=null;
 function fechaMed(){return $("mfecha").value||iso(hoy)}
 async function loadMed(){
-  if(!$("mfecha").value)$("mfecha").value=iso(hoy);
+  $("mfecha").value=iso(hoy); if(!tomaAMano)tomaSel=tomaHora();
   $("mmsg").textContent="Cargando…";
   try{const r=await api({action:"getEntregas",fecha:fechaMed()});
     if(!r||r.ok!==true)throw new Error((r&&r.error)||"respuesta inesperada");
@@ -883,7 +901,10 @@ async function loadMed(){
 }
 function fueraEl(i,f){const c=calc(i);return c.evs.some(e=>f>=e.d&&f<e.v)}
 function renderMed(){
-  $("mtomas").replaceChildren(...TOMAS.map(t=>{const b=el("button",t===tomaSel?"on":"",t);b.type="button";b.onclick=()=>{tomaSel=t;abiertoNo=null;renderMed()};return b}));
+  $("mtomas").replaceChildren(...TOMAS.map(t=>{const b=el("button",t===tomaSel?"on":"",t);b.type="button";b.onclick=()=>{tomaSel=t;tomaAMano=t!==tomaHora();abiertoNo=null;renderMed()};return b}));
+  $("mauto").textContent=tomaAMano?"Elegiste "+tomaSel+" a mano.":"Se eligió "+tomaSel+" por la hora. Tocá otra toma si hace falta.";
+  const qm=nq($("mq").value.trim()); $("mqx").hidden=!qm;
+  const coincide=i=>{if(!qm)return true;const n=nq(i.nombre.trim());return n.split(/\s+/).some(p=>p.startsWith(qm))||n.includes(qm)};
   const f=parse(fechaMed()),k=tomaSel.toLowerCase();
   const con=items.filter(i=>i.nombre&&i.ingreso&&String(i[k]||"").trim()&&parse(i.ingreso)<=f).sort((a,b)=>a.nombre.localeCompare(b.nombre,"es"));
   const fuera=con.filter(i=>fueraEl(i,f)),aca=con.filter(i=>!fueraEl(i,f));
@@ -892,10 +913,10 @@ function renderMed(){
   $("mbar").style.width=(aca.length?Math.round(hechas/aca.length*100):0)+"%";
   const fila=i=>{
     const m=marcas[tomaSel+"|"+i.id],r=el("div","mrow"+(m?(m.estado==="Dada"?" dada":""):" falta")),t=el("div","tx");
-    t.append(el("b","",i.nombre.trim()),el("span","",String(i[k]).trim()));r.append(t);
+    t.append(resaltarM(i.nombre.trim(),qm),el("span","",String(i[k]).trim()));r.append(avatar(i,"av"),t);
     const bt=el("div","bt");
     if(m){bt.append(el("span","est "+(m.estado==="Dada"?"ok":"no"),(m.estado==="Dada"?"✓ Dada":"✗ No la tomó"+(m.motivo?": "+m.motivo:""))+" · "+m.hora+" · "+String(m.usuario).split("@")[0]));
-      if(isAdmin()){const u=el("button","","Desmarcar");u.type="button";u.onclick=()=>marcar(i,"");bt.append(u)}}
+      if(isAdmin()){const u=el("button","","Deshacer");u.type="button";u.onclick=()=>marcar(i,"");bt.append(u)}}
     else if(!isAdmin()){bt.append(el("span","est","Sin marcar"))}
     else if(abiertoNo===i.id){const inp=el("input");inp.placeholder="Motivo (opcional)";inp.id="mot-"+i.id;
       const ok=el("button","d","Guardar «No la tomó»");ok.type="button";ok.onclick=()=>marcar(i,"no",inp.value.trim());
@@ -903,19 +924,34 @@ function renderMed(){
     else{const d=el("button","p","✓ Dada");d.type="button";d.onclick=()=>marcar(i,"dada");
       const n=el("button","","✗ No la tomó");n.type="button";n.onclick=()=>{abiertoNo=i.id;renderMed();setTimeout(()=>{const x=$("mot-"+i.id);if(x)x.focus()},0)};bt.append(d,n)}
     r.append(bt);return r};
-  $("mlist").replaceChildren(...aca.map(fila));
-  $("mfuerah").hidden=!fuera.length;$("mfuera").replaceChildren(...fuera.map(i=>{const r=el("div","mrow"),t=el("div","tx");t.append(el("b","",i.nombre.trim()),el("span","",String(i[k]).trim()));r.append(t);return r}));
+  const faltan=aca.filter(i=>!marcas[tomaSel+"|"+i.id]&&coincide(i)),ya=aca.filter(i=>marcas[tomaSel+"|"+i.id]&&coincide(i)),L=[];
+  if(faltan.length){L.push(el("div","msec",qm?"Coinciden":"Faltan ("+faltan.length+")"));faltan.forEach(i=>L.push(fila(i)))}
+  else if(qm&&!ya.length)L.push(el("p","empty","Nadie con «"+$("mq").value.trim()+"» toma medicación en el "+tomaSel.toLowerCase()+"."));
+  else if(!qm&&aca.length)L.push(el("p","empty","¡Listo! Ya pasaron todos en el "+tomaSel.toLowerCase()+"."));
+  if(ya.length){L.push(el("div","msec","Ya marcados ("+ya.length+")"));ya.forEach(i=>L.push(fila(i)))}
+  $("mlist").replaceChildren(...L);
+  const fuera2=fuera.filter(coincide);$("mfuerah").hidden=!fuera2.length;$("mfuera").replaceChildren(...fuera2.map(i=>{const r=el("div","mrow"),t=el("div","tx");t.append(el("b","",i.nombre.trim()),el("span","",String(i[k]).trim()));r.append(t);return r}));
 }
 async function marcar(i,estado,motivo){
   if(!isAdmin())return;
   const key=tomaSel+"|"+i.id,antes=marcas[key];abiertoNo=null;
   if(estado)marcas[key]={toma:tomaSel,id:i.id,estado:estado==="dada"?"Dada":"No la tomó",motivo:motivo||"",hora:new Date().toTimeString().slice(0,5),usuario:email};else delete marcas[key];
-  renderMed();
+  if(estado){$("mq").value="";$("mok").textContent=(estado==="dada"?"✓ Dada a ":"✗ No la tomó: ")+i.nombre.trim();clearTimeout(marcar.t);marcar.t=setTimeout(()=>$("mok").textContent="",4000)}
+  renderMed(); if(estado)$("mq").focus({preventScroll:true});
   try{const r=await api({action:"marcarMed",fecha:fechaMed(),toma:tomaSel,id:i.id,nombre:i.nombre.trim(),estado,motivo:motivo||"",medicacion:String(i[tomaSel.toLowerCase()]||"")});
     if(!r||r.ok!==true)throw new Error((r&&r.error)||"no se confirmó");
   }catch(e){if(antes)marcas[key]=antes;else delete marcas[key];renderMed();$("mmsg").textContent="No se guardó la marca de "+i.nombre.trim()+": "+e.message}
 }
-$("mfecha").onchange=loadMed; $("mrefresh").onclick=async()=>{await reload();loadMed()};
+const nq=s=>String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+function resaltarM(nombre,q){const b=el("b");const i=q?nq(nombre).indexOf(q):-1;if(i<0){b.textContent=nombre;return b}
+  b.append(nombre.slice(0,i),el("span","mhl",nombre.slice(i,i+q.length)),nombre.slice(i+q.length));return b}
+$("mq").oninput=()=>{abiertoNo=null;renderMed()};
+$("mqx").onclick=()=>{$("mq").value="";renderMed();$("mq").focus()};
+// Enter: si queda uno solo sin marcar, lo marca como Dada
+$("mq").addEventListener("keydown",e=>{if(e.key!=="Enter")return;e.preventDefault();if(!isAdmin())return;
+  const qm=nq($("mq").value.trim());if(!qm)return;const k=tomaSel.toLowerCase(),f=parse(fechaMed());
+  const c=items.filter(i=>i.nombre&&i.ingreso&&String(i[k]||"").trim()&&parse(i.ingreso)<=f&&!fueraEl(i,f)&&!marcas[tomaSel+"|"+i.id]&&nq(i.nombre).includes(qm));
+  if(c.length===1)marcar(c[0],"dada")});
 $("entver").onclick=async()=>{
   const box=$("medh");box.hidden=false;box.replaceChildren(el("small","","Cargando…"));
   try{const r=await api({action:"getEntregas",id:cur.id,dias:30});if(!r||r.ok!==true)throw new Error((r&&r.error)||"error");
