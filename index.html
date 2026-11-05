@@ -1030,7 +1030,7 @@ $("parmar").onclick=async()=>{
       const body=[],estilo=[];
       TOM.forEach(([LAB,T,k,n],ti)=>{const meds=medsT[ti];let usados=1;
         body.push(["",LAB,"",...Array(N).fill("")]);estilo.push("lab");
-        meds.forEach(([nm,ds])=>{body.push([nm,ds,"",...Array.from({length:N},(_,x)=>presente(new Date(Y,M-1,x+1))?"X":"")]);estilo.push("med");usados++});
+        meds.forEach(([nm,ds])=>{body.push([nm,"",ds,...Array.from({length:N},(_,x)=>presente(new Date(Y,M-1,x+1))?"X":"")]);estilo.push("med");usados++});
         if(meds.length){body.push(["","","",...Array.from({length:N},(_,x)=>{const d=new Date(Y,M-1,x+1);if(!presente(d))return"";
             const m=mios.find(z=>z.toma===T&&z.fecha===iso(d));if(m)return ini(m.usuario);
             const e=c.evs.find(z=>d>=z.d&&d<z.v);if(e){const l=llevarDe(i,e,recs);if(l)return ini(l.usuario)}return""})]);estilo.push("ini");usados++}
@@ -1047,8 +1047,8 @@ $("parmar").onclick=async()=>{
       doc.rect(mx,y,W-2*mx,7);doc.setFontSize(9);doc.text("NOMBRE DE RESIDENTE:",mx+3,y+5);doc.setFont("helvetica","normal");doc.setFontSize(11);doc.text(h.nombre,mx+46,y+5);y+=7;
       doc.rect(mx,y,W-2*mx,7);doc.setFont("helvetica","bold");doc.setFontSize(9);doc.text("MES:",mx+3,y+5);doc.text("AÑO:",mx+35,y+5);doc.text("DIAS",mx+68,y+5);
       doc.setFont("helvetica","normal");doc.setFontSize(11);doc.text(String(M),mx+14,y+5);doc.text(String(Y).slice(2),mx+46,y+5);doc.text(String(N),mx+78,y+5);y+=7;
-      const filas=h.body.length+1,rh=Math.min(6.2,(H-y-6)/filas),fs=Math.max(5.5,Math.min(8.5,rh*1.45)),dw=(W-2*mx-48-30-14)/N;
-      const cs={0:{cellWidth:48,halign:"left"},1:{cellWidth:30,halign:"left"},2:{cellWidth:14}};for(let x=0;x<N;x++)cs[x+3]={cellWidth:dw};
+      const filas=h.body.length+1,rh=Math.min(6.2,(H-y-6)/filas),fs=Math.max(5.5,Math.min(8.5,rh*1.45)),dw=(W-2*mx-48-22-22)/N;
+      const cs={0:{cellWidth:48,halign:"left"},1:{cellWidth:22,halign:"left"},2:{cellWidth:22}};for(let x=0;x<N;x++)cs[x+3]={cellWidth:dw};
       doc.autoTable({startY:y,margin:{left:mx,right:mx,top:5,bottom:4},tableWidth:W-2*mx,
         head:[["MEDICACIÓN","HORA","DOSIS",...Array.from({length:N},(_,x)=>String(x+1))]],body:h.body,theme:"grid",columnStyles:cs,
         styles:{font:"helvetica",fontSize:fs,textColor:0,lineColor:0,lineWidth:.25,cellPadding:{top:0,bottom:0,left:1.2,right:1.2},minCellHeight:rh,valign:"middle",halign:"center",overflow:"ellipsize"},
