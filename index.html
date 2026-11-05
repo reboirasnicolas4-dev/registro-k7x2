@@ -999,7 +999,9 @@ $("pabrir").onclick=()=>abrirPlanilla("");
 $("pficha").onclick=()=>abrirPlanilla(cur?cur.id:"");
 $("pcancel").onclick=()=>$("pdlg").close();
 ["pmes","pquien"].forEach(k=>$(k).onchange=()=>{planPDF=null;$("pinfo").hidden=true;$("pdesc").hidden=$("pshare").hidden=true;$("parmar").hidden=false});
-async function cargarLogo(){if(logoData)return logoData;try{const b=await fetch("logo.png").then(r=>r.blob());logoData=await new Promise(ok=>{const f=new FileReader();f.onload=()=>ok(f.result);f.readAsDataURL(b)})}catch(e){logoData=""}return logoData}
+// Logo achicado (para que el PDF pese poco aunque tenga 40 hojas)
+async function cargarLogo(){if(logoData!==null)return logoData;
+  try{logoData=await new Promise((ok,ko)=>{const im=new Image();im.onload=()=>{const c=document.createElement("canvas");c.width=c.height=120;const g=c.getContext("2d");g.fillStyle="#fff";g.fillRect(0,0,120,120);g.drawImage(im,0,0,120,120);ok(c.toDataURL("image/jpeg",.85))};im.onerror=ko;im.src="logo.png"})}catch(e){logoData=""}return logoData}
 const partirMeds=t=>String(t||"").split(/[,;\n]+|\s·\s/).map(x=>x.trim()).filter(Boolean);
 function medDosis(t){const m=t.match(/^(.*?)\s+(\d[\d.,\/]*\s*(mg|mcg|ml|g|gotas?|comp\.?|cc)?\b.*)$/i);return m?[m[1],m[2]]:[t,""]}
 $("parmar").onclick=async()=>{
@@ -1037,9 +1039,9 @@ $("parmar").onclick=async()=>{
       hojas.push({nombre:i.nombre.trim(),body,estilo});
     });
     if(!hojas.length)throw new Error("nadie tiene medicación cargada en ese mes");
-    const doc=new window.jspdf.jsPDF({unit:"mm",format:"a4",orientation:"landscape"}),W=297,H=210,mx=10;
+    const doc=new window.jspdf.jsPDF({unit:"mm",format:"a4",orientation:"landscape",compress:true}),W=297,H=210,mx=10;
     hojas.forEach((h,hi)=>{if(hi)doc.addPage();
-      if(logo)try{doc.addImage(logo,"PNG",W/2-6,5,12,12)}catch(e){}
+      if(logo)try{doc.addImage(logo,"JPEG",W/2-6,5,12,12,"logo")}catch(e){}
       let y=19;doc.setLineWidth(.5);doc.setDrawColor(0);
       doc.rect(mx,y,W-2*mx,7);doc.setFont("helvetica","bold");doc.setFontSize(10.5);doc.text("PLANILLA DE SUMINISTROS DIARIOS DE MEDICACIÓN",W-mx-3,y+5,{align:"right"});y+=7;
       doc.rect(mx,y,W-2*mx,7);doc.setFontSize(9);doc.text("NOMBRE DE RESIDENTE:",mx+3,y+5);doc.setFont("helvetica","normal");doc.setFontSize(11);doc.text(h.nombre,mx+46,y+5);y+=7;
