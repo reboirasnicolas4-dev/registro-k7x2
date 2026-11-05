@@ -164,6 +164,13 @@ a.btn.p{background:var(--acc);color:var(--accx);border-color:var(--acc)}
 .tl{display:grid;gap:6px}
 .tl div{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:14px}
 .tl span{color:var(--mut)}.tl .now{border-color:var(--acc)}
+label.opt{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:var(--bg);color:var(--ink);font-size:14.5px;font-weight:600;cursor:pointer}
+label.opt input{width:auto;margin-top:3px}label.opt small{display:block;font-weight:400;color:var(--mut);font-size:12.5px}
+label.opt:has(input:checked){border:2px solid var(--acc)}
+.drow{display:grid;grid-template-columns:44px minmax(0,1fr);gap:2px 12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px;align-items:center}
+.drow.fin{opacity:.75}.drow .av{grid-row:span 2}.drow b{font-size:15.5px}
+.drow .pl{display:flex;grid-column:2}.drow .nt{grid-column:2;color:var(--mut);font-size:13.5px}
+.drow .bt{grid-column:2;display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}.drow .bt button{font-size:13.5px;padding:8px 12px}
 .ulist{display:grid;gap:10px}
 .uc{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;gap:10px 14px;align-items:center;flex-wrap:wrap}
 .uc .em{font-weight:700;flex:1 1 220px;overflow-wrap:anywhere}.uc .st{font-size:13px;color:var(--mut);flex:1 1 100%}
@@ -354,9 +361,16 @@ a.btn.p{background:var(--acc);color:var(--accx);border-color:var(--acc)}
     <div class="rooms" id="crooms"></div>
     <div class="acts" style="justify-content:flex-start;margin-top:14px"><a href="cuartos/" class="btn p">Abrir Cuartos para rotar o cambiar camas</a></div>
   </section>
+  <section id="vDet" hidden>
+    <button type="button" class="back" data-back>‹ Más</button>
+    <div class="bar"><input id="dq" type="search" placeholder="Buscar por nombre o cédula…" aria-label="Buscar detallado"></div>
+    <div class="msg" id="dmsg" role="alert"></div>
+    <div class="mlist" id="dlist"></div>
+  </section>
   <section id="vMas" hidden>
     <div class="menu-list">
       <button type="button" class="mi" data-go="E"><span>Egresados<small>Los que ya se fueron, con motivo y nota</small></span><i>›</i></button>
+      <button type="button" class="mi" data-go="D"><span>Detallados<small>Los que están haciendo el detallado</small></span><i>›</i></button>
       <button type="button" class="mi" data-go="R" id="miR" hidden><span>Registro<small>Quién cambió qué y cuándo</small></span><i>›</i></button>
       <button type="button" class="mi" data-go="U" id="miU" hidden><span>Usuarios<small>Agregar, quitar y dar códigos (solo vos)</small></span><i>›</i></button>
       <button type="button" class="mi" id="compartir2"><span>Compartir lista<small>PDF de la lista para mandar por WhatsApp</small></span><i>›</i></button>
@@ -364,6 +378,7 @@ a.btn.p{background:var(--acc);color:var(--accx);border-color:var(--acc)}
     </div>
   </section>
   <button type="button" class="fab" id="add" hidden aria-label="Agregar interno">+</button>
+  <button type="button" class="fab" id="dadd" hidden aria-label="Agregar detallado">+</button>
   <nav class="bnav" id="bnav" aria-label="Secciones">
     <button type="button" data-v="I" class="on"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c.6-3.3 3-5 6-5s5.4 1.7 6 5"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14c2.6 0 4.4 1.5 5 4"/></svg></span>Internos</button>
     <button type="button" data-v="M"><span class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="9" width="18" height="7" rx="3.5" transform="rotate(-35 12 12.5)"/><path d="M9.3 8.6l5.6 8"/></svg></span>Medicación</button>
@@ -372,6 +387,17 @@ a.btn.p{background:var(--acc);color:var(--accx);border-color:var(--acc)}
   </nav>
 </main>
 
+<dialog id="ddlg"><form id="df" class="ff">
+  <h2 id="dtit">Detallado</h2>
+  <label>Nombre<input name="nombre" required autocomplete="off"></label>
+  <div class="g2">
+    <label>Cédula<input name="cedula" autocomplete="off" placeholder="1.234.567-8"></label>
+    <label>Desde<input name="fecha" type="date"></label>
+  </div>
+  <label>Nota<textarea name="nota" placeholder="Opcional"></textarea></label>
+  <div class="msg" id="dmsg2" role="alert"></div>
+  <div class="acts"><button type="button" class="d" id="ddel" hidden>Borrar</button><button type="button" id="dcancel">Cancelar</button><button type="submit" class="p" id="dsave">Guardar</button></div>
+</form></dialog>
 <dialog id="cdlg"><div class="ff">
   <div class="cuenta"><div class="me big" id="meBig">N</div><div style="min-width:0"><b id="whoem" style="overflow-wrap:anywhere"></b><div><span class="role" id="whorole"></span></div></div></div>
   <div class="menu-list">
@@ -389,6 +415,10 @@ a.btn.p{background:var(--acc);color:var(--accx);border-color:var(--acc)}
     <label>Fecha de egreso<input name="fecha" type="date" required></label>
     <label>Motivo<select name="motivo" required></select></label>
   </div>
+  <fieldset id="edet"><legend>¿Hace el detallado?</legend>
+    <label class="opt"><input type="radio" name="detallado" value="si" checked><span>Sí, pasa a Detallados<small>Queda en Egresados y además en la pestaña Detallados, desde la fecha de egreso.</small></span></label>
+    <label class="opt"><input type="radio" name="detallado" value="no"><span>No<small>Solo queda en Egresados.</small></span></label>
+  </fieldset>
   <label>Nota<textarea name="nota" placeholder="Opcional"></textarea></label>
   <p style="margin:0;color:var(--mut);font-size:13px">Sale de la lista de internos y pasa a Egresados. No se borra nada.</p>
   <div class="msg" id="emsg2" role="alert"></div>
@@ -720,7 +750,7 @@ $("lf").addEventListener("submit",async e=>{
 });
 $("em").addEventListener("input",()=>{if(!$("setup").hidden)modoSetup(false)});
 $("retry").onclick=()=>{email="";pass="";role="";$("em").value="";modoSetup(false);show("login")};
-$("out").onclick=()=>{cerrarSesion();usuarios=[];$("ulist").replaceChildren();$("ucode").hidden=true;$("ucode").replaceChildren();email="";role="";items=[];$("pw").value="";$("lmsg").textContent="";modoSetup(false);verTab("I");regCargado=false;egrCargado=false;show("login")};
+$("out").onclick=()=>{cerrarSesion();usuarios=[];$("ulist").replaceChildren();$("ucode").hidden=true;$("ucode").replaceChildren();email="";role="";items=[];$("pw").value="";$("lmsg").textContent="";modoSetup(false);verTab("I");regCargado=false;egrCargado=false;detCargado=false;dets=[];show("login")};
 $("chpw").onclick=async()=>{
   const actual=prompt("Contraseña actual:"); if(actual==null)return;
   const nueva=prompt("Nueva contraseña (mínimo 6 caracteres):"); if(nueva==null)return;
@@ -776,7 +806,7 @@ $("nosal").onclick=()=>{const f=$("f"),c=salidaCercana(f.ingreso.value);if(!c){$
   f.nosalioel.value=iso(c.d);f.salioel.value="";f.vuelveel.value="";salInfo()};
 $("add").onclick=()=>openDlg(null);
 /* ===== Egresados ===== */
-const MOTIVOS=["Terminó tratamiento","Se fue antes","Estalló","Derivado","Otro"];
+const MOTIVOS=["Terminó tratamiento","Se fue antes","Derivado","Otro"];
 let egr=[], egrCargado=false;
 const fdi=s=>s?fd(parse(s)):"";
 async function loadEgr(){
@@ -802,10 +832,10 @@ function renderEgr(){
 }
 /* ===== Navegación: barra de abajo ===== */
 let vista="I";
-const VISTAS={I:["vInt","Internos","I"],M:["vMed","Medicación","M"],C:["vCua","Cuartos","C"],X:["vMas","Más","X"],E:["vEgr","Egresados","X"],R:["vReg","Registro","X"],U:["vUsu","Usuarios","X"]};
+const VISTAS={D:["vDet","Detallados","X"],I:["vInt","Internos","I"],M:["vMed","Medicación","M"],C:["vCua","Cuartos","C"],X:["vMas","Más","X"],E:["vEgr","Egresados","X"],R:["vReg","Registro","X"],U:["vUsu","Usuarios","X"]};
 function verTab(k){vista=k;Object.entries(VISTAS).forEach(([t,[v]])=>{$(v).hidden=t!==k});
   $("ttl").textContent=VISTAS[k][1];document.querySelectorAll("#bnav button").forEach(b=>b.classList.toggle("on",b.dataset.v===VISTAS[k][2]));
-  $("add").hidden=!isAdmin()||k!=="I"; window.scrollTo(0,0);
+  $("add").hidden=!isAdmin()||k!=="I"; $("dadd").hidden=!isAdmin()||k!=="D"; window.scrollTo(0,0); if(k==="D")loadDet();
   if(k==="E"&&!egrCargado)loadEgr(); if(k==="R"&&!regCargado)loadReg(); if(k==="M")loadMed(); if(k==="U")loadUsu(); if(k==="C")renderCua(true)}
 document.querySelectorAll("#bnav button").forEach(b=>b.onclick=()=>verTab(b.dataset.v));
 document.querySelectorAll("[data-back]").forEach(b=>b.onclick=()=>verTab("X"));
@@ -836,7 +866,7 @@ async function renderCua(recargar){if(recargar){await cargarCamas()}
   $("cpills").replaceChildren(el("span","pill","Camas libres: "+libres),el("span","pill"+(sin.length?" w":""),"Sin cama: "+sin.length+(sin.length?" ("+sin.map(i=>corto(i.nombre)).join(", ")+")":"")))}
 // Actualizar deslizando hacia abajo (o tocando la línea de arriba)
 async function actualizarVista(){$("ptrb").textContent="Actualizando…";
-  try{if(vista==="I")await reload();else if(vista==="M")await loadMed();else if(vista==="E")await loadEgr();else if(vista==="R")await loadReg();else if(vista==="U")await loadUsu();else if(vista==="C"){await load();renderCua(false)}else await reload()}catch(e){}
+  try{if(vista==="I")await reload();else if(vista==="M")await loadMed();else if(vista==="E")await loadEgr();else if(vista==="R")await loadReg();else if(vista==="U")await loadUsu();else if(vista==="C"){await load();renderCua(false)}else if(vista==="D"){await loadDet()}else await reload()}catch(e){}
   $("ptrb").textContent="↓ Deslizá hacia abajo para actualizar · al día "+new Date().toTimeString().slice(0,5)}
 $("ptrb").onclick=actualizarVista;
 {let y0=null;
@@ -849,9 +879,48 @@ const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+Stri
 function abrirEgreso(it,motivo,fecha){
   if(!it) return; cur=it; const f=$("ef"); f.reset();
   f.motivo.replaceChildren(...MOTIVOS.map(m=>el("option","",m))); f.fecha.value=fecha||iso(hoy); if(motivo)f.motivo.value=motivo;
+  $("edet").hidden=f.motivo.value!=="Terminó tratamiento";
   $("enom").textContent=it.nombre.trim(); $("emsg2").textContent=""; if($("dlg").open)$("dlg").close(); $("edlg").showModal();
 }
 $("egr").onclick=()=>abrirEgreso(cur);
+/* ===== Detallados (pestaña "Detallados" de la planilla) ===== */
+let dets=[], detCargado=false, detArm="", detCur=null;
+async function loadDet(){if(detCargado){renderDet();return}$("dmsg").textContent="Cargando…";
+  try{const r=await api({action:"getSheet",sheet:"Detallados"});if(!r||r.ok!==true)throw new Error((r&&r.error)||"respuesta inesperada");
+    dets=(r.data||[]).map(o=>({fila:o._fila,nombre:String(o.nombre||"").trim(),cedula:String(o.cedula||""),fecha:toISO(o.fecha),nota:String(o.nota||""),fin:toISO(o.terminoel)})).filter(d=>d.nombre);
+    detCargado=true;$("dmsg").textContent="";renderDet()}catch(e){$("dmsg").textContent="No se pudo cargar: "+e.message}}
+function renderDet(){const q=nq($("dq").value.trim()),L=$("dlist"),out=[];
+  const ok=d=>!q||nq(d.nombre+" "+d.cedula).includes(q);
+  const act=dets.filter(d=>!d.fin&&ok(d)).sort((a,b)=>(a.fecha||"9")<(b.fecha||"9")?1:-1),ter=dets.filter(d=>d.fin&&ok(d)).sort((a,b)=>a.fin<b.fin?1:-1);
+  const tarjeta=d=>{const r=el("div","drow"+(d.fin?" fin":""));r.append(el("div","av",iniciales(d.nombre)),el("b","",d.nombre));
+    const pl=el("div","pl");
+    if(d.fin)pl.append(el("span","pill",(d.fecha?fd(parse(d.fecha)).slice(0,5):"¿?")+" → "+fd(parse(d.fin))));
+    else if(d.fecha){const n=days(parse(d.fecha),hoy);pl.append(el("span","pill o",n<=0?"Desde hoy":"Desde el "+fd(parse(d.fecha))+" · hace "+n+(n===1?" día":" días")))}
+    else pl.append(el("span","pill w","Falta la fecha"));
+    if(d.cedula)pl.append(el("span","pill",d.cedula));r.append(pl);
+    if(d.nota)r.append(el("div","nt",d.nota));
+    if(isAdmin()){const bt=el("div","bt");
+      if(!d.fin){const t=el("button","",detArm===d.fila?"¿Seguro? Tocá de nuevo":"Terminó el detallado");t.type="button";
+        t.onclick=()=>{if(detArm!==d.fila){detArm=d.fila;renderDet();return}detArm="";guardarDet(d,{"Terminó el":iso(hoy)},"Terminó el detallado: "+d.nombre)};bt.append(t)}
+      else{const u=el("button","","Volver a Detallados");u.type="button";u.onclick=()=>guardarDet(d,{"Terminó el":""},"Volvió a Detallados: "+d.nombre);bt.append(u)}
+      const e=el("button","","Editar");e.type="button";e.onclick=()=>abrirDet(d);bt.append(e);r.append(bt)}
+    return r};
+  out.push(el("div","msec","Haciendo el detallado ("+act.length+")"));act.forEach(d=>out.push(tarjeta(d)));
+  if(!act.length)out.push(el("p","empty",q?"Nadie coincide con la búsqueda.":"Nadie está haciendo el detallado ahora."));
+  if(ter.length){out.push(el("div","msec","Ya terminaron ("+ter.length+")"));ter.forEach(d=>out.push(tarjeta(d)))}
+  L.replaceChildren(...out)}
+async function guardarDet(d,rec,log){$("dmsg").textContent="Guardando…";
+  try{const r=d?await api({action:"updateRow",sheet:"Detallados",fila:d.fila,record:rec,log}):await api({action:"addRow",sheet:"Detallados",record:rec,log});
+    confirmar(r);detCargado=false;await loadDet();return true}catch(e){$("dmsg").textContent="No se pudo guardar: "+e.message;return false}}
+function abrirDet(d){detCur=d||null;const f=$("df");f.reset();$("dmsg2").textContent="";$("dtit").textContent=d?d.nombre:"Agregar detallado";
+  f.nombre.value=d?d.nombre:"";f.cedula.value=d?d.cedula:"";f.fecha.value=d?d.fecha:iso(hoy);f.nota.value=d?d.nota:"";$("ddel").hidden=true;$("ddlg").showModal()}
+$("df").addEventListener("submit",async e=>{e.preventDefault();const f=$("df");
+  const rec={"Nombre":f.nombre.value.trim(),"Cédula":f.cedula.value.trim(),"Fecha":f.fecha.value,"Nota":f.nota.value.trim()};
+  $("dsave").disabled=true;const ok=await guardarDet(detCur,rec,(detCur?"Editó en Detallados: ":"Agregó a Detallados: ")+rec["Nombre"]);$("dsave").disabled=false;
+  if(ok)$("ddlg").close();else $("dmsg2").textContent=$("dmsg").textContent});
+$("dcancel").onclick=()=>$("ddlg").close();
+$("dadd").onclick=()=>abrirDet(null);
+$("dq").oninput=renderDet;
 /* ===== Terminan pronto ===== */
 function renderFin(all){
   const prox=all.filter(x=>x.c.fin>=hoy&&days(hoy,x.c.fin)<=AV_FIN).sort((a,b)=>a.c.fin-b.c.fin);
@@ -969,13 +1038,18 @@ $("medver").onclick=async()=>{
   }catch(e){box.replaceChildren(el("small","","No se pudo cargar: "+e.message))}
 };
 $("ecancel").onclick=()=>$("edlg").close();
+$("ef").motivo.addEventListener("change",()=>{$("edet").hidden=$("ef").motivo.value!=="Terminó tratamiento"});
 $("ef").addEventListener("submit",async e=>{
   e.preventDefault(); if(!isAdmin()||!cur) return; const f=$("ef");
   $("esave").disabled=true; $("esave").textContent="Guardando…";
   try{
     const r=await api({action:"darEgreso",id:cur.id,fecha:f.fecha.value,motivo:f.motivo.value,nota:f.nota.value.trim()});
-    confirmar(r); const nom=cur.nombre.trim(); $("edlg").close(); egrCargado=false; await reload();
-    $("amsg").textContent="Egreso de "+nom+" guardado."+(r.cama?" Se liberó su cama en "+r.cama+".":"");
+    confirmar(r); const nom=cur.nombre.trim(),ced=cur.cedula||""; let det="";
+    if(f.motivo.value==="Terminó tratamiento"&&f.detallado.value==="si"){
+      try{const d=await api({action:"addRow",sheet:"Detallados",record:{"Nombre":nom,"Cédula":ced,"Fecha":f.fecha.value,"Nota":""},log:"Pasó a Detallados: "+nom});
+        confirmar(d);det=" Pasó a Detallados.";detCargado=false}catch(e2){det=" No se pudo anotar en Detallados ("+e2.message+"): agregalo a mano desde Más › Detallados."}}
+    $("edlg").close(); egrCargado=false; await reload();
+    $("amsg").textContent="Egreso de "+nom+" guardado."+(r.cama?" Se liberó su cama en "+r.cama+".":"")+det;
   }catch(err){$("emsg2").textContent="No se pudo dar de egreso: "+err.message}
   finally{$("esave").disabled=false;$("esave").textContent="Dar de egreso"}
 });
