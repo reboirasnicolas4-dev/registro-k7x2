@@ -105,6 +105,51 @@ textarea{min-height:56px;resize:vertical}
 .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}.acts .d{margin-right:auto}
 details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{margin-top:8px}
 .msg{color:var(--bad);font-size:13px;min-height:1em}
+/* ===== Versión simplificada ===== */
+main{padding-bottom:110px}
+.appbar{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.appbar .alogo{width:38px;height:38px;border-radius:50%}
+.appbar h1{flex:1;font:700 26px/1.1 Fraunces,Georgia,serif;margin:0}
+.me{width:40px;height:40px;border-radius:50%;border:0;padding:0;background:var(--acc);color:var(--accx);font:700 17px "Hanken Grotesk",system-ui,sans-serif;flex:none}
+.me.big{width:64px;height:64px;font-size:26px;display:grid;place-items:center;border-radius:16px}
+.cuenta{display:flex;gap:14px;align-items:center}
+#cdlg .ff{padding:20px;display:grid;gap:14px}
+.ptrb{display:block;width:100%;border:0;background:none;color:var(--mut);font-size:12px;padding:2px 0 8px;font-weight:400}
+.ptr{height:0;overflow:hidden;text-align:center;color:var(--mut);font-size:13px;transition:height .15s}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:99px;padding:6px 12px;font-weight:600;font-size:13px}
+.chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip.share{margin-left:auto}
+.pl{display:none;gap:5px;flex-wrap:wrap;margin-top:4px}
+.pill{font-size:11.5px;font-weight:700;border-radius:6px;padding:2px 7px;background:var(--line);color:var(--ink)}
+.pill.w{background:var(--warn);color:var(--warnx)}
+.pill.o{background:color-mix(in srgb,var(--acc) 25%,transparent)}
+.fab{position:fixed;right:max(18px,env(safe-area-inset-right,0px));bottom:calc(84px + env(safe-area-inset-bottom,0px));width:58px;height:58px;border-radius:18px;border:0;padding:0;background:var(--acc);color:var(--accx);font:400 32px/1 "Hanken Grotesk",system-ui,sans-serif;box-shadow:0 8px 22px -6px rgba(0,0,0,.45);z-index:20}
+.bnav{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(4,1fr);background:var(--card);border-top:1px solid var(--line);padding:6px max(6px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(6px,env(safe-area-inset-left,0px))}
+.bnav button{border:0;background:none;color:var(--mut);font-size:11.5px;font-weight:600;display:grid;justify-items:center;gap:2px;padding:6px 0;border-radius:0}
+.bnav svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;display:block}
+.bnav .ico{padding:2px 16px;border-radius:99px}
+.bnav button.on{color:var(--ink)}.bnav button.on .ico{background:color-mix(in srgb,var(--acc) 30%,transparent)}
+@media (min-width:701px){.bnav{left:50%;right:auto;transform:translateX(-50%);width:min(560px,100%);border:1px solid var(--line);border-bottom:0;border-radius:16px 16px 0 0}}
+.back{border:0;background:none;padding:4px 0 10px;font-weight:700;color:var(--ink)}
+.menu-list{display:grid;gap:8px}
+.mi{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:14px;border-radius:12px;font-weight:600;font-size:15px}
+.mi span{flex:1;min-width:0}.mi small{display:block;font-weight:400;color:var(--mut);font-size:12.5px}.mi i{font-style:normal;color:var(--mut);font-size:20px}
+.rooms{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+.room{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:6px}
+.room .h{display:flex;justify-content:space-between;gap:8px;font-weight:700}.room .h span{font-weight:600;color:var(--mut);font-size:13px}
+.room .h span.full{color:var(--ink)}.room .ppl{font-size:13px;color:var(--mut)}
+a.btn{display:inline-block;text-decoration:none;border:1px solid var(--line);background:var(--card);border-radius:8px;padding:10px 16px;font-weight:700;color:var(--ink)}
+a.btn.p{background:var(--acc);color:var(--accx);border-color:var(--acc)}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:3px}
+.seg button{border:0;background:none;padding:8px 0;border-radius:8px;font-weight:600;font-size:14px;color:var(--mut)}
+.seg button.on{background:var(--acc);color:var(--accx)}
+.pane{display:grid;gap:12px}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px}
+.kv div{min-width:0}.kv small{display:block;font-size:11px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+.tl{display:grid;gap:6px}
+.tl div{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:14px}
+.tl span{color:var(--mut)}.tl .now{border-color:var(--acc)}
 .ulist{display:grid;gap:10px}
 .uc{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;gap:10px 14px;align-items:center;flex-wrap:wrap}
 .uc .em{font-weight:700;flex:1 1 220px;overflow-wrap:anywhere}.uc .st{font-size:13px;color:var(--mut);flex:1 1 100%}
@@ -135,6 +180,13 @@ details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{mar
   .wrap.cards td.wide{grid-column:1/-1}
   .wrap.cards tr.r:hover td{background:none}
   .wrap.cards tr.r:active{background:color-mix(in srgb,var(--acc) 8%,var(--card))}
+  /* lista de internos: solo foto, nombre, tipo y lo próximo */
+  .wrap.cards #rows tr{display:flex;align-items:center;gap:10px;padding:10px 12px}
+  .wrap.cards #rows td{display:none}
+  .wrap.cards #rows td.n{display:block;flex:1;font-size:15px}
+  .wrap.cards #rows tr::after{content:"›";color:var(--mut);font-size:20px}
+  #rows .av{width:44px;height:44px}
+  #rows .pl{display:flex}
   /* encabezado, pestañas y resumen más compactos */
   .who{flex-wrap:wrap;gap:8px;width:100%}
   .who #whoem{flex:1 1 100%;overflow-wrap:anywhere}
@@ -183,7 +235,7 @@ details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{mar
       <label>Repetila<input id="np2" type="password" autocomplete="new-password" minlength="6"></label>
     </div>
     <label class="chk" style="display:flex;gap:8px;align-items:center;font-size:14px"><input id="rec" type="checkbox" style="width:auto"> Recordarme en este dispositivo (30 días)</label>
-    <details><summary>Conexión con Google (avanzado)</summary>
+    <details hidden><summary>Conexión con Google (avanzado)</summary>
       <label>URL de la Web App<input id="apiurl" type="url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off"></label>
     </details>
     <div class="msg" id="lmsg" role="alert"></div>
@@ -200,27 +252,23 @@ details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{mar
 </section>
 
 <main id="app" hidden>
-  <div class="top">
-    <div><h1>Internos</h1><p class="sub" id="hoy"></p></div>
-    <div class="who"><span id="whoem"></span><span class="role" id="whorole"></span><a href="cuartos/" class="role" style="text-decoration:none;padding:8px 12px;border-radius:8px">🛏️ Cuartos</a><button id="chpw">Cambiar contraseña</button><button id="out">Salir</button></div>
-  </div>
-  <div class="tabs" role="tablist">
-    <button id="tabI" class="on" role="tab">Internos</button>
-    <button id="tabM" role="tab">Medicación</button>
-    <button id="tabE" role="tab">Egresados</button>
-    <button id="tabR" role="tab" hidden>Registro</button>
-    <button id="tabU" role="tab" hidden>Usuarios</button>
-  </div>
+  <header class="appbar">
+    <img src="logo.png" alt="" class="alogo"><h1 id="ttl">Internos</h1>
+    <button type="button" class="me" id="me" aria-label="Tu cuenta">N</button>
+  </header>
+  <p class="sub" id="hoy" hidden></p>
+  <button type="button" class="ptrb" id="ptrb">↓ Deslizá hacia abajo para actualizar</button>
+  <div class="ptr" id="ptr"></div>
   <section id="vInt">
   <div class="stats" id="stats"></div>
   <div class="finbox" id="finbox" hidden></div>
   <div class="bar">
     <input id="q" type="search" placeholder="Buscar por nombre o cédula…" aria-label="Buscar">
-    <select id="ft" aria-label="Tipo"><option value="">Todos los tipos</option><option>Privado</option><option>MIDES</option></select>
-    <button id="refresh">Actualizar</button>
-    <button id="imprimir">Imprimir lista</button>
-    <button id="compartir">Compartir PDF</button>
-    <button class="p" id="add" hidden>Agregar interno</button>
+    <select id="ft" aria-label="Tipo" hidden><option value="">Todos los tipos</option><option>Privado</option><option>MIDES</option></select>
+  </div>
+  <div class="chips" id="fchips">
+    <button type="button" class="chip on" data-t="">Todos</button><button type="button" class="chip" data-t="MIDES">MIDES</button><button type="button" class="chip" data-t="Privado">Privado</button>
+    <button type="button" class="chip share" id="compartir">⤴ Compartir</button>
   </div>
   <div class="msg" id="amsg" role="alert"></div>
   <div class="fstat" id="fstat" hidden></div>
@@ -230,6 +278,7 @@ details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{mar
   </table><div class="empty" id="empty" hidden>No hay internos para mostrar.</div></div>
   </section>
   <section id="vEgr" hidden>
+    <button type="button" class="back" data-back>‹ Más</button>
     <div class="bar">
       <input id="eq" type="search" placeholder="Buscar por nombre o cédula…" aria-label="Buscar egresado">
       <select id="em2" aria-label="Motivo"><option value="">Todos los motivos</option></select>
@@ -257,6 +306,7 @@ details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{mar
     <div class="mlist" id="mfuera"></div>
   </section>
   <section id="vUsu" hidden>
+    <button type="button" class="back" data-back>‹ Más</button>
     <form id="uf" class="bar">
       <input id="unew" type="email" required placeholder="Correo del usuario nuevo (Gmail)" aria-label="Correo del usuario nuevo" autocomplete="off">
       <select id="urol" aria-label="Rol"><option>Usuario</option><option>Admin</option></select>
@@ -268,6 +318,7 @@ details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{mar
     <div class="ulist" id="ulist"></div>
   </section>
   <section id="vReg" hidden>
+    <button type="button" class="back" data-back>‹ Más</button>
     <div class="bar">
       <input id="rq" type="search" placeholder="Buscar por interno, usuario o detalle…" aria-label="Buscar en el registro">
       <select id="ra" aria-label="Acción"><option value="">Todas las acciones</option></select>
@@ -280,7 +331,38 @@ details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{mar
       <tbody id="rrows"></tbody>
     </table><div class="empty" id="rempty" hidden>Todavía no hay cambios registrados.</div></div>
   </section>
+  <section id="vCua" hidden>
+    <div class="chips" id="cpills"></div>
+    <div class="rooms" id="crooms"></div>
+    <div class="acts" style="justify-content:flex-start;margin-top:14px"><a href="cuartos/" class="btn p">Abrir Cuartos para rotar o cambiar camas</a></div>
+  </section>
+  <section id="vMas" hidden>
+    <div class="menu-list">
+      <button type="button" class="mi" data-go="E"><span>Egresados<small>Los que ya se fueron, con motivo y nota</small></span><i>›</i></button>
+      <button type="button" class="mi" data-go="R" id="miR" hidden><span>Registro<small>Quién cambió qué y cuándo</small></span><i>›</i></button>
+      <button type="button" class="mi" data-go="U" id="miU" hidden><span>Usuarios<small>Agregar, quitar y dar códigos (solo vos)</small></span><i>›</i></button>
+      <button type="button" class="mi" id="compartir2"><span>Compartir lista<small>PDF de la lista para mandar por WhatsApp</small></span><i>›</i></button>
+      <button type="button" class="mi" id="imprimir"><span>Imprimir lista<small>Desde la computadora</small></span><i>›</i></button>
+    </div>
+  </section>
+  <button type="button" class="fab" id="add" hidden aria-label="Agregar interno">+</button>
+  <nav class="bnav" id="bnav" aria-label="Secciones">
+    <button type="button" data-v="I" class="on"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c.6-3.3 3-5 6-5s5.4 1.7 6 5"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14c2.6 0 4.4 1.5 5 4"/></svg></span>Internos</button>
+    <button type="button" data-v="M"><span class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="9" width="18" height="7" rx="3.5" transform="rotate(-35 12 12.5)"/><path d="M9.3 8.6l5.6 8"/></svg></span>Medicación</button>
+    <button type="button" data-v="C"><span class="ico"><svg viewBox="0 0 24 24"><path d="M3 18V7M3 13h18v5M21 13v-2a3 3 0 0 0-3-3h-7v5"/><circle cx="7" cy="10.5" r="1.8"/></svg></span>Cuartos</button>
+    <button type="button" data-v="X"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/></svg></span>Más</button>
+  </nav>
 </main>
+
+<dialog id="cdlg"><div class="ff">
+  <div class="cuenta"><div class="me big" id="meBig">N</div><div style="min-width:0"><b id="whoem" style="overflow-wrap:anywhere"></b><div><span class="role" id="whorole"></span></div></div></div>
+  <div class="menu-list">
+    <button type="button" class="mi" id="chpw"><span>Cambiar contraseña</span><i>›</i></button>
+    <button type="button" class="mi" id="goU" hidden><span>Usuarios<small>Solo vos</small></span><i>›</i></button>
+    <button type="button" class="mi" id="out"><span>Salir</span><i>›</i></button>
+  </div>
+  <div class="acts"><button type="button" id="cclose">Cerrar</button></div>
+</div></dialog>
 
 <dialog id="edlg"><form id="ef" class="ff">
   <h2>Dar de egreso</h2>
@@ -309,13 +391,18 @@ details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{mar
     </div>
   </div>
   <div class="cuinfo" id="cuinfo" hidden></div>
+  <div class="seg" id="fseg"><button type="button" data-s="d" class="on">Datos</button><button type="button" data-s="s">Salidas</button><button type="button" data-s="m">Medicación</button></div>
+  <div class="pane" data-p="d">
+  <div class="kv" id="fres" hidden></div>
   <label>Nombre<input name="nombre" required autocomplete="off"></label>
   <div class="g2">
     <label>Cédula<input name="cedula" autocomplete="off" placeholder="1.234.567-8"></label>
     <label>Tipo<select name="tipo"><option>Privado</option><option>MIDES</option></select></label>
   </div>
   <label>Fecha de ingreso<input name="ingreso" type="date" required></label>
-  <fieldset><legend>Salida</legend>
+  </div>
+  <fieldset class="pane" data-p="s"><legend>Salidas</legend>
+    <div class="tl" id="fplan"></div>
     <small style="color:var(--mut)">Se calcula sola. Usá esto solo si sale otro día o si no sale.</small>
     <div class="g2">
       <label>Salió el<input name="salioel" type="date"></label>
@@ -329,7 +416,7 @@ details{color:var(--mut);font-size:13px}summary{cursor:pointer}details label{mar
     </div>
     <small id="salinfo" style="color:var(--mut)"></small>
   </fieldset>
-  <fieldset><legend>Medicación</legend>
+  <fieldset class="pane" data-p="m"><legend>Medicación</legend>
     <label>Desayuno<textarea name="desayuno"></textarea></label>
     <label>Almuerzo<textarea name="almuerzo"></textarea></label>
     <label>Merienda<textarea name="merienda"></textarea></label>
@@ -517,7 +604,7 @@ function show(which){["login","denied","app"].forEach(k=>$(k).hidden=k!==which)}
 function render(){
   $("hoy").textContent="Hoy es "+fd(hoy)+". Tratamiento de "+DUR+" meses; primera salida a los "+PRIMERA+" meses.";
   $("amsg").textContent=scriptViejo?"Atención: tu Apps Script de Google sigue con el código viejo, así que agregar, editar y eliminar no van a funcionar. Pegá el código nuevo, guardalo y publicá una Nueva versión (Implementar > Administrar implementaciones > lápiz > Nueva versión).":"";
-  $("whoem").textContent=email; $("whorole").textContent=role; $("add").hidden=!isAdmin();
+  $("whoem").textContent=email; $("whorole").textContent=role;
   const q=$("q").value.trim().toLowerCase(), ft=$("ft").value;
   const all=items.filter(i=>i.nombre&&i.ingreso).map(i=>({i,c:calc(i)}));
   $("stats").replaceChildren(...[[all.length,"internos","",""],[all.filter(x=>x.c.salSoon).length,"salen en "+AV_SAL+" días o menos","w","sal"],[all.filter(x=>x.c.finSoon).length,"terminan en "+AV_FIN+" días o menos","w","fin"]]
@@ -525,13 +612,18 @@ function render(){
       s.append(el("b","",String(n)),el("span","",l));s.onclick=()=>{filtroStat=(filtroStat===f?"":f);render();if(filtroStat)$("rows").closest(".wrap").scrollIntoView({behavior:"smooth",block:"start"})};return s}));
   {const fb=$("fstat");fb.hidden=!filtroStat;if(filtroStat){fb.replaceChildren(el("span","",filtroStat==="sal"?"Mostrando solo los que salen en "+AV_SAL+" días o menos":"Mostrando solo los que terminan en "+AV_FIN+" días o menos"));
     const x=el("button","","Ver todos");x.type="button";x.onclick=()=>{filtroStat="";render()};fb.append(x)}}
-  renderFin(all); $("tabR").hidden=!isAdmin(); $("tabU").hidden=email!=="reboirasnicolas4@gmail.com";
+  $("finbox").hidden=true; $("miR").hidden=!isAdmin(); $("miU").hidden=$("goU").hidden=email!=="reboirasnicolas4@gmail.com";
+  $("me").textContent=$("meBig").textContent=(email[0]||"?").toUpperCase(); $("add").hidden=!isAdmin()||vista!=="I";
+  document.querySelectorAll("#fchips .chip[data-t]").forEach(b=>b.classList.toggle("on",b.dataset.t===ft));
+  $("ptrb").textContent="↓ Deslizá hacia abajo para actualizar · al día "+new Date().toTimeString().slice(0,5);
   const list=all.filter(({i,c})=>(!ft||i.tipo===ft)&&(!q||(i.nombre+" "+i.cedula).toLowerCase().includes(q))&&(filtroStat!=="sal"||c.salSoon)&&(filtroStat!=="fin"||c.finSoon))
     .sort(filtroStat==="sal"?(a,b)=>a.c.sal-b.c.sal:filtroStat==="fin"?(a,b)=>a.c.fin-b.c.fin:(a,b)=>(a.c.ing-b.c.ing)*(asc?1:-1));
   const tb=$("rows"); tb.replaceChildren(); $("empty").hidden=list.length>0;
   list.forEach(({i,c})=>{
     const tr=el("tr","r"); tr.tabIndex=0;
-    {const td=el("td","n"),w=el("div","nm");w.append(avatar(i,"av"),el("span","",i.nombre.trim()));td.append(w);tr.append(td)} cell(tr,i.cedula); cell(tr,fd(c.ing)); cell(tr,c.lleva); cell(tr,c.falta);
+    {const td=el("td","n"),w=el("div","nm"),tx=el("div"),pl=el("div","pl");tx.style.minWidth="0";
+      pl.append(el("span","pill",i.tipo||"—"));const [pt,pc]=evento(c);pl.append(el("span","pill"+(pc?" "+pc:""),pt));
+      tx.append(el("span","",i.nombre.trim()),pl);w.append(avatar(i,"av"),tx);td.append(w);tr.append(td)} cell(tr,i.cedula); cell(tr,fd(c.ing)); cell(tr,c.lleva); cell(tr,c.falta);
     cell(tr,fd(c.fin),"",c.finSoon); cell(tr,c.sal?fd(c.sal):"Sin salidas pendientes","",c.salSoon); cell(tr,c.salF,"",c.salSoon); cell(tr,c.vuelve);
     const t=el("td"); t.append(el("span","t",i.tipo)); tr.append(t);
     tr.onclick=()=>openDlg(i); tr.onkeydown=e=>{if(e.key==="Enter")openDlg(i)};
@@ -554,10 +646,19 @@ function openDlg(it){
   [...f.elements].forEach(x=>{if(x.tagName!=="BUTTON"&&x.tagName!=="FIELDSET")x.disabled=ro});
   $("save").hidden=ro; $("del").hidden=ro||!it; $("egr").hidden=ro||!it; $("cancel").textContent=ro?"Cerrar":"Cancelar";
   $("ft2").textContent=it?it.nombre.trim():"Agregar interno";
+  $("fseg").hidden=!it; verSol("d");
+  {const fr=$("fres"),pl=$("fplan");fr.replaceChildren();pl.replaceChildren();fr.hidden=!it;
+   if(it&&it.ingreso){const c=calc(it);[["Lleva",c.lleva],["Le falta",c.falta],["Finaliza",fd(c.fin)],["Próxima salida",c.sal?fd(c.sal):"Sin salidas pendientes"]].forEach(([k,v])=>{const d=el("div");d.append(el("small","",k),el("span","",v));fr.append(d)});
+     c.evs.slice().sort((a,b)=>a.d-b.d).forEach((e2,k)=>{const now=hoy>=e2.d&&hoy<=e2.v,est=e2.v<hoy?"Hecha":now?"Ahora":"Pendiente";
+       const d=el("div",now?"now":"");d.append(el("b","",(k+1)+".ª salida"),el("span","",fd(e2.d).slice(0,5)+" → "+fd(e2.v).slice(0,5)+" · "+est));pl.append(d)});
+     if(!c.evs.length)pl.append(el("small","","Todavía no tiene salidas."))}}
   $("dlg").showModal();
 }
 async function reload(){try{await load();$("amsg").textContent="";render()}catch(e){$("amsg").textContent="No se pudo actualizar la lista: "+e.message}}
 
+function verSol(k){document.querySelectorAll("#fseg button").forEach(b=>b.classList.toggle("on",b.dataset.s===k));document.querySelectorAll("#f .pane").forEach(p=>p.hidden=p.dataset.p!==k&&!$("fseg").hidden)}
+document.querySelectorAll("#fseg button").forEach(b=>b.onclick=()=>verSol(b.dataset.s));
+$("f").addEventListener("invalid",()=>verSol("d"),true);
 /* ===== Celular: pone el nombre de la columna en cada dato para verlo como tarjeta ===== */
 document.querySelectorAll(".wrap.cards table").forEach(t=>{
   const tb=t.tBodies[0];
@@ -656,7 +757,6 @@ $("volvio").onclick=()=>{const f=$("f");f.salioel.value="";f.vuelveel.value="";f
 $("nosal").onclick=()=>{const f=$("f"),c=salidaCercana(f.ingreso.value);if(!c){$("msg").textContent="No tiene salidas programadas.";return}
   f.nosalioel.value=iso(c.d);f.salioel.value="";f.vuelveel.value="";salInfo()};
 $("add").onclick=()=>openDlg(null);
-$("refresh").onclick=reload;
 /* ===== Egresados ===== */
 const MOTIVOS=["Terminó tratamiento","Se fue antes","Estalló","Derivado","Otro"];
 let egr=[], egrCargado=false;
@@ -682,9 +782,50 @@ function renderEgr(){
   list.forEach(o=>{const tr=el("tr");cell(tr,o.nombre.trim(),"n");cell(tr,o.cedula);cell(tr,fdi(o.ingreso));cell(tr,fdi(o.egreso));cell(tr,o.motivo);
     const t=el("td");if(o.tipo)t.append(el("span","t",o.tipo));tr.append(t);cell(tr,o.nota);tb.append(tr)});
 }
-function verTab(k){[["I","vInt"],["M","vMed"],["E","vEgr"],["R","vReg"],["U","vUsu"]].forEach(([t,v])=>{$(v).hidden=t!==k;$("tab"+t).classList.toggle("on",t===k)});
-  if(k==="E"&&!egrCargado)loadEgr(); if(k==="R"&&!regCargado)loadReg(); if(k==="M")loadMed(); if(k==="U")loadUsu()}
-$("tabI").onclick=()=>verTab("I"); $("tabM").onclick=()=>verTab("M"); $("tabE").onclick=()=>verTab("E"); $("tabR").onclick=()=>verTab("R"); $("tabU").onclick=()=>verTab("U");
+/* ===== Navegación: barra de abajo ===== */
+let vista="I";
+const VISTAS={I:["vInt","Internos","I"],M:["vMed","Medicación","M"],C:["vCua","Cuartos","C"],X:["vMas","Más","X"],E:["vEgr","Egresados","X"],R:["vReg","Registro","X"],U:["vUsu","Usuarios","X"]};
+function verTab(k){vista=k;Object.entries(VISTAS).forEach(([t,[v]])=>{$(v).hidden=t!==k});
+  $("ttl").textContent=VISTAS[k][1];document.querySelectorAll("#bnav button").forEach(b=>b.classList.toggle("on",b.dataset.v===VISTAS[k][2]));
+  $("add").hidden=!isAdmin()||k!=="I"; window.scrollTo(0,0);
+  if(k==="E"&&!egrCargado)loadEgr(); if(k==="R"&&!regCargado)loadReg(); if(k==="M")loadMed(); if(k==="U")loadUsu(); if(k==="C")renderCua(true)}
+document.querySelectorAll("#bnav button").forEach(b=>b.onclick=()=>verTab(b.dataset.v));
+document.querySelectorAll("[data-back]").forEach(b=>b.onclick=()=>verTab("X"));
+document.querySelectorAll("#vMas [data-go]").forEach(b=>b.onclick=()=>verTab(b.dataset.go));
+$("compartir2").onclick=()=>$("compartir").click();
+document.querySelectorAll("#fchips .chip[data-t]").forEach(b=>b.onclick=()=>{$("ft").value=b.dataset.t;render()});
+// Menú de la cuenta (la letra de arriba)
+$("me").onclick=()=>$("cdlg").showModal(); $("cclose").onclick=()=>$("cdlg").close();
+$("goU").onclick=()=>verTab("U");
+$("cdlg").addEventListener("click",e=>{if(e.target===$("cdlg")||e.target.closest("#goU,#out"))$("cdlg").close()},true);
+// Lo próximo de cada interno, para la etiqueta de la lista
+function evento(c){const d=x=>days(hoy,x),dm=x=>String(x.getDate()).padStart(2,"0")+"/"+String(x.getMonth()+1).padStart(2,"0");
+  if(c.vuelve)return["De salida · vuelve "+(c.vuelve==="Hoy"?"hoy":"en "+c.vuelve),"o"];
+  if(c.fin<=hoy)return["Cumplió el tratamiento","w"];
+  if(c.finSoon){const n=d(c.fin);return[n===0?"Termina hoy":"Termina en "+n+(n===1?" día":" días"),"w"]}
+  if(c.salSoon){const n=d(c.sal);return[n===0?"Sale hoy":"Sale en "+n+(n===1?" día":" días"),"w"]}
+  if(c.sal)return["Próxima salida "+dm(c.sal),""];
+  return["Termina el "+fd(c.fin),""]}
+// Cuartos: resumen desde la pestaña Cuartos
+const CU_DEF=[["Tropilla",14,x=>!!x.sector],["Cuarto 0",4,x=>!x.sector&&x.cuarto==="0"],["Cuarto 1",6,x=>!x.sector&&x.cuarto==="1"],["Cuarto 2",6,x=>!x.sector&&x.cuarto==="2"],["Cuarto 3",4,x=>!x.sector&&x.cuarto==="3"],["Cuarto 4",8,x=>!x.sector&&x.cuarto==="4"]];
+async function renderCua(recargar){if(recargar){await cargarCamas()}
+  const act=items.filter(i=>i.nombre&&i.ingreso), corto=n=>{const p=n.trim().split(/\s+/);return p[0]+(p[1]?" "+p[1][0]+".":"")};
+  let libres=0;const R=$("crooms");R.replaceChildren();
+  CU_DEF.forEach(([n,cap,f])=>{const ps=act.filter(i=>camas[i.id]&&f(camas[i.id]));libres+=Math.max(0,cap-ps.length);
+    const r=el("div","room"),h=el("div","h",n);h.append(el("span",ps.length>=cap?"full":"",ps.length+"/"+cap+" camas"));
+    r.append(h,el("div","ppl",ps.length?ps.map(i=>corto(i.nombre)+(n==="Tropilla"?" ("+camas[i.id].sector+")":"")).join(" · "):"Vacío"));R.append(r)});
+  const sin=act.filter(i=>!camas[i.id]||(!camas[i.id].sector&&!camas[i.id].cuarto));
+  $("cpills").replaceChildren(el("span","pill","Camas libres: "+libres),el("span","pill"+(sin.length?" w":""),"Sin cama: "+sin.length+(sin.length?" ("+sin.map(i=>corto(i.nombre)).join(", ")+")":"")))}
+// Actualizar deslizando hacia abajo (o tocando la línea de arriba)
+async function actualizarVista(){$("ptrb").textContent="Actualizando…";
+  try{if(vista==="I")await reload();else if(vista==="M")await loadMed();else if(vista==="E")await loadEgr();else if(vista==="R")await loadReg();else if(vista==="U")await loadUsu();else if(vista==="C"){await load();renderCua(false)}else await reload()}catch(e){}
+  $("ptrb").textContent="↓ Deslizá hacia abajo para actualizar · al día "+new Date().toTimeString().slice(0,5)}
+$("ptrb").onclick=actualizarVista;
+{let y0=null;
+ addEventListener("touchstart",e=>{y0=(window.scrollY<=0&&!$("app").hidden&&!document.querySelector("dialog[open]"))?e.touches[0].clientY:null},{passive:true});
+ addEventListener("touchmove",e=>{if(y0==null)return;const d=e.touches[0].clientY-y0;const p=$("ptr");p.style.height=Math.min(44,Math.max(0,d/3))+"px";p.textContent=d>150?"Soltá para actualizar":"↓ Seguí deslizando"},{passive:true});
+ addEventListener("touchend",e=>{if(y0==null)return;const d=e.changedTouches[0].clientY-y0;y0=null;$("ptr").style.height="0";if(d>150)actualizarVista()});
+ let ult=Date.now();document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&!$("app").hidden&&Date.now()-ult>120000){ult=Date.now();actualizarVista()}})}
 $("eq").oninput=renderEgr; $("em2").onchange=renderEgr; $("et").onchange=renderEgr; $("erefresh").onclick=loadEgr;
 const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 function abrirEgreso(it,motivo,fecha){
