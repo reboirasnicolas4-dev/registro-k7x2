@@ -170,6 +170,8 @@ a.btn.p{background:var(--acc);color:var(--accx);border-color:var(--acc)}
 .tl div{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:14px}
 .tl span{color:var(--mut)}.tl .now{border-color:var(--acc)}
 .dseg{margin-bottom:10px;grid-template-columns:1fr 1fr}.dseg button{font-size:13.5px}
+.delbox{border:2px solid var(--bad);border-radius:12px;padding:12px;display:grid;gap:8px;background:var(--bg)}
+.delbox small{color:var(--mut)}.delbox b{color:var(--bad)}
 label.opt{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:var(--bg);color:var(--ink);font-size:14.5px;font-weight:600;cursor:pointer}
 label.opt input{width:auto;margin-top:3px}label.opt small{display:block;font-weight:400;color:var(--mut);font-size:12.5px}
 label.opt:has(input:checked){border:2px solid var(--acc)}
@@ -492,9 +494,15 @@ label.opt:has(input:checked){border:2px solid var(--acc)}
     <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" id="medver">Ver cambios de medicación</button><button type="button" id="entver">Ver entregas (30 días)</button></div>
     <div class="medh" id="medh" hidden></div>
   </fieldset>
+  <div class="delbox" id="delbox" hidden>
+    <b>Borrar a <span id="delnom"></span></b>
+    <small>Usalo solo si se cargó por error (duplicado o prueba). No pasa a Egresados y no queda su historial. Si se fue, terminó o pasa a Destallo, cancelá y usá <b>Dar de egreso</b>.</small>
+    <label>Para confirmar, escribí su nombre completo<input id="delin" autocomplete="off"></label>
+    <div class="acts"><button type="button" id="delno">Cancelar</button><button type="button" class="d" id="delok" disabled>Borrar definitivamente</button></div>
+  </div>
   <div class="msg" id="msg" role="alert"></div>
   <div class="acts">
-    <button type="button" class="d" id="del" hidden>Eliminar</button>
+    <button type="button" class="d" id="del" hidden>Borrar (se cargó por error)</button>
     <button type="button" id="egr" hidden>Dar de egreso</button>
     <button type="button" id="cancel">Cancelar</button>
     <button type="submit" class="p" id="save">Guardar</button>
@@ -699,7 +707,7 @@ function render(){
   });
 }
 function openDlg(it){
-  cur=it||null; delArm=false; $("msg").textContent=""; $("del").textContent="Eliminar";
+  cur=it||null; delArm=false; $("msg").textContent=""; $("del").textContent="Borrar (se cargó por error)"; $("delbox").hidden=true;
   const f=$("f"); f.reset();
   f.nombre.value=it?it.nombre.trim():""; f.cedula.value=it?.cedula||""; f.tipo.value=it?.tipo||"Privado"; f.ingreso.value=it?.ingreso||"";
   MEALS.forEach(m=>f[m].value=it?.[m]||"");
@@ -712,7 +720,7 @@ function openDlg(it){
   $("salhoy").hidden=$("nosal").hidden=$("volvio").hidden=!isAdmin();
   const ro=!isAdmin();
   [...f.elements].forEach(x=>{if(x.tagName!=="BUTTON"&&x.tagName!=="FIELDSET")x.disabled=ro});
-  $("save").hidden=ro; $("del").hidden=ro||!it; $("egr").hidden=ro||!it; $("cancel").textContent=ro?"Cerrar":"Cancelar";
+  $("save").hidden=ro; $("del").hidden=ro||!it||email!=="reboirasnicolas4@gmail.com"; $("egr").hidden=ro||!it; $("cancel").textContent=ro?"Cerrar":"Cancelar";
   $("ft2").textContent=it?it.nombre.trim():"Agregar interno";
   $("fseg").hidden=!it; verSol("d");
   {const fr=$("fres"),pl=$("fplan");fr.replaceChildren();pl.replaceChildren();fr.hidden=!it;
@@ -798,8 +806,11 @@ $("f").addEventListener("submit",async e=>{
   }catch(err){$("msg").textContent="No se pudo guardar: "+err.message}
   finally{$("save").disabled=false;$("save").textContent="Guardar"}
 });
-$("del").onclick=async()=>{
-  if(!delArm){delArm=true;$("del").textContent="¿Seguro? Tocá de nuevo";return}
+$("del").onclick=()=>{if(!cur)return;$("delnom").textContent=cur.nombre.trim();$("delin").value="";$("delok").disabled=true;$("delbox").hidden=false;$("delbox").scrollIntoView({block:"center"});$("delin").focus()};
+$("delin").oninput=()=>{$("delok").disabled=nq($("delin").value.trim())!==nq(cur?cur.nombre.trim():"x")};
+$("delno").onclick=()=>{$("delbox").hidden=true};
+$("delok").onclick=async()=>{
+  if(!cur||$("delok").disabled)return;
   try{
     const res=await api(null,{action:ACT.remove,id:cur.id});
     confirmar(res);
