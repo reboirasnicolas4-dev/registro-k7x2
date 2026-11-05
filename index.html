@@ -16,6 +16,7 @@
 <style>
 :root{--bg:#f6f1e7;--card:#fffdf8;--ink:#2a2118;--mut:#6b6157;--line:#ddd5c4;--acc:#f7a823;--accx:#281a08;--warn:#ffd84d;--warnx:#3a2f00;--bad:#a8332a;color-scheme:light}
 @media (prefers-color-scheme:dark){:root{--bg:#16120e;--card:#211b15;--ink:#f0e8da;--mut:#b3a99b;--line:#3a3027;--acc:#f7a823;--accx:#281a08;--warn:#e8c53a;--warnx:#241d00;--bad:#ff8a7e;color-scheme:dark}}
+html,body{overscroll-behavior-y:contain}/* evita que el navegador recargue la página al deslizar hacia abajo */
 *{box-sizing:border-box}[hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.45 "Hanken Grotesk",system-ui,sans-serif}
 main{max-width:1100px;margin:0 auto;padding:24px 16px 48px}
