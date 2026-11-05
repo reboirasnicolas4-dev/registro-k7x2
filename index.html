@@ -384,7 +384,6 @@ label.opt:has(input:checked){border:2px solid var(--acc)}
       <button type="button" class="mi" data-go="D" style="--c:#f0855a"><b class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21c-3.9 0-7-2.6-7-6.5 0-3.7 3-5.7 4-9.5 2 1.5 3 3.5 3 5.5 1-.7 1.7-1.8 2-3 2 1.8 5 4.6 5 7 0 3.9-3.1 6.5-7 6.5z"/></svg></b><span>Destallo<small>Los que están haciendo el destallo</small></span><i>›</i></button>
       <button type="button" class="mi" data-go="R" id="miR" hidden style="--c:#d9b12f"><b class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg></b><span>Registro<small>Quién cambió qué y cuándo</small></span><i>›</i></button>
       <button type="button" class="mi" data-go="U" id="miU" hidden style="--c:#f7a823"><b class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M11 12l8-8M16 7l3 3M14 9l2 2"/></svg></b><span>Usuarios<small>Agregar, quitar y códigos</small></span><i>›</i></button>
-      <button type="button" class="mi" id="compartir2" style="--c:#3fae68"><b class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.4-4A8 8 0 1 1 8 18.6L4 20z"/></svg></b><span>Compartir lista<small>PDF para WhatsApp</small></span><i>›</i></button>
       <button type="button" class="mi" id="imprimir" style="--c:var(--mut)"><b class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V4h10v5M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2M7 14h10v6H7z"/></svg></b><span>Imprimir lista<small>Desde la computadora</small></span><i>›</i></button>
     </div>
   </section>
@@ -873,7 +872,7 @@ function verTab(k){vista=k;Object.entries(VISTAS).forEach(([t,[v]])=>{$(v).hidde
 document.querySelectorAll("#bnav button").forEach(b=>b.onclick=()=>verTab(b.dataset.v));
 document.querySelectorAll("[data-back]").forEach(b=>b.onclick=()=>verTab("X"));
 document.querySelectorAll("#vMas [data-go]").forEach(b=>b.onclick=()=>verTab(b.dataset.go));
-$("compartir2").onclick=()=>$("compartir").click();
+
 document.querySelectorAll("#fchips .chip[data-t]").forEach(b=>b.onclick=()=>{$("ft").value=b.dataset.t;render()});
 // Menú de la cuenta (la letra de arriba)
 $("me").onclick=()=>$("cdlg").showModal(); $("cclose").onclick=()=>$("cdlg").close();
