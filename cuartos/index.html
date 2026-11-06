@@ -316,7 +316,7 @@ html.cargando #login{display:none!important}
 /* ===== Configuración ===== */
 const DEFAULT_API="https://script.google.com/macros/s/AKfycbzYLuWCtvRv-sQobVzwXxUhTbjfhDuul9raoOD4RbxFOkBVaPI5FLEOU4TI5z3pQl9_/exec";
 let API=DEFAULT_API;
-const SECTORES=["Cocina","Huerta","Animales","Almox","Panadería"];
+const SECTORES=["Cocina","Huerta","Almox","Panadería"];
 const CUARTOS=[{id:"0",camas:4},{id:"1",camas:6},{id:"2",camas:6},{id:"3",camas:4,manual:true},{id:"4",camas:8}];
 const CAMAS_TROPILLA=14, MESES_C3=6;
 const HOJA_CUARTOS="Cuartos", HOJA_ROT="Rotaciones";
@@ -695,7 +695,7 @@ if("serviceWorker" in navigator&&location.protocol.startsWith("http"))window.add
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261106154716";
+const APP_VER="20261106170920";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
