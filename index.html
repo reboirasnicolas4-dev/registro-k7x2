@@ -918,7 +918,7 @@ function evento(c){const d=x=>days(hoy,x),dm=x=>String(x.getDate()).padStart(2,"
   if(c.sal)return["Próxima salida "+dm(c.sal),""];
   return["Termina el "+fd(c.fin),""]}
 // Cuartos: resumen desde la pestaña Cuartos
-const CU_DEF=[["Tropilla",14,x=>!!x.sector],["Cuarto 0",4,x=>!x.sector&&x.cuarto==="0"],["Cuarto 1",6,x=>!x.sector&&x.cuarto==="1"],["Cuarto 2",6,x=>!x.sector&&x.cuarto==="2"],["Cuarto 3",4,x=>!x.sector&&x.cuarto==="3"],["Cuarto 4",8,x=>!x.sector&&x.cuarto==="4"]];
+const CU_DEF=[["Tropilla",16,x=>!!x.sector],["Cuarto 0",4,x=>!x.sector&&x.cuarto==="0"],["Cuarto 1",6,x=>!x.sector&&x.cuarto==="1"],["Cuarto 2",6,x=>!x.sector&&x.cuarto==="2"],["Cuarto 3",4,x=>!x.sector&&x.cuarto==="3"],["Cuarto 4",8,x=>!x.sector&&x.cuarto==="4"]];
 async function renderCua(recargar){if(recargar){await cargarCamas()}
   const act=items.filter(i=>i.nombre&&i.ingreso), corto=n=>{const p=n.trim().split(/\s+/);return p[0]+(p[1]?" "+p[1][0]+".":"")};
   let libres=0;const R=$("crooms");R.replaceChildren();
@@ -1394,7 +1394,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261106173026";
+const APP_VER="20261106173849";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
