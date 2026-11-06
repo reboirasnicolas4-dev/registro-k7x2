@@ -280,6 +280,11 @@ html.cargando #login{display:none!important}
       <p class="sub" style="margin:0">La rotación los separa sola y te avisa si los juntás a mano. Para agregar una pareja, tocá a una persona en Cuartos y elegí «No juntar con…».</p>
       <div id="njlist" style="display:grid;gap:6px"></div>
     </div>
+    <div class="nj" id="fbox" hidden>
+      <h2>No entran en cuartos</h2>
+      <p class="sub" style="margin:0">Siguen en la lista de Internos, pero no ocupan cama ni entran en la rotación.</p>
+      <div id="flist" style="display:grid;gap:6px"></div>
+    </div>
   </section>
 
   <section id="v-hist" hidden>
@@ -295,6 +300,7 @@ html.cargando #login{display:none!important}
     <button id="mswap">Intercambiar con otro</button>
     <button id="mnj">No juntar con…</button>
     <button id="msacar">Dejar sin cama</button>
+    <button id="mfuera">No entra en cuartos</button>
     <button id="mcerrar">Cancelar</button>
   </div>
 </div></dialog>
@@ -318,13 +324,15 @@ const DEFAULT_API="https://script.google.com/macros/s/AKfycbzYLuWCtvRv-sQobVzwXx
 let API=DEFAULT_API;
 const SECTORES=["Cocina","Huerta","Almox","Panadería"];
 // En Tropilla sin sector: se guarda con el valor "Tropilla" en la columna sector
+// Los que no entran en cuartos (siguen en Internos): se guardan con sector "Fuera"
+const FUERA="Fuera";
 const SINS="Tropilla", GRUPOS=[...SECTORES,SINS], secNom=s=>s===SINS?"Sin sector":s;
 const CUARTOS=[{id:"0",camas:4},{id:"1",camas:6},{id:"2",camas:6},{id:"3",camas:4,manual:true},{id:"4",camas:8}];
 const CAMAS_TROPILLA=16, MESES_C3=6;
 const HOJA_CUARTOS="Cuartos", HOJA_ROT="Rotaciones";
 
 /* ===== Estado ===== */
-let email="",pass="",role="",gente=[],historial=[],sel=null,menuP=null,modo="swap",parejas=[],deshacer=[],ultimoLog="";
+let email="",pass="",role="",gente=[],fuera=[],historial=[],sel=null,menuP=null,modo="swap",parejas=[],deshacer=[],ultimoLog="";
 const HOJA_NJ="NoJuntar";
 const PRIMERA=3,DUR=9,DIAS_SAL=n=>n<=3?4:7;
 function addM(d,n){const t=new Date(d.getFullYear(),d.getMonth()+n,1);const last=new Date(t.getFullYear(),t.getMonth()+1,0).getDate();return new Date(t.getFullYear(),t.getMonth(),Math.min(d.getDate(),last))}
@@ -382,8 +390,9 @@ async function cargar(){
   gente=int.filter(o=>String(o.nombre||"").trim()&&o.ingreso).map(o=>{const g=guardado[String(o.id)]||{};
     return{id:String(o.id),nombre:String(o.nombre).trim(),cedula:String(o.cedula||""),ingreso:parse(toISO(o.ingreso)),
       sector:GRUPOS.includes(g.sector)?g.sector:"",cuarto:CUARTOS.some(c=>c.id===String(g.cuarto))?String(g.cuarto):"",antes:String(g.antes||""),
-      salio:toISO(o.salioel),vuelve:toISO(o.vuelveel),nosalio:toISO(o.nosalioel)}})
+      salio:toISO(o.salioel),vuelve:toISO(o.vuelveel),nosalio:toISO(o.nosalioel),fuera:g.sector===FUERA}})
     .sort((a,b)=>a.nombre.localeCompare(b.nombre,"es"));
+  fuera=gente.filter(p=>p.fuera);gente=gente.filter(p=>!p.fuera);
   historial=((rot&&rot.data)||[]).slice().reverse();
   gente.forEach(p=>{p.afuera=salidaHoy(p)});
   const ids=new Set(gente.map(p=>p.id));
@@ -396,7 +405,7 @@ let tGuardar=null;
 function guardarPronto(){if(!isAdmin())return;clearTimeout(tGuardar);estado("Guardando…");tGuardar=setTimeout(guardarYa,600)}
 async function guardarYa(){
   try{const r=await api({action:"setSheet",sheet:HOJA_CUARTOS,columns:["id","nombre","cedula","sector","cuarto","antes"],
-      rows:gente.map(p=>({id:p.id,nombre:p.nombre,cedula:p.cedula,sector:p.sector,cuarto:p.sector?"":p.cuarto,antes:p.antes})),log:ultimoLog});
+      rows:[...gente.map(p=>({id:p.id,nombre:p.nombre,cedula:p.cedula,sector:p.sector,cuarto:p.sector?"":p.cuarto,antes:p.antes})),...fuera.map(p=>({id:p.id,nombre:p.nombre,cedula:p.cedula,sector:FUERA,cuarto:"",antes:""}))],log:ultimoLog});
     ultimoLog="";
     if(!r||r.ok!==true)throw new Error((r&&r.error)||"no se confirmó");
     estado("Guardado ✔"); setTimeout(()=>{if($("estado").textContent==="Guardado ✔")estado("")},2000);
@@ -546,6 +555,9 @@ function renderSectores(){
     ["",...GRUPOS].forEach(x=>{const o=el("option","",x===SINS?"Tropilla sin sector":x||"Sin sector");o.value=x;s.append(o)});s.value=p.sector;
     s.onchange=()=>{antesDeCambiar(p.nombre+": sector "+(s.value||"ninguno"));p.sector=s.value;if(p.sector){p.cuarto="";p.antes=""}render();guardarPronto()};
     td.className="ssec";td.append(s);tr.append(td,el("td","sdonde",donde(p)));return tr}));
+  $("fbox").hidden=!fuera.length;
+  $("flist").replaceChildren(...fuera.map(p=>{const r=el("div","r");r.append(el("span","",p.nombre));
+    if(isAdmin()){const b=el("button","","Volver a cuartos");b.type="button";b.onclick=()=>volverACuartos(p);r.append(b)}return r}));
 }
 function renderHist(){
   const l=$("hlist");
@@ -611,6 +623,13 @@ function mandar(p,cuarto){
 function mover(id,cuarto){const p=gente.find(x=>x.id===id);mandar(p,cuarto)}
 $("mcerrar").onclick=()=>$("menu").close();
 $("mnj").onclick=()=>{const p=menuP;$("menu").close();sel=p.id;modo="nj";render();toast("Tocá a la persona con la que "+nom1(p)+" no tiene que estar")};
+$("mfuera").onclick=()=>{const p=menuP;$("menu").close();
+  if(!confirm(p.nombre+" deja de contar en Cuartos: no ocupa cama ni rota. Sigue en la lista de Internos. ¿Seguro?"))return;
+  ultimoLog=p.nombre+" no entra en cuartos";p.sector="";p.cuarto="";p.antes="";p.fuera=true;
+  gente=gente.filter(x=>x.id!==p.id);fuera.push(p);const np=parejas.length;parejas=parejas.filter(x=>!x.includes(p.id));sel=null;render();guardarPronto();if(parejas.length!==np)guardarParejas("Quitó «no juntar» de "+p.nombre);
+  toast(nom1(p)+" ya no cuenta en Cuartos (lo volvés a sumar en Sectores)")};
+function volverACuartos(p){ultimoLog=p.nombre+" vuelve a cuartos";p.fuera=false;fuera=fuera.filter(x=>x.id!==p.id);
+  gente.push(p);gente.sort((a,b)=>a.nombre.localeCompare(b.nombre,"es"));render();guardarPronto();toast(nom1(p)+" vuelve a contar en Cuartos (quedó sin cama)")}
 $("msacar").onclick=()=>{const p=menuP;$("menu").close();
   if(p.sector){antesDeCambiar(p.nombre+" salió de Tropilla ("+secNom(p.sector)+")");p.sector="";p.cuarto="";p.antes="";render();guardarPronto();toast(nom1(p)+" salió de Tropilla y quedó sin cama");return}
   antesDeCambiar(p.nombre+" quedó sin cama");p.cuarto="";render();guardarPronto();toast(nom1(p)+" quedó sin cama")};
@@ -709,7 +728,7 @@ if("serviceWorker" in navigator&&location.protocol.startsWith("http"))window.add
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261106173849";
+const APP_VER="20261106193804";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
