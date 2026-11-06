@@ -580,7 +580,7 @@ function abrirMenu(p){
     const b=el("button",aca?"act":"");b.type="button";
     b.append(el("b","","Cuarto "+c.id),el("small","",aca?"Está acá":libres<=0?"Lleno · usá Intercambiar":(libres+(libres===1?" cama libre":" camas libres"))+(ojo?" · ⚠ lleva "+llevaTxt(p):"")));
     b.disabled=aca||libres<=0;b.onclick=()=>{$("menu").close();mandar(p,c.id)};return b}));
-  $("mswap").hidden=!!p.sector||!p.cuarto;$("msacar").hidden=!!p.sector||!p.cuarto;
+  $("mswap").hidden=!!p.sector||!p.cuarto;$("msacar").hidden=!p.sector&&!p.cuarto;$("msacar").textContent=p.sector?"Sacar de Tropilla":"Dejar sin cama";
   const nj=parejaDe(p).map(id=>gente.find(x=>x.id===id)).filter(Boolean);
   if(nj.length)$("mdonde").textContent+=" No juntar con: "+nj.map(x=>x.nombre).join(", ")+".";
   if(p.afuera)$("mdonde").textContent+=" Está de salida, vuelve el "+fd(p.afuera)+".";
@@ -597,7 +597,9 @@ function mandar(p,cuarto){
 function mover(id,cuarto){const p=gente.find(x=>x.id===id);mandar(p,cuarto)}
 $("mcerrar").onclick=()=>$("menu").close();
 $("mnj").onclick=()=>{const p=menuP;$("menu").close();sel=p.id;modo="nj";render();toast("Tocá a la persona con la que "+nom1(p)+" no tiene que estar")};
-$("msacar").onclick=()=>{const p=menuP;$("menu").close();antesDeCambiar(p.nombre+" quedó sin cama");p.cuarto="";render();guardarPronto();toast(nom1(p)+" quedó sin cama")};
+$("msacar").onclick=()=>{const p=menuP;$("menu").close();
+  if(p.sector){antesDeCambiar(p.nombre+" salió de Tropilla ("+p.sector+")");p.sector="";p.cuarto="";p.antes="";render();guardarPronto();toast(nom1(p)+" salió de Tropilla y quedó sin cama");return}
+  antesDeCambiar(p.nombre+" quedó sin cama");p.cuarto="";render();guardarPronto();toast(nom1(p)+" quedó sin cama")};
 $("mswap").onclick=()=>{const p=menuP;$("menu").close();sel=p.id;modo="swap";render();toast("Tocá a la otra persona para intercambiarlos")};
 $("rotar").onclick=()=>{rotar();CUARTOS.forEach(c=>abiertos.add(c.id));render()};
 $("pendg").onclick=()=>$("guardar").click();
@@ -693,7 +695,7 @@ if("serviceWorker" in navigator&&location.protocol.startsWith("http"))window.add
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261105201644";
+const APP_VER="20261106124432";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
