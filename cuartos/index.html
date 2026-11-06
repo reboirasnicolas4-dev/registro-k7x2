@@ -317,6 +317,8 @@ html.cargando #login{display:none!important}
 const DEFAULT_API="https://script.google.com/macros/s/AKfycbzYLuWCtvRv-sQobVzwXxUhTbjfhDuul9raoOD4RbxFOkBVaPI5FLEOU4TI5z3pQl9_/exec";
 let API=DEFAULT_API;
 const SECTORES=["Cocina","Huerta","Almox","Panadería"];
+// En Tropilla sin sector: se guarda con el valor "Tropilla" en la columna sector
+const SINS="Tropilla", GRUPOS=[...SECTORES,SINS], secNom=s=>s===SINS?"Sin sector":s;
 const CUARTOS=[{id:"0",camas:4},{id:"1",camas:6},{id:"2",camas:6},{id:"3",camas:4,manual:true},{id:"4",camas:8}];
 const CAMAS_TROPILLA=14, MESES_C3=6;
 const HOJA_CUARTOS="Cuartos", HOJA_ROT="Rotaciones";
@@ -379,7 +381,7 @@ async function cargar(){
   const guardado={};((cu&&cu.data)||[]).forEach(o=>{if(o.id)guardado[String(o.id)]=o});
   gente=int.filter(o=>String(o.nombre||"").trim()&&o.ingreso).map(o=>{const g=guardado[String(o.id)]||{};
     return{id:String(o.id),nombre:String(o.nombre).trim(),cedula:String(o.cedula||""),ingreso:parse(toISO(o.ingreso)),
-      sector:SECTORES.includes(g.sector)?g.sector:"",cuarto:CUARTOS.some(c=>c.id===String(g.cuarto))?String(g.cuarto):"",antes:String(g.antes||""),
+      sector:GRUPOS.includes(g.sector)?g.sector:"",cuarto:CUARTOS.some(c=>c.id===String(g.cuarto))?String(g.cuarto):"",antes:String(g.antes||""),
       salio:toISO(o.salioel),vuelve:toISO(o.vuelveel),nosalio:toISO(o.nosalioel)}})
     .sort((a,b)=>a.nombre.localeCompare(b.nombre,"es"));
   historial=((rot&&rot.data)||[]).slice().reverse();
@@ -440,7 +442,7 @@ function meses(p){const a=p.ingreso;let m=(HOY.getFullYear()-a.getFullYear())*12
 const puede3=p=>meses(p)>=MESES_C3;
 const llevaTxt=p=>{const m=meses(p);return m===1?"1 mes":m+" meses"};
 const nom1=p=>p.nombre.split(" ")[0];
-function donde(p){return p.sector?"Tropilla ("+p.sector+")":p.cuarto?"Cuarto "+p.cuarto:"Sin cama"}
+function donde(p){return p.sector?"Tropilla ("+(p.sector===SINS?"sin sector":p.sector)+")":p.cuarto?"Cuarto "+p.cuarto:"Sin cama"}
 
 // Rotación: cada uno a un cuarto distinto del que tenía, parejo y sin pasar camas. El cuarto 3 no se toca.
 function rotar(){
@@ -497,7 +499,7 @@ function render(){
   const libT=CAMAS_TROPILLA-conS.length;
   $("tcap").textContent=conS.length+"/"+CAMAS_TROPILLA+" camas"+(libT>0?" · "+libT+(libT===1?" libre":" libres"):"");
   $("tbar").firstChild.style.width=Math.min(100,conS.length/CAMAS_TROPILLA*100)+"%";plegable($("trop"),"T");
-  $("secs").replaceChildren(...SECTORES.map(s=>{const d=el("div","sec"),ps=conS.filter(p=>p.sector===s);d.append(el("h3","",s+" · "+ps.length));
+  $("secs").replaceChildren(...GRUPOS.filter(s=>s!==SINS||conS.some(p=>p.sector===SINS)).map(s=>{const d=el("div","sec"),ps=conS.filter(p=>p.sector===s);d.append(el("h3","",secNom(s)+" · "+ps.length));
     if(!ps.length)d.append(el("div","cap","Nadie"));
     ps.forEach(p=>{const b=el(isAdmin()?"button":"span","chip"+(isAdmin()?" btn":""),p.nombre);if(isAdmin()){b.type="button";b.onclick=()=>tocar(p)}d.append(b)});return d}));
   // Sin cama
@@ -531,9 +533,9 @@ function render(){
 }
 function renderSectores(){
   const fsel=$("sf").value;
-  $("sum2").replaceChildren(...[["Todos",gente.length,"*"],...SECTORES.map(s=>[s,gente.filter(p=>p.sector===s).length,s]),["Sin sector",sinSector().length,""]]
+  $("sum2").replaceChildren(...[["Todos",gente.length,"*"],...SECTORES.map(s=>[s,gente.filter(p=>p.sector===s).length,s]),...(gente.some(p=>p.sector===SINS)?[["Tropilla sin sector",gente.filter(p=>p.sector===SINS).length,SINS]]:[]),["Sin sector",sinSector().length,""]]
     .map(([l,n,v])=>{const s=el("button","pill fil"+(fsel===v?" on":""));s.type="button";s.append(l+" ",el("b","",String(n)));s.onclick=()=>{$("sf").value=v;renderSectores()};return s}));
-  const fs=$("sf");if(fs.options.length===2)SECTORES.forEach(x=>{const o=el("option","",x);o.value=x;fs.append(o)});
+  const fs=$("sf");if(fs.options.length===2)GRUPOS.forEach(x=>{const o=el("option","",x===SINS?"Tropilla sin sector":x);o.value=x;fs.append(o)});
   const q=$("sq").value.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""), f=fs.value;
   const lista=gente.filter(p=>(f==="*"||p.sector===f)&&(!q||(p.nombre+" "+p.cedula).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").includes(q)));
   $("scnt").textContent=lista.length===gente.length?gente.length+" internos":lista.length+" de "+gente.length+" internos";
@@ -541,7 +543,7 @@ function renderSectores(){
     if(!p){const tr=el("tr"),td=el("td","","No hay internos que coincidan con la búsqueda.");td.colSpan=4;td.style.color="var(--mut)";tr.append(td);return tr}
     const tr=el("tr");tr.append(el("td","snom",p.nombre),el("td","slleva",llevaTxt(p)+(puede3(p)?" ✓":"")));
     const td=el("td"),s=el("select");s.id="sec-"+p.id;s.setAttribute("aria-label","Sector de "+p.nombre);s.disabled=!isAdmin();
-    ["",...SECTORES].forEach(x=>{const o=el("option","",x||"Sin sector");o.value=x;s.append(o)});s.value=p.sector;
+    ["",...GRUPOS].forEach(x=>{const o=el("option","",x===SINS?"Tropilla sin sector":x||"Sin sector");o.value=x;s.append(o)});s.value=p.sector;
     s.onchange=()=>{antesDeCambiar(p.nombre+": sector "+(s.value||"ninguno"));p.sector=s.value;if(p.sector){p.cuarto="";p.antes=""}render();guardarPronto()};
     td.className="ssec";td.append(s);tr.append(td,el("td","sdonde",donde(p)));return tr}));
 }
@@ -579,12 +581,24 @@ function abrirMenu(p){
     const libres=c.camas-enCuarto(c.id).length,aca=!p.sector&&p.cuarto===c.id,ojo=c.manual&&!puede3(p);
     const b=el("button",aca?"act":"");b.type="button";
     b.append(el("b","","Cuarto "+c.id),el("small","",aca?"Está acá":libres<=0?"Lleno · usá Intercambiar":(libres+(libres===1?" cama libre":" camas libres"))+(ojo?" · ⚠ lleva "+llevaTxt(p):"")));
-    b.disabled=aca||libres<=0;b.onclick=()=>{$("menu").close();mandar(p,c.id)};return b}));
-  $("mswap").hidden=!!p.sector||!p.cuarto;$("msacar").hidden=!p.sector&&!p.cuarto;$("msacar").textContent=p.sector?"Sacar de Tropilla":"Dejar sin cama";
+    b.disabled=aca||libres<=0;b.onclick=()=>{$("menu").close();mandar(p,c.id)};return b}),botonTropilla(p));
+  $("mnj").hidden=false;$("mswap").hidden=!!p.sector||!p.cuarto;$("msacar").hidden=!p.sector&&!p.cuarto;$("msacar").textContent=p.sector?"Sacar de Tropilla":"Dejar sin cama";
   const nj=parejaDe(p).map(id=>gente.find(x=>x.id===id)).filter(Boolean);
   if(nj.length)$("mdonde").textContent+=" No juntar con: "+nj.map(x=>x.nombre).join(", ")+".";
   if(p.afuera)$("mdonde").textContent+=" Está de salida, vuelve el "+fd(p.afuera)+".";
   $("menu").showModal();
+}
+function botonTropilla(p){
+  const ocup=gente.filter(x=>x.sector).length,libres=CAMAS_TROPILLA-ocup,b=el("button",p.sector?"act":"");b.type="button";
+  b.append(el("b","","Tropilla"),el("small","",p.sector?"Está acá · cambiar sector":libres<=0?"Lleno ("+ocup+"/"+CAMAS_TROPILLA+")":libres+(libres===1?" cama libre":" camas libres")));
+  b.disabled=!p.sector&&libres<=0;b.onclick=()=>elegirSector(p);return b}
+function elegirSector(p){
+  $("mdonde").textContent="¿En qué sector de Tropilla va "+nom1(p)+"?";
+  $("mswap").hidden=$("mnj").hidden=$("msacar").hidden=true;
+  $("mops").replaceChildren(...GRUPOS.map(s=>{const n=gente.filter(x=>x.sector===s).length,aca=p.sector===s,b=el("button",aca?"act":"");b.type="button";
+    b.append(el("b","",secNom(s)),el("small","",aca?"Está acá":n+(n===1?" persona":" personas")));b.disabled=aca;
+    b.onclick=()=>{$("menu").close();const antes=donde(p);antesDeCambiar(p.nombre+" → Tropilla ("+secNom(s)+")");p.sector=s;p.cuarto="";p.antes="";sel=null;render();guardarPronto();
+      toast(nom1(p)+" va a Tropilla"+(s===SINS?"":" ("+s+")")+(antes.startsWith("Cuarto")?" (deja el "+antes.toLowerCase()+")":""))};return b}));
 }
 function mandar(p,cuarto){
   abiertos.add(cuarto);
@@ -598,7 +612,7 @@ function mover(id,cuarto){const p=gente.find(x=>x.id===id);mandar(p,cuarto)}
 $("mcerrar").onclick=()=>$("menu").close();
 $("mnj").onclick=()=>{const p=menuP;$("menu").close();sel=p.id;modo="nj";render();toast("Tocá a la persona con la que "+nom1(p)+" no tiene que estar")};
 $("msacar").onclick=()=>{const p=menuP;$("menu").close();
-  if(p.sector){antesDeCambiar(p.nombre+" salió de Tropilla ("+p.sector+")");p.sector="";p.cuarto="";p.antes="";render();guardarPronto();toast(nom1(p)+" salió de Tropilla y quedó sin cama");return}
+  if(p.sector){antesDeCambiar(p.nombre+" salió de Tropilla ("+secNom(p.sector)+")");p.sector="";p.cuarto="";p.antes="";render();guardarPronto();toast(nom1(p)+" salió de Tropilla y quedó sin cama");return}
   antesDeCambiar(p.nombre+" quedó sin cama");p.cuarto="";render();guardarPronto();toast(nom1(p)+" quedó sin cama")};
 $("mswap").onclick=()=>{const p=menuP;$("menu").close();sel=p.id;modo="swap";render();toast("Tocá a la otra persona para intercambiarlos")};
 $("rotar").onclick=()=>{rotar();CUARTOS.forEach(c=>abiertos.add(c.id));render()};
@@ -616,7 +630,7 @@ $("guardar").onclick=async()=>{
     const fila={fecha:HOY.getFullYear()+"-"+String(HOY.getMonth()+1).padStart(2,"0")+"-"+String(HOY.getDate()).padStart(2,"0"),
       guardadopor:email,cambios:sinSector().filter(p=>p.antes&&p.antes!==p.cuarto).length,
       cuarto0:lista("0"),cuarto1:lista("1"),cuarto2:lista("2"),cuarto3:lista("3"),cuarto4:lista("4"),
-      tropilla:SECTORES.map(s=>s+": "+gente.filter(p=>p.sector===s).map(p=>p.nombre).join(", ")).join(" | ")};
+      tropilla:GRUPOS.filter(s=>gente.some(p=>p.sector===s)).map(s=>secNom(s)+": "+gente.filter(p=>p.sector===s).map(p=>p.nombre).join(", ")).join(" | ")};
     const r=await api({action:"addRow",sheet:HOJA_ROT,record:fila,log:"Guardó la rotación ("+fila.cambios+" cambios)"});
     if(!r||r.ok!==true)throw new Error((r&&r.error)||"no se confirmó");
     sinSector().forEach(p=>p.antes=p.cuarto);historial.unshift(fila);render();await guardarYa();toast("Rotación guardada en el historial");
@@ -630,7 +644,7 @@ function armarPDF(){
   const doc=new window.jspdf.jsPDF({unit:"mm",format:"a4"}),W=210,M=10;
   doc.setFont("helvetica","bold");doc.setFontSize(16);doc.text("Cuartos - Alas de Libertad",M,15);
   doc.setFont("helvetica","normal");doc.setFontSize(10);doc.text(fd(HOY),W-M,15,{align:"right"});
-  const cajas=[{t:"Tropilla ("+gente.filter(p=>p.sector).length+"/"+CAMAS_TROPILLA+")",l:SECTORES.flatMap(s=>{const ps=gente.filter(p=>p.sector===s);return ps.length?[{h:s},...ps.map(p=>({n:p.nombre}))]:[]})},
+  const cajas=[{t:"Tropilla ("+gente.filter(p=>p.sector).length+"/"+CAMAS_TROPILLA+")",l:GRUPOS.flatMap(s=>{const ps=gente.filter(p=>p.sector===s);return ps.length?[{h:secNom(s)},...ps.map(p=>({n:p.nombre}))]:[]})},
     ...CUARTOS.map(c=>({t:"Cuarto "+c.id+" ("+enCuarto(c.id).length+"/"+c.camas+")",l:enCuarto(c.id).map(p=>({n:p.nombre}))}))];
   const sueltos=sinSector().filter(p=>!p.cuarto);
   if(sueltos.length)cajas.push({t:"Sin cama ("+sueltos.length+")",l:sueltos.map(p=>({n:p.nombre}))});
@@ -695,7 +709,7 @@ if("serviceWorker" in navigator&&location.protocol.startsWith("http"))window.add
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261106170920";
+const APP_VER="20261106173026";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}

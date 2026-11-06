@@ -639,7 +639,7 @@ let camas={};   // id del interno -> {cuarto, sector} de la pestaña Cuartos
 async function cargarCamas(){try{const r=await api({action:"getSheet",sheet:"Cuartos"});const m={};
   ((r&&r.data)||[]).forEach(o=>{if(o.id)m[String(o.id)]={cuarto:String(o.cuarto??""),sector:String(o.sector||"")}});camas=m}catch(e){}}
 function textoCama(id){const c=camas[id];if(!c||(!c.sector&&!c.cuarto))return null;
-  return c.sector?["Tropilla","Sector: "+c.sector]:["Cuarto "+c.cuarto,""]}
+  return c.sector?["Tropilla",c.sector==="Tropilla"?"Sin sector":"Sector: "+c.sector]:["Cuarto "+c.cuarto,""]}
 async function load(){
   const pc=cargarCamas();
   const res=await api({action:ACT.list});
@@ -924,7 +924,7 @@ async function renderCua(recargar){if(recargar){await cargarCamas()}
   let libres=0;const R=$("crooms");R.replaceChildren();
   CU_DEF.forEach(([n,cap,f])=>{const ps=act.filter(i=>camas[i.id]&&f(camas[i.id]));libres+=Math.max(0,cap-ps.length);
     const r=el("div","room"),h=el("div","h",n);h.append(el("span",ps.length>=cap?"full":"",ps.length+"/"+cap+" camas"));
-    r.append(h,el("div","ppl",ps.length?ps.map(i=>corto(i.nombre)+(n==="Tropilla"?" ("+camas[i.id].sector+")":"")).join(" · "):"Vacío"));R.append(r)});
+    r.append(h,el("div","ppl",ps.length?ps.map(i=>corto(i.nombre)+(n==="Tropilla"&&camas[i.id].sector!=="Tropilla"?" ("+camas[i.id].sector+")":"")).join(" · "):"Vacío"));R.append(r)});
   const sin=act.filter(i=>!camas[i.id]||(!camas[i.id].sector&&!camas[i.id].cuarto));
   $("cpills").replaceChildren(el("span","pill","Camas libres: "+libres),el("span","pill"+(sin.length?" w":""),"Sin cama: "+sin.length+(sin.length?" ("+sin.map(i=>corto(i.nombre)).join(", ")+")":"")))}
 // Actualizar deslizando hacia abajo (o tocando la línea de arriba)
@@ -1394,7 +1394,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261106170920";
+const APP_VER="20261106173026";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
