@@ -635,6 +635,8 @@ function confirmar(res){
   if(res&&typeof res==="object"){if(res.error)throw new Error(res.error);if(res.ok===true)return}
   throw new Error("el script no confirmó el cambio y respondió: "+JSON.stringify(res).slice(0,140)+". Probablemente sigue publicado el código viejo: pegá el código nuevo, guardalo y publicá una Nueva versión");
 }
+// La planilla guarda la hora como hora de Sheets y llega con la fecha 1899-12-30 delante: dejar solo HH:MM
+const soloHora=h=>{const m=String(h||"").match(/(\d{1,2}):(\d{2})(?!.*\d{1,2}:\d{2})/);return m?m[1]+":"+m[2]:String(h||"")};
 let camas={};   // id del interno -> {cuarto, sector} de la pestaña Cuartos
 async function cargarCamas(){try{const r=await api({action:"getSheet",sheet:"Cuartos"});const m={};
   ((r&&r.data)||[]).forEach(o=>{if(!o.id)return;const fuera=String(o.sector||"")==="Fuera";m[String(o.id)]={cuarto:fuera?"":String(o.cuarto??""),sector:fuera?"":String(o.sector||""),fuera}});camas=m}catch(e){}}
@@ -1159,7 +1161,7 @@ function renderMed(){
     const m=marcas[tomaSel+"|"+i.id],r=el("div","mrow"+(m?(m.estado==="Dada"?" dada":""):" falta")),t=el("div","tx");
     t.append(resaltarM(i.nombre.trim(),qm),el("span","",String(i[k]).trim()));r.append(avatar(i,"av"),t);
     const bt=el("div","bt");
-    if(m){bt.append(el("span","est "+(m.estado==="Dada"?"ok":"no"),(m.estado==="Dada"?"✓ Dada":"✗ No la tomó"+(m.motivo?": "+m.motivo:""))+" · "+m.hora+" · "+String(m.usuario).split("@")[0]));
+    if(m){bt.append(el("span","est "+(m.estado==="Dada"?"ok":"no"),(m.estado==="Dada"?"✓ Dada":"✗ No la tomó"+(m.motivo?": "+m.motivo:""))+" · "+soloHora(m.hora)+" · "+String(m.usuario).split("@")[0]));
       if(isAdmin()){const u=el("button","","Deshacer");u.type="button";u.onclick=()=>marcar(i,"");bt.append(u)}}
     else if(!isAdmin()){bt.append(el("span","est","Sin marcar"))}
     else if(abiertoNo===i.id){const inp=el("input");inp.placeholder="Motivo (opcional)";inp.id="mot-"+i.id;
@@ -1205,9 +1207,9 @@ $("mq").addEventListener("keydown",e=>{if(e.key!=="Enter")return;e.preventDefaul
 $("entver").onclick=async()=>{
   const box=$("medh");box.hidden=false;box.replaceChildren(el("small","","Cargando…"));
   try{const r=await api({action:"getEntregas",id:cur.id,dias:30});if(!r||r.ok!==true)throw new Error((r&&r.error)||"error");
-    const l=(r.data||[]).sort((a,b)=>(b.fecha+b.hora).localeCompare(a.fecha+a.hora));
+    const l=(r.data||[]).sort((a,b)=>(b.fecha+soloHora(b.hora).padStart(5,"0")).localeCompare(a.fecha+soloHora(a.hora).padStart(5,"0")));
     const no=l.filter(x=>x.estado!=="Dada").length;
-    box.replaceChildren(el("small","",l.length+" marcas en 30 días · "+no+" sin tomar"),...l.map(o=>{const d=el("div");d.append(el("small","",fdi(o.fecha)+" "+o.hora+" · "+o.toma+" · "+String(o.usuario).split("@")[0]),el("br"),document.createTextNode(o.estado+(o.motivo?": "+o.motivo:"")));return d}));
+    box.replaceChildren(el("small","",l.length+" marcas en 30 días · "+no+" sin tomar"),...l.map(o=>{const d=el("div");d.append(el("small","",fdi(o.fecha)+" "+soloHora(o.hora)+" · "+o.toma+" · "+String(o.usuario).split("@")[0]),el("br"),document.createTextNode(o.estado+(o.motivo?": "+o.motivo:"")));return d}));
     if(!l.length)box.append(el("small","","Sin marcas todavía."));
   }catch(e){box.replaceChildren(el("small","","No se pudo cargar: "+e.message))}
 };
@@ -1394,7 +1396,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261106193804";
+const APP_VER="20261106215019";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
