@@ -90,6 +90,7 @@ table{border-collapse:collapse;width:100%;min-width:560px}
 th{background:var(--acc);color:var(--accx);text-align:left;padding:9px 12px;font-size:13px}
 td{padding:8px 12px;border-top:1px solid var(--line)}
 .hist{display:grid;gap:10px}
+.hdel{margin-top:10px;border:1px solid var(--line);background:none;color:var(--bad);border-radius:9px;padding:8px 12px;font:600 14px var(--body,inherit);cursor:pointer}
 .h{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
 .h .meta{color:var(--mut);font-size:13px;margin:2px 0 6px}
 .h div{margin:3px 0}
@@ -565,7 +566,24 @@ function renderHist(){
   l.replaceChildren(...historial.map(h=>{const d=el("div","h");
     d.append(el("h2","",h.fecha?fd(parse(toISO(h.fecha))):"Sin fecha"),el("div","meta",(h.cambios||0)+" cambiaron de cuarto · guardó "+(h.guardadopor||"—")));
     [["Cuarto 0","cuarto0"],["Cuarto 1","cuarto1"],["Cuarto 2","cuarto2"],["Cuarto 3","cuarto3"],["Cuarto 4","cuarto4"],["Tropilla","tropilla"]]
-      .forEach(([t,k])=>{const r=el("div");r.append(el("b","",t+": "),document.createTextNode(h[k]||"—"));d.append(r)});return d}));
+      .forEach(([t,k])=>{const r=el("div");r.append(el("b","",t+": "),document.createTextNode(h[k]||"—"));d.append(r)});
+    if(isAdmin()){const b=el("button","hdel","🗑 Borrar este registro");b.type="button";b.onclick=()=>borrarRegistro(h,b);d.append(b)}
+    return d}));
+}
+// Borra una rotación guardada por error. Antes de borrar vuelve a leer la pestaña y busca la fila exacta,
+// así no se borra otra si alguien guardó algo mientras tanto.
+async function borrarRegistro(h,b){
+  const cuando=h.fecha?fd(parse(toISO(h.fecha))):"sin fecha";
+  if(!confirm("¿Borrar el registro del "+cuando+"? No se puede recuperar. Los cuartos de ahora no cambian."))return;
+  b.disabled=true;b.textContent="Borrando…";
+  try{
+    const r=await api({action:"getSheet",sheet:HOJA_ROT});const igual=o=>["fecha","guardadopor","cambios","cuarto0","cuarto1","cuarto2","cuarto3","cuarto4","tropilla"].every(k=>String(o[k]??"")===String(h[k]??""));
+    const f=((r&&r.data)||[]).filter(igual).pop();
+    if(!f||!f._fila)throw new Error("no lo encontré en la planilla; tocá ⋯ → Actualizar");
+    const d=await api({action:"deleteRow",sheet:HOJA_ROT,fila:f._fila,log:"Borró el registro de rotación del "+cuando});
+    if(!d||d.ok!==true)throw new Error((d&&d.error)||"no se confirmó");
+    historial=historial.filter(x=>x!==h);render();toast("Registro borrado");
+  }catch(e){b.disabled=false;b.textContent="🗑 Borrar este registro";toast("No se pudo borrar: "+e.message)}
 }
 
 /* ===== Acciones ===== */
@@ -728,7 +746,7 @@ if("serviceWorker" in navigator&&location.protocol.startsWith("http"))window.add
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261106215019";
+const APP_VER="20261106232811";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
