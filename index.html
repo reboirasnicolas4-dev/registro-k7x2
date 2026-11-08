@@ -242,7 +242,7 @@ label.opt:has(input:checked){border:2px solid var(--acc)}
   #print th{font-weight:700;text-align:center}
   #print td.c{text-align:center;width:9%}
   #print td.ce,#print td.f{text-align:center}
-  #print tr.mides td.nm,#print tr.mides td.ce,#print tr.mides td.f{background:#ffeb3b!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #print tr.mides td.nm,#print tr.mides td.ce,#print tr.mides td.f{background:#b3b3b3!important;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   #print tr{break-inside:avoid}
   #print tr.blank td{height:var(--rh,7mm)}
 }
@@ -1396,7 +1396,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261106232811";
+const APP_VER="20261107214437";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
