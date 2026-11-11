@@ -75,6 +75,20 @@
   .confirm .fila{display:flex;gap:8px;margin-top:10px}
   .confirm button{flex:1;border-radius:10px;padding:11px;font-weight:600;border:1px solid var(--linea);background:#fff}
   .confirm .si{background:var(--marron);color:#fff;border-color:var(--marron)}
+  .acciones .guardar{background:var(--marron);border-color:var(--marron);color:#fff}
+  .acciones .guardar:disabled{opacity:.6}
+  .top .ic{font-size:18px;line-height:1;padding-left:11px;padding-right:11px}
+  .nota{background:var(--naranja-claro);border:1px solid var(--naranja);color:var(--marron);border-radius:12px;padding:10px 12px;font-size:14.5px;margin:4px 0 6px}
+  .lista h2{font-family:Lora,serif;color:var(--marron);font-size:24px;margin:8px 0 10px}
+  .busca input{width:100%;font:inherit;font-size:17px;padding:13px 14px;border:1.5px solid var(--linea);border-radius:12px;background:#fff;color:var(--tinta);outline:none}
+  .busca input:focus{border-color:var(--naranja)}
+  .lista .cnt{font-size:13px;color:var(--gris);margin:10px 2px}
+  .lrow{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:#fff;border:1px solid var(--linea);border-radius:14px;padding:12px;margin-bottom:8px;color:var(--tinta)}
+  .lrow .av{width:42px;height:42px;border-radius:50%;background:var(--fondo);border:1px solid var(--linea);display:grid;place-items:center;font-weight:700;font-size:14px;color:var(--gris);flex:none}
+  .lrow .lt2{flex:1;min-width:0}.lrow b{display:block;font-size:16px}.lrow small{display:block;color:var(--gris);font-size:13px}
+  .lrow em{font-style:normal;font-size:11.5px;font-weight:700;background:var(--linea);color:var(--gris);border-radius:99px;padding:2px 8px;margin-left:6px;vertical-align:1px}
+  .lrow i{font-style:normal;color:var(--naranja);font-size:22px}
+  @media (max-width:430px){header.top{gap:6px}.marca{font-size:16px}.marca small{font-size:10.5px}.btn-sec{padding:8px 9px;font-size:13.5px}.top .volver,.top .ic{padding-left:10px;padding-right:10px}}
   .hoja-ficha{display:block;width:100%;height:auto;background:#fff;box-shadow:0 3px 14px rgba(0,0,0,.12);margin:0 0 14px;border-radius:2px}
 </style>
 </head>
@@ -84,9 +98,11 @@
     <a class="btn-sec volver" href="../" aria-label="Volver a Internos" title="Volver a Internos">‹</a>
     <div class="marca">“Alas de Libertad”<small>Ficha de ingreso</small></div>
     <div class="sp"></div>
+    <button class="btn-sec ic" id="btnGuard" aria-label="Fichas guardadas" title="Fichas guardadas">🗂</button>
     <button class="btn-sec" id="btnIndice">Preguntas</button>
     <button class="btn-sec" id="btnVer">Ver ficha</button>
   </header>
+  <div class="nota no-print" id="nota" role="status" hidden></div>
   <main id="vista"></main>
 </div>
 
@@ -204,8 +220,9 @@ function resumen(q){
 
 /* ---------- Pantalla de preguntas ---------- */
 function render(){
-  $("#btnVer").textContent = modo==="ficha" ? "Volver" : "Ver ficha";
+  $("#btnVer").textContent = modo!=="preguntas" ? "Volver" : "Ver ficha";
   if(modo==="ficha") return renderFicha();
+  if(modo==="lista") return renderLista();
   const q = Q[paso];
   aplicarDefaults(q);
   const visibles = Q.filter(visible);
@@ -413,6 +430,7 @@ function renderFicha(){
   $("#vista").innerHTML = `
     <div class="no-print" style="margin-top:6px">
       <div class="acciones">
+        <button class="guardar" id="bGuardar">${D._guardada?"💾 Guardar cambios":"💾 Guardar ficha"}</button>
         <button class="pdf" id="bPdf">Descargar PDF para imprimir</button>
         <button id="bEditar">Volver a las preguntas</button>
         <button id="bNueva">Empezar ficha nueva</button>
@@ -425,6 +443,7 @@ function renderFicha(){
     <div id="hojas"></div>`;
   dibujarPaginas($("#hojas"));
   $("#bPdf").addEventListener("click", descargarPDF);
+  $("#bGuardar").addEventListener("click", e=>guardarFicha(e.currentTarget));
   $("#bEditar").addEventListener("click", ()=>{ modo="preguntas"; guardar(); render(); });
   $("#bNueva").addEventListener("click", ()=>$("#conf").classList.add("show"));
   $("#cNo").addEventListener("click", ()=>$("#conf").classList.remove("show"));
@@ -475,13 +494,95 @@ async function descargarPDF(){
   }
 }
 
+/* ---------- Fichas guardadas (pestaña "Fichas de ingreso" de la planilla Base_Internos) ---------- */
+const API="https://script.google.com/macros/s/AKfycbzYLuWCtvRv-sQobVzwXxUhTbjfhDuul9raoOD4RbxFOkBVaPI5FLEOU4TI5z3pQl9_/exec", HOJA="Fichas de ingreso";
+const nced=c=>String(c||"").replace(/\D/g,"");
+const norm=t=>String(t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+const inic=n=>String(n||"").trim().split(/\s+/).slice(0,2).map(w=>w[0]||"").join("").toUpperCase();
+function nota(t){ const n=$("#nota"); n.textContent=t||""; n.hidden=!t; }
+// Usa la sesión con la que se entró a Internos (no pide contraseña acá)
+function sesion(){ try{ const p=JSON.parse(sessionStorage.getItem("alas-paso")||"null"); if(p&&p.token) return p; return JSON.parse(localStorage.getItem("alas-token")||"null"); }catch(e){ return null; } }
+async function api(o){
+  const s=sesion(); if(!s||!s.token) throw new Error("para guardar o ver fichas, entrá a la ficha desde la app de Internos (Más → Ficha de ingreso)");
+  const r=await fetch(API,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(Object.assign({email:s.email,token:s.token},o))});
+  const t=await r.text(); let j; try{ j=JSON.parse(t); }catch(e){ throw new Error("la planilla no respondió bien, probá de nuevo"); }
+  if(j && j.auth===false) throw new Error("tu sesión venció: volvé a Internos y entrá de nuevo");
+  return j;
+}
+async function leerFichas(){
+  const r=await api({action:"getSheet",sheet:HOJA});
+  if(!r||r.ok!==true) throw new Error((r&&r.error)||"no se pudo leer");
+  return (r.data||[]).map(o=>{ let d={}; try{ d=JSON.parse(o.datos||"{}"); }catch(e){}
+    return {fila:o._fila,id:String(o.id||""),nombre:String(o.nombre||"").trim(),cedula:String(o.cedula||""),fecha:String(o.fechadeingreso||"").slice(0,10),por:String(o.guardadapor||""),act:String(o.actualizada||""),D:d}; })
+    .filter(f=>f.id&&f.nombre);
+}
+function ahoraTxt(){ const d=new Date(),z=n=>String(n).padStart(2,"0"); return d.getFullYear()+"-"+z(d.getMonth()+1)+"-"+z(d.getDate())+" "+z(d.getHours())+":"+z(d.getMinutes()); }
+async function guardarFicha(btn){
+  if(!val("nombre")){ aviso("Falta el nombre del residente: volvé a las preguntas y completalo."); return; }
+  btn.disabled=true; btn.textContent="Guardando…";
+  try{
+    if(!D._id) D._id="f"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    const s=sesion()||{}, cuando=ahoraTxt();
+    const datos=Object.assign({},D); delete datos._guardada;
+    const rec={"id":D._id,"Fecha de ingreso":val("fechaIngreso")||val("fecha"),"Nombre":val("nombre"),"Cédula":val("cedula"),"Guardada por":s.email||"","Actualizada":cuando,"Datos":JSON.stringify(datos)};
+    const ya=(await leerFichas()).find(f=>f.id===D._id);
+    const r= ya ? await api({action:"updateRow",sheet:HOJA,fila:ya.fila,record:rec,log:"Corrigió la ficha de ingreso de "+rec["Nombre"]})
+                : await api({action:"addRow",sheet:HOJA,record:rec,log:"Guardó la ficha de ingreso de "+rec["Nombre"]});
+    if(!r||r.ok!==true) throw new Error((r&&r.error)||"no se confirmó");
+    D._guardada=cuando; guardar();
+    btn.textContent="✔ Guardada"; aviso("✔ Ficha guardada. La encontrás en 🗂 Fichas guardadas"+(rec["Cédula"]?" y en la tarjeta de "+rec["Nombre"].split(" ")[0]+" en Internos":"")+".");
+    setTimeout(()=>{ btn.disabled=false; btn.textContent="💾 Guardar cambios"; },2500);
+  }catch(e){ btn.disabled=false; btn.textContent=D._guardada?"💾 Guardar cambios":"💾 Guardar ficha"; aviso("No se pudo guardar: "+e.message); }
+}
+// Pasa una ficha guardada al formulario (avisa si hay otra a medio hacer sin guardar)
+function sinGuardar(){ return !!(val("nombre") && !D._guardada); }
+function abrirGuardada(f){
+  if(sinGuardar() && D._id!==f.id && !confirm("Tenés la ficha de "+val("nombre")+" sin guardar. Si abrís esta, se pierde. ¿Seguir?")) return;
+  D=Object.assign({},f.D,{_id:f.id,_guardada:f.act||"sí"}); paso=0; modo="ficha"; guardar(); nota(""); render();
+}
+async function abrirPorCedula(ced,nom){
+  $("#vista").innerHTML='<p class="hint" style="margin-top:20px">Buscando la ficha de '+esc(nom||ced)+'…</p>';
+  try{
+    const c=nced(ced); const ls=c?(await leerFichas()).filter(f=>nced(f.cedula)===c).sort((a,b)=>(b.act).localeCompare(a.act)):[];
+    if(ls.length){ abrirGuardada(ls[0]); if(modo==="ficha") nota("Ficha de ingreso guardada de "+ls[0].nombre+"."); return; }
+    if(sinGuardar() && nced(val("cedula"))!==c && !confirm("Tenés la ficha de "+val("nombre")+" sin guardar. ¿La descarto para empezar la de "+(nom||ced)+"?")){ render(); return; }
+    if(!(nced(val("cedula"))===c && c)){ D={nombre:nom,cedula:ced}; paso=0; }
+    modo="preguntas"; guardar(); nota((nom||"Este interno")+" todavía no tiene ficha guardada. Empezá una: el nombre y la cédula ya están puestos."); render();
+  }catch(e){ nota("No se pudo buscar la ficha: "+e.message); modo="preguntas"; render(); }
+}
+async function renderLista(){
+  nota("");
+  $("#vista").innerHTML=`<div class="lista"><h2>Fichas guardadas</h2>
+    <div class="busca"><input id="lq" type="search" placeholder="Buscar por nombre o cédula…" aria-label="Buscar ficha" autocomplete="off"></div>
+    <p class="cnt" id="lcnt">Cargando…</p><div id="lfichas"></div></div>`;
+  window.scrollTo(0,0);
+  let fichas, act=null;
+  try{
+    fichas=await leerFichas();
+    try{ const ins=await api({action:"getInternos"}); const arr=Array.isArray(ins)?ins:(ins&&ins.data)||null; if(arr) act=new Set(arr.map(i=>nced(i.cedula)).filter(Boolean)); }catch(e){}
+  }catch(e){ if(modo==="lista") $("#lcnt").textContent="No se pudo cargar: "+e.message; return; }
+  if(modo!=="lista") return;
+  fichas.sort((a,b)=>(b.fecha+b.act).localeCompare(a.fecha+a.act));
+  const pintar=()=>{ const q=norm($("#lq").value.trim());
+    const ls=fichas.filter(f=>!q||norm(f.nombre+" "+f.cedula+" "+nced(f.cedula)).includes(q));
+    $("#lcnt").textContent = !fichas.length ? "Todavía no hay fichas guardadas. Al terminar una ficha, tocá «Guardar ficha»."
+      : ls.length+(ls.length===1?" ficha":" fichas")+" · la más nueva primero";
+    $("#lfichas").innerHTML = ls.map(f=>`<button type="button" class="lrow" data-id="${esc(f.id)}"><span class="av">${esc(inic(f.nombre))}</span><span class="lt2"><b>${esc(f.nombre)}${act&&f.cedula&&!act.has(nced(f.cedula))?"<em>Ya no está</em>":""}</b><small>Ingreso ${esc(fmtFecha(f.fecha))}${f.cedula?" · "+esc(f.cedula):""}</small></span><i>›</i></button>`).join("")
+      || (fichas.length?'<p class="cnt">Nadie coincide con la búsqueda.</p>':"");
+    document.querySelectorAll(".lrow").forEach(b=>b.onclick=()=>abrirGuardada(fichas.find(f=>f.id===b.dataset.id)));
+  };
+  $("#lq").oninput=pintar; pintar();
+}
+
 /* ---------- Arranque ---------- */
 $("#btnIndice").addEventListener("click", ()=>{ renderIndice(); $("#panel").classList.add("open"); });
 $("#cerrarPanel").addEventListener("click", ()=>$("#panel").classList.remove("open"));
 $("#panel").addEventListener("click", e=>{ if(e.target.id==="panel") $("#panel").classList.remove("open"); });
-$("#btnVer").addEventListener("click", ()=>{ modo = modo==="ficha"?"preguntas":"ficha"; guardar(); render(); });
+$("#btnVer").addEventListener("click", ()=>{ modo = modo==="preguntas"?"ficha":"preguntas"; guardar(); render(); });
+$("#btnGuard").addEventListener("click", ()=>{ modo="lista"; render(); });
 cargar();
-render();
+{ let A=null; try{ A=JSON.parse(sessionStorage.getItem("ficha-abrir")||"null"); sessionStorage.removeItem("ficha-abrir"); }catch(e){}
+  if(A&&(A.ced||A.nom)) abrirPorCedula(A.ced||"",A.nom||""); else render(); }
 if("serviceWorker" in navigator && location.protocol.startsWith("http")) window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
 })();
 </script>

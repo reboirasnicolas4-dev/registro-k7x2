@@ -150,6 +150,8 @@ main{padding-bottom:110px}
 .back{border:0;background:none;padding:4px 0 10px;font-weight:700;color:var(--ink)}
 .menu-list{display:grid;gap:8px}
 .mi{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px;border-radius:14px;font-weight:600;font-size:15px}
+.fichalink{display:flex;align-items:center;justify-content:space-between;gap:8px;text-decoration:none;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 14px;font-weight:600;margin:0 0 10px}
+.fichalink span{color:var(--acc);font-size:18px}
 a.mi{text-decoration:none;color:var(--ink);background:var(--card);border:1px solid var(--line);box-sizing:border-box;font-family:inherit}
 .mi span{flex:1;min-width:0}.mi small{display:block;font-weight:400;color:var(--mut);font-size:12.5px}
 .mi i{font-style:normal;color:var(--acc);font-size:18px;line-height:1;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;flex:none;background:color-mix(in srgb,var(--acc) 12%,var(--card))}
@@ -494,6 +496,7 @@ html.cargando #login{display:none!important}
     </div>
   </div>
   <div class="cuinfo" id="cuinfo" hidden></div>
+  <a class="fichalink" id="fichalink" hidden>📋 Ficha de ingreso <span>›</span></a>
   <div class="seg" id="fseg"><button type="button" data-s="d" class="on">Datos</button><button type="button" data-s="s">Salidas</button><button type="button" data-s="m">Medicación</button></div>
   <div class="pane" data-p="d">
   <div class="kv" id="fres" hidden></div>
@@ -597,7 +600,7 @@ function sesionGuardada(){try{const p=JSON.parse(sessionStorage.getItem("alas-pa
   if(p&&p.token&&Date.now()-p.t<60000)return p;return JSON.parse(localStorage.getItem("alas-token")||"null")}catch(x){return null}}
 function borrarSesion(){try{localStorage.removeItem("alas-token");localStorage.removeItem("internos-pw");sessionStorage.removeItem("alas-sesion");sessionStorage.removeItem("alas-paso")}catch(x){}}
 function cerrarSesion(){fotosChicas={};fotosGrandes={};fotosPedidas=new Set();if(token)api({action:"logout"}).catch(()=>{});borrarSesion();token="";pass=""}
-document.addEventListener("click",e=>{if(e.target.closest('a[href="cuartos/"],a[href="ficha/"]'))pasarSesion()});
+document.addEventListener("click",e=>{if(e.target.closest('a[href="cuartos/"],a[href^="ficha/"]'))pasarSesion()});
 
 /* ===== Comunicación con Google Sheets (Apps Script) ===== */
 async function api(params, body){
@@ -751,7 +754,9 @@ function openDlg(it){
   pintarFoto(it); $("fotobox").hidden=!it;
   {const b=$("cuinfo");b.hidden=!it;if(it){const t=textoCama(it.id);b.replaceChildren(el("span","","🛏️"));
     if(t){b.append(el("b","",t[0]));if(t[1])b.append(el("span","",t[1]))}else b.append(el("span","","Sin cama asignada"));
-    const a=el("a","","Ver en Cuartos →");a.href="cuartos/";b.append(a)}} $("fotobt").hidden=!isAdmin(); $("fmsg").textContent="";
+    const a=el("a","","Ver en Cuartos →");a.href="cuartos/";b.append(a)}}
+  {const fl=$("fichalink");fl.hidden=!it;fl.href="ficha/";// la cédula va por sessionStorage, no en la dirección
+    fl.onclick=()=>{try{sessionStorage.setItem("ficha-abrir",JSON.stringify({ced:it.cedula||"",nom:(it.nombre||"").trim()}))}catch(x){}}} $("fotobt").hidden=!isAdmin(); $("fmsg").textContent="";
   f.salioel.value=it?.salio||""; f.vuelveel.value=it?.vuelve||""; f.nosalioel.value=it?.nosalio||""; salInfo();
   $("salhoy").hidden=$("nosal").hidden=$("volvio").hidden=!isAdmin();
   const ro=!isAdmin();
@@ -1398,7 +1403,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261111150822";
+const APP_VER="20261111162148";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
