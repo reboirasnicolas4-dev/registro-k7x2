@@ -150,6 +150,7 @@ main{padding-bottom:110px}
 .back{border:0;background:none;padding:4px 0 10px;font-weight:700;color:var(--ink)}
 .menu-list{display:grid;gap:8px}
 .mi{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px;border-radius:14px;font-weight:600;font-size:15px}
+a.mi{text-decoration:none;color:var(--ink);background:var(--card);border:1px solid var(--line);box-sizing:border-box;font-family:inherit}
 .mi span{flex:1;min-width:0}.mi small{display:block;font-weight:400;color:var(--mut);font-size:12.5px}
 .mi i{font-style:normal;color:var(--acc);font-size:18px;line-height:1;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;flex:none;background:color-mix(in srgb,var(--acc) 12%,var(--card))}
 .mi b.ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:none;color:var(--c,var(--acc));background:color-mix(in srgb,var(--c,var(--acc)) 18%,var(--card))}
@@ -399,6 +400,7 @@ html.cargando #login{display:none!important}
     <div class="menu-list">
       <button type="button" class="mi" data-go="E" style="--c:#f7a823"><b class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 4H6a1 1 0 0 0-1 1v15h8M13 4v16M16 12h6M19 9l3 3-3 3"/></svg></b><span>Egresados<small>Los que ya se fueron</small></span><i>›</i></button>
       <button type="button" class="mi" data-go="D" style="--c:#f0855a"><b class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21c-3.9 0-7-2.6-7-6.5 0-3.7 3-5.7 4-9.5 2 1.5 3 3.5 3 5.5 1-.7 1.7-1.8 2-3 2 1.8 5 4.6 5 7 0 3.9-3.1 6.5-7 6.5z"/></svg></b><span>Destallo<small>Los que están haciendo el destallo</small></span><i>›</i></button>
+      <a href="ficha/" class="mi" style="--c:#7fb069"><b class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8M9 2.8h6v2.4H9z"/><path d="M6 4H5a1 1 0 0 0-1 1v15a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1h-1"/><path d="M8 10h8M8 14h8M8 18h5"/></svg></b><span>Ficha de ingreso<small>Preguntas al nuevo y ficha para imprimir</small></span><i>›</i></a>
       <button type="button" class="mi" data-go="R" id="miR" hidden style="--c:#d9b12f"><b class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg></b><span>Registro<small>Quién cambió qué y cuándo</small></span><i>›</i></button>
       <button type="button" class="mi" data-go="U" id="miU" hidden style="--c:#f7a823"><b class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M11 12l8-8M16 7l3 3M14 9l2 2"/></svg></b><span>Usuarios<small>Agregar, quitar y códigos</small></span><i>›</i></button>
       <button type="button" class="mi" id="imprimir" style="--c:var(--mut)"><b class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V4h10v5M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2M7 14h10v6H7z"/></svg></b><span>Imprimir lista<small>Desde la computadora</small></span><i>›</i></button>
@@ -595,7 +597,7 @@ function sesionGuardada(){try{const p=JSON.parse(sessionStorage.getItem("alas-pa
   if(p&&p.token&&Date.now()-p.t<60000)return p;return JSON.parse(localStorage.getItem("alas-token")||"null")}catch(x){return null}}
 function borrarSesion(){try{localStorage.removeItem("alas-token");localStorage.removeItem("internos-pw");sessionStorage.removeItem("alas-sesion");sessionStorage.removeItem("alas-paso")}catch(x){}}
 function cerrarSesion(){fotosChicas={};fotosGrandes={};fotosPedidas=new Set();if(token)api({action:"logout"}).catch(()=>{});borrarSesion();token="";pass=""}
-document.addEventListener("click",e=>{if(e.target.closest('a[href="cuartos/"]'))pasarSesion()});
+document.addEventListener("click",e=>{if(e.target.closest('a[href="cuartos/"],a[href="ficha/"]'))pasarSesion()});
 
 /* ===== Comunicación con Google Sheets (Apps Script) ===== */
 async function api(params, body){
@@ -1396,7 +1398,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261107214437";
+const APP_VER="20261111083844";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}

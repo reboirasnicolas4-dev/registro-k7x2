@@ -27,6 +27,7 @@
   .marca{font-family:Lora,serif;font-weight:700;color:var(--marron);font-size:19px;line-height:1.1}
   .marca small{display:block;font-family:Inter,sans-serif;font-weight:500;font-size:12px;color:var(--gris);letter-spacing:.06em;text-transform:uppercase;margin-top:2px}
   .top .sp{flex:1}
+  .top .volver{text-decoration:none;white-space:nowrap;font-size:22px;line-height:1;padding-left:14px;padding-right:14px}
   .btn-sec{background:var(--blanco);border:1px solid var(--linea);color:var(--marron);border-radius:10px;padding:8px 12px;font-size:14px;font-weight:600}
   .barra{height:6px;background:var(--linea);border-radius:99px;overflow:hidden;margin:4px 0 6px}
   .barra i{display:block;height:100%;background:var(--naranja);width:0;transition:width .25s}
@@ -80,6 +81,7 @@
 <body>
 <div class="app" id="app">
   <header class="top no-print">
+    <a class="btn-sec volver" href="../" aria-label="Volver a Internos" title="Volver a Internos">‹</a>
     <div class="marca">“Alas de Libertad”<small>Ficha de ingreso</small></div>
     <div class="sp"></div>
     <button class="btn-sec" id="btnIndice">Preguntas</button>
@@ -492,6 +494,11 @@ cargar();
 render();
 if("serviceWorker" in navigator && location.protocol.startsWith("http")) window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
 })();
+</script>
+<script>
+/* Al volver a Internos: renueva el pase de sesión que dejó Internos, así no pide la contraseña otra vez */
+document.addEventListener("click",function(e){if(!e.target.closest("a.volver"))return;
+  try{var p=JSON.parse(sessionStorage.getItem("alas-paso")||"null");if(p&&p.token){p.t=Date.now();sessionStorage.setItem("alas-paso",JSON.stringify(p))}}catch(x){}});
 </script>
 </body>
 </html>
