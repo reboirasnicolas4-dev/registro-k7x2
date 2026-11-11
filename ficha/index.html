@@ -77,6 +77,10 @@
   .confirm .si{background:var(--marron);color:#fff;border-color:var(--marron)}
   .acciones .guardar{background:var(--marron);border-color:var(--marron);color:#fff}
   .acciones .guardar:disabled{opacity:.6}
+  .tipoSel{display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid var(--linea);border-radius:14px;padding:8px 10px}
+  .tipoSel span{font-weight:600;color:var(--marron);font-size:15px;margin-right:auto}
+  .acciones .tipoSel .tp{flex:0 0 auto;padding:10px 16px;font-size:16px;border-radius:10px}
+  .acciones .tipoSel .tp.on{background:var(--naranja);border-color:var(--naranja);color:#fff}
   .top .ic{font-size:18px;line-height:1;padding-left:11px;padding-right:11px}
   .nota{background:var(--naranja-claro);border:1px solid var(--naranja);color:var(--marron);border-radius:12px;padding:10px 12px;font-size:14.5px;margin:4px 0 6px}
   .lista h2{font-family:Lora,serif;color:var(--marron);font-size:24px;margin:8px 0 10px}
@@ -431,6 +435,7 @@ function renderFicha(){
   $("#vista").innerHTML = `
     <div class="no-print" style="margin-top:6px">
       <div class="acciones">
+        ${D._interno?"":`<div class="tipoSel" role="group" aria-label="Tipo de ingreso"><span>Ingresa como:</span>${["Privado","MIDES"].map(t=>`<button type="button" class="tp${D.tipoIng===t?" on":""}" data-t="${t}" aria-pressed="${D.tipoIng===t}">${t}</button>`).join("")}</div>`}
         <button class="guardar" id="bGuardar">${D._guardada?"💾 Guardar cambios":"💾 Guardar ficha"}</button>
         <button class="pdf" id="bPdf">Descargar PDF para imprimir</button>
         <button id="bEditar">Volver a las preguntas</button>
@@ -445,6 +450,8 @@ function renderFicha(){
   dibujarPaginas($("#hojas"));
   $("#bPdf").addEventListener("click", descargarPDF);
   $("#bGuardar").addEventListener("click", e=>guardarFicha(e.currentTarget));
+  document.querySelectorAll(".tipoSel .tp").forEach(b=>b.addEventListener("click",()=>{ D.tipoIng=b.dataset.t; guardar();
+    document.querySelectorAll(".tipoSel .tp").forEach(x=>{ const on=x===b; x.classList.toggle("on",on); x.setAttribute("aria-pressed",on); }); }));
   $("#bEditar").addEventListener("click", ()=>{ modo="preguntas"; guardar(); render(); });
   $("#bNueva").addEventListener("click", ()=>$("#conf").classList.add("show"));
   $("#cNo").addEventListener("click", ()=>$("#conf").classList.remove("show"));
@@ -525,7 +532,7 @@ async function agregarAInternos(){
   const c=nced(val("cedula")), n=norm(val("nombre")).replace(/\s+/g," ").trim();
   const ya=arr.find(i=>(c&&nced(i.cedula)===c)||(!c&&norm(i.nombre).replace(/\s+/g," ").trim()===n));
   if(ya){ D._interno=String(ya.id||"ya"); return "ya"; }
-  if(!val("tipoIng")) throw new Error("falta elegir si ingresa como Privado o MIDES: es la 3.ª pregunta, en Inicio. Elegilo y tocá Guardar de nuevo");
+  if(!val("tipoIng")) throw new Error("falta elegir si ingresa como Privado o MIDES: elegilo arriba del botón Guardar y tocá Guardar de nuevo");
   const rec={nombre:val("nombre"),cedula:val("cedula"),ingreso:val("fechaIngreso")||val("fecha"),tipo:val("tipoIng")};
   const r=await api({action:"addInterno",record:rec});
   if(!r||r.ok!==true) throw new Error((r&&r.error)||"no se confirmó");
