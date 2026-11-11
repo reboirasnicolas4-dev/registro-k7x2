@@ -136,6 +136,7 @@ const hoyISO = () => { const d=new Date(); const z=n=>String(n).padStart(2,"0");
 const Q = [
   {s:0,k:"fecha",tipo:"date",label:"Fecha (arriba de la ficha)",ask:"Fecha de hoy",def:hoyISO},
   {s:0,k:"fechaIngreso",tipo:"date",label:"Fecha de ingreso de residentes",ask:"¿Qué día ingresa a la comunidad?",def:hoyISO},
+  {s:0,k:"tipoIng",tipo:"choice",label:"Tipo (Privado o MIDES)",ask:"¿Ingresa como privado o por MIDES?",ops:["Privado","MIDES"],hint:"Es para la lista de Internos: al guardar la ficha, se agrega solo. No sale en la hoja impresa."},
 
   {s:1,k:"nombre",tipo:"text",label:"Nombre y apellido",ask:"¿Cuál es tu nombre y apellido?"},
   {s:1,k:"cedula",tipo:"text",num:true,label:"Cédula de identidad",ask:"¿Cuál es tu número de cédula?"},
@@ -517,6 +518,19 @@ async function leerFichas(){
     .filter(f=>f.id&&f.nombre);
 }
 function ahoraTxt(){ const d=new Date(),z=n=>String(n).padStart(2,"0"); return d.getFullYear()+"-"+z(d.getMonth()+1)+"-"+z(d.getDate())+" "+z(d.getHours())+":"+z(d.getMinutes()); }
+// Al guardar una ficha nueva, el residente se agrega solo a la lista de Internos (si no estaba)
+async function agregarAInternos(){
+  const ins=await api({action:"getInternos"}); const arr=Array.isArray(ins)?ins:(ins&&ins.data)||[];
+  if(ins&&ins.ok===false) throw new Error(ins.error||"no se pudo leer Internos");
+  const c=nced(val("cedula")), n=norm(val("nombre")).replace(/\s+/g," ").trim();
+  const ya=arr.find(i=>(c&&nced(i.cedula)===c)||(!c&&norm(i.nombre).replace(/\s+/g," ").trim()===n));
+  if(ya){ D._interno=String(ya.id||"ya"); return "ya"; }
+  if(!val("tipoIng")) throw new Error("falta elegir si ingresa como Privado o MIDES: es la 3.ª pregunta, en Inicio. Elegilo y tocá Guardar de nuevo");
+  const rec={nombre:val("nombre"),cedula:val("cedula"),ingreso:val("fechaIngreso")||val("fecha"),tipo:val("tipoIng")};
+  const r=await api({action:"addInterno",record:rec});
+  if(!r||r.ok!==true) throw new Error((r&&r.error)||"no se confirmó");
+  D._interno=String(r.id||"nuevo"); return "nuevo";
+}
 async function guardarFicha(btn){
   if(!val("nombre")){ aviso("Falta el nombre del residente: volvé a las preguntas y completalo."); return; }
   btn.disabled=true; btn.textContent="Guardando…";
@@ -530,7 +544,13 @@ async function guardarFicha(btn){
                 : await api({action:"addRow",sheet:HOJA,record:rec,log:"Guardó la ficha de ingreso de "+rec["Nombre"]});
     if(!r||r.ok!==true) throw new Error((r&&r.error)||"no se confirmó");
     D._guardada=cuando; guardar();
-    btn.textContent="✔ Guardada"; aviso("✔ Ficha guardada. La encontrás en 🗂 Fichas guardadas"+(rec["Cédula"]?" y en la tarjeta de "+rec["Nombre"].split(" ")[0]+" en Internos":"")+".");
+    let extra="";
+    if(!D._interno){
+      try{ const q=await agregarAInternos(); guardar();
+        extra = q==="nuevo" ? " "+rec["Nombre"].split(" ")[0]+" ya quedó agregado a la lista de Internos ("+val("tipoIng")+", ingreso "+fmtFecha(val("fechaIngreso")||val("fecha"))+")." : " Ya estaba en la lista de Internos.";
+      }catch(e){ extra=" ⚠ Pero no se agregó a Internos: "+e.message+"."; }
+    }
+    btn.textContent="✔ Guardada"; aviso("✔ Ficha guardada. La encontrás en 🗂 Fichas guardadas."+extra);
     setTimeout(()=>{ btn.disabled=false; btn.textContent="💾 Guardar cambios"; },2500);
   }catch(e){ btn.disabled=false; btn.textContent=D._guardada?"💾 Guardar cambios":"💾 Guardar ficha"; aviso("No se pudo guardar: "+e.message); }
 }
