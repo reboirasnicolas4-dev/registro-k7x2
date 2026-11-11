@@ -112,8 +112,7 @@ const SECCIONES = [
   "5. Situación sociofamiliar",
   "6. Situación educativa y laboral",
   "7. Compromisos del residente",
-  "8. Observaciones del equipo",
-  "9. Firmas"
+  "8. Observaciones del equipo"
 ];
 
 const hoyISO = () => { const d=new Date(); const z=n=>String(n).padStart(2,"0"); return d.getFullYear()+"-"+z(d.getMonth()+1)+"-"+z(d.getDate()); };
@@ -162,11 +161,6 @@ const Q = [
   {s:7,k:"compromiso",tipo:"choice",label:"Compromisos del residente",ask:"¿Aceptás estos compromisos?",ops:["Acepta","No acepta"],lectura:true},
 
   {s:8,k:"observaciones",tipo:"area",label:"Observaciones del equipo",ask:"Observaciones del equipo",hint:"Esto lo completa el equipo, no se le pregunta al residente."},
-
-  {s:9,k:"aclaracion",tipo:"text",label:"Aclaración (firma del residente)",ask:"Aclaración de la firma del residente",def:d=>d.nombre||"",hint:"Por defecto va el nombre del residente. La firma se hace a mano en la hoja impresa."},
-  {s:9,k:"fechaFirmaRes",tipo:"date",label:"Fecha (firma del residente)",ask:"Fecha de la firma del residente",def:hoyISO},
-  {s:9,k:"cargo",tipo:"text",label:"Cargo (responsable del ingreso)",ask:"Cargo del responsable del ingreso",chips:["Operador terapéutico","Coordinador","Psicólogo/a","Director"]},
-  {s:9,k:"fechaFirmaResp",tipo:"date",label:"Fecha (firma del responsable)",ask:"Fecha de la firma del responsable",def:hoyISO}
 ];
 
 const COMPROMISOS = [
@@ -380,10 +374,6 @@ function layout(medir){
   box(3,85.1,535.9,D.compromiso==="Acepta"); box(3,135,535.9,D.compromiso==="No acepta");
   // Página 4
   area(4,[[85,131,425],[85,144,425],[85,157,425],[85,170,425],[85,182.5,425]],val("observaciones"));
-  fld(4,180,238.8,330,val("aclaracion"));
-  fld(4,158,254.9,85,F("fechaFirmaRes"),true);
-  fld(4,160,294.0,350,val("cargo"));
-  fld(4,158,310.1,85,F("fechaFirmaResp"),true);
   return ops;
 }
 
