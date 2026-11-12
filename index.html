@@ -582,7 +582,10 @@ const DEFAULT_API = "https://script.google.com/macros/s/AKfycbzYLuWCtvRv-sQobVzw
 let API = DEFAULT_API;
 const ACT = { check:"checkUser", list:"getInternos", add:"addInterno", update:"updateInterno", remove:"deleteInterno" };
 const DUR=9, PRIMERA=3, AV_FIN=10, AV_SAL=7;
-const DIAS_SAL=n=>n<=3?4:7; // salidas 1.ª a 3.ª: 4 días; de la 4.ª en adelante: una semana
+// Días desde que sale hasta el día que vuelve. El día que vuelve también cuenta como salida:
+// 1.ª a 3.ª: sábado → martes (4 días: sáb, dom, lun, mar); de la 4.ª en adelante: lunes → lunes siguiente
+const DIAS_SAL=n=>n<=3?3:7;
+const DUR_TXT=n=>n<=3?"4 días":"una semana";
 const MEALS=["desayuno","almuerzo","merienda","cena"];
 
 /* ===== Estado ===== */
@@ -677,7 +680,7 @@ function planSalidas(ing,fin){const out=[];for(let n=1;;n++){const d=addM(ing,PR
 function numSalidaD(ing,s){return Math.max(1,fullM(ing,new Date(s.getFullYear(),s.getMonth(),s.getDate()+15))-PRIMERA+1)} // tolera salidas adelantadas o atrasadas
 // Una salida automática que empieza hoy no cuenta hasta que se toca «Ya salió» (si no se toca, mañana ya cuenta)
 function pendiente(e){return !e.man&&+e.d===+hoy}
-function afueraEl(e,f){return f>=e.d&&f<e.v&&!(pendiente(e)&&+f===+hoy)}
+function afueraEl(e,f){return f>=e.d&&f<=e.v&&!(pendiente(e)&&+f===+hoy)}
 function calc(it){
   const ing=parse(it.ingreso), fin=addM(ing,DUR);
   const m0=ing>hoy?0:fullM(ing,hoy);
@@ -687,7 +690,7 @@ function calc(it){
   const evs=planSalidas(ing,fin).filter(p=>+p.d!==skip&&!(man&&man.n===p.n)).map(p=>({d:p.d,v:p.v}));
   if(man) evs.push(man);
   let vuelve="";
-  for(const e of evs) if(!pendiente(e)&&hoy>=e.d&&(e.man?hoy<e.v:hoy<=e.v)){const r=days(hoy,e.v);vuelve=r===0?"Hoy":r+(r===1?" día":" días")}
+  for(const e of evs) if(!pendiente(e)&&hoy>=e.d&&hoy<=e.v){const r=days(hoy,e.v);vuelve=r===0?"Hoy":r+(r===1?" día":" días")}
   const fut=evs.filter(e=>e.d>=hoy).sort((a,b)=>a.d-b.d);
   let sal=fut.length?fut[0].d:null;
   return{ing,fin,lleva:ing>hoy?"Aún no ingresa":span(ing,hoy),falta:fin<=hoy?"Cumplido":span(hoy,fin),
@@ -877,7 +880,7 @@ function numSalida(ingISO,salISO){return !ingISO||!salISO?1:numSalidaD(parse(ing
 function salidaCercana(ingISO){if(!ingISO)return null;const ing=parse(ingISO);const pl=planSalidas(ing,addM(ing,DUR));
   return pl.length?pl.reduce((a,b)=>Math.abs(b.d-hoy)<Math.abs(a.d-hoy)?b:a):null}
 function salInfo(){const f=$("f");const t=[];
-  if(f.salioel.value){const n=numSalida(f.ingreso.value,f.salioel.value);t.push("Salida puesta a mano: n.º "+n+" ("+DIAS_SAL(n)+" días). Podés cambiar la fecha de vuelta si se coordinó distinto.")}
+  if(f.salioel.value){const n=numSalida(f.ingreso.value,f.salioel.value);t.push("Salida puesta a mano: n.º "+n+" ("+DUR_TXT(n)+", el día que vuelve también cuenta). Podés cambiar la fecha de vuelta si se coordinó distinto.")}
   if(f.nosalioel.value)t.push("No salió el "+fd(parse(f.nosalioel.value))+".");
   $("salinfo").textContent=t.length?t.join(" "):"Automático: sin cambios.";}
 function autoVuelve(){const f=$("f");if(!f.salioel.value){f.vuelveel.value="";salInfo();return}
@@ -1146,7 +1149,7 @@ let marcas={}, abiertoNo=null, llevar=[];
 function salidaActual(i,f){return calc(i).evs.find(e=>afueraEl(e,f))}
 function llevarDe(i,e,lista){const a=iso(new Date(e.d.getFullYear(),e.d.getMonth(),e.d.getDate()-2)),b=iso(e.v);return (lista||llevar).filter(m=>String(m.id)===String(i.id)&&m.toma==="Salida"&&m.fecha>=a&&m.fecha<=b).pop()}
 // La salida en la que está hoy (si está de salida)
-function salidaHoy(i){return calc(i).evs.find(e=>!pendiente(e)&&hoy>=e.d&&(e.man?hoy<e.v:hoy<=e.v))}
+function salidaHoy(i){return calc(i).evs.find(e=>!pendiente(e)&&hoy>=e.d&&hoy<=e.v)}
 // Le toca salir hoy pero todavía no se tocó «Ya salió»
 function salePend(i){return calc(i).evs.find(e=>pendiente(e))}
 async function yaSalio(i){if(!isAdmin())return;const e=salePend(i);if(!e)return;
@@ -1158,7 +1161,10 @@ async function yaSalio(i){if(!isAdmin())return;const e=salePend(i);if(!e)return;
 // "Ya volvió": termina la salida hoy (queda registrada: salió el … y volvió hoy)
 async function yaVolvio(i){if(!isAdmin())return;const e=salidaHoy(i);if(!e)return;
   if(!confirm("¿Marcar que "+i.nombre.trim()+" ya volvió hoy? Desde ahora vuelve a contar para la medicación y Cuartos."))return;
-  const rec={id:i.id,nombre:i.nombre.trim(),cedula:i.cedula||"",tipo:i.tipo||"Privado",ingreso:i.ingreso,salioel:iso(e.d),vuelveel:iso(hoy),nosalioel:i.nosalio||""};
+  // el día que vuelve cuenta como salida, así que al volver antes la salida termina ayer y hoy ya está presente
+  const ayer=new Date(hoy.getFullYear(),hoy.getMonth(),hoy.getDate()-1),mismoDia=+e.d>=+hoy;
+  const rec={id:i.id,nombre:i.nombre.trim(),cedula:i.cedula||"",tipo:i.tipo||"Privado",ingreso:i.ingreso,
+    salioel:mismoDia?"":iso(e.d),vuelveel:mismoDia?"":iso(ayer),nosalioel:mismoDia?iso(e.d):(i.nosalio||"")};
   MEALS.forEach(m=>rec[m]=i[m]||"");
   try{const res=await api(null,{action:ACT.update,record:rec});confirmar(res);if($("dlg").open)$("dlg").close();await reload();renderMed()}
   catch(err){alert("No se pudo marcar: "+err.message)}}
@@ -1442,7 +1448,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261112164017";
+const APP_VER="20261112191037";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}

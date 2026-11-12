@@ -335,7 +335,7 @@ const HOJA_CUARTOS="Cuartos", HOJA_ROT="Rotaciones";
 /* ===== Estado ===== */
 let email="",pass="",role="",gente=[],fuera=[],historial=[],sel=null,menuP=null,modo="swap",parejas=[],deshacer=[],ultimoLog="";
 const HOJA_NJ="NoJuntar";
-const PRIMERA=3,DUR=9,DIAS_SAL=n=>n<=3?4:7;
+const PRIMERA=3,DUR=9,DIAS_SAL=n=>n<=3?3:7; // hasta el día que vuelve (ese día también cuenta como salida)
 function addM(d,n){const t=new Date(d.getFullYear(),d.getMonth()+n,1);const last=new Date(t.getFullYear(),t.getMonth()+1,0).getDate();return new Date(t.getFullYear(),t.getMonth(),Math.min(d.getDate(),last))}
 function fullM(a,b){let m=(b.getFullYear()-a.getFullYear())*12+b.getMonth()-a.getMonth();if(addM(a,m)>b)m--;return m}
 const dias=(a,b)=>Math.round((b-a)/864e5);
@@ -347,7 +347,7 @@ function salidaHoy(o){
   const evs=[];for(let n=1;;n++){const d=addM(ing,PRIMERA+n-1);if(d>=fin)break;if(+d===skip||(man&&man.n===n))continue;evs.push({d,v:new Date(d.getFullYear(),d.getMonth(),d.getDate()+DIAS_SAL(n))})}
   if(man)evs.push(man);
   // la salida automática de hoy no cuenta hasta que en Internos se toca «Ya salió»
-  const e=evs.find(e=>HOY>=e.d&&HOY<e.v&&(e.man||+e.d!==+HOY));return e?e.v:null;
+  const e=evs.find(e=>HOY>=e.d&&HOY<=e.v&&(e.man||+e.d!==+HOY));return e?e.v:null;
 }
 const $=id=>document.getElementById(id);
 const el=(t,c,txt)=>{const e=document.createElement(t);if(c)e.className=c;if(txt!=null)e.textContent=txt;return e};
@@ -747,7 +747,7 @@ if("serviceWorker" in navigator&&location.protocol.startsWith("http"))window.add
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261112164017";
+const APP_VER="20261112191037";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
