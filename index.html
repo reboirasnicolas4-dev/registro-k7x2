@@ -92,7 +92,9 @@ td.n{font-weight:700}
 .av{width:36px;height:36px;border-radius:50%;object-fit:cover;flex:none;background:var(--line);display:grid;place-items:center;font-size:13px;font-weight:700;color:var(--mut)}
 .foto{display:flex;gap:14px;align-items:center}
 .cuinfo{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:10px 0 4px;font-size:14px}
-.cuinfo b{font-weight:700}.cuinfo a{margin-left:auto;color:var(--ink);font-weight:600;font-size:13px}
+.cuinfo b{font-weight:700}
+.salbox{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:color-mix(in srgb,var(--acc) 14%,var(--card));border:1px solid var(--acc);border-radius:10px;padding:8px 10px 8px 12px;margin:6px 0 4px;font-size:14px}
+.salbox b{font-weight:700}.salbox button{margin-left:auto}.cuinfo a{margin-left:auto;color:var(--ink);font-weight:600;font-size:13px}
 .foto .big{width:120px;height:120px;border-radius:14px;object-fit:cover;background:var(--line);display:grid;place-items:center;color:var(--mut);font-size:13px;text-align:center;flex:none}
 .foto .bt{display:grid;gap:8px}
 .foto input[type=file]{display:none}
@@ -496,6 +498,7 @@ html.cargando #login{display:none!important}
     </div>
   </div>
   <div class="cuinfo" id="cuinfo" hidden></div>
+  <div class="salbox" id="salbox" hidden></div>
   <a class="fichalink" id="fichalink" hidden>📋 Ficha de ingreso <span>›</span></a>
   <div class="seg" id="fseg"><button type="button" data-s="d" class="on">Datos</button><button type="button" data-s="s">Salidas</button><button type="button" data-s="m">Medicación</button></div>
   <div class="pane" data-p="d">
@@ -676,11 +679,11 @@ function calc(it){
   const m0=ing>hoy?0:fullM(ing,hoy);
   // Salidas automáticas, menos la marcada "No salió" y la reemplazada por una salida puesta a mano
   const skip=it.nosalio?+parse(it.nosalio):null;
-  const man=it.salio&&it.vuelve?{n:numSalidaD(ing,parse(it.salio)),d:parse(it.salio),v:parse(it.vuelve)}:null;
+  const man=it.salio&&it.vuelve?{n:numSalidaD(ing,parse(it.salio)),d:parse(it.salio),v:parse(it.vuelve),man:true}:null;
   const evs=planSalidas(ing,fin).filter(p=>+p.d!==skip&&!(man&&man.n===p.n)).map(p=>({d:p.d,v:p.v}));
   if(man) evs.push(man);
   let vuelve="";
-  for(const e of evs) if(hoy>=e.d&&hoy<=e.v){const r=days(hoy,e.v);vuelve=r===0?"Hoy":r+(r===1?" día":" días")}
+  for(const e of evs) if(hoy>=e.d&&(e.man?hoy<e.v:hoy<=e.v)){const r=days(hoy,e.v);vuelve=r===0?"Hoy":r+(r===1?" día":" días")}
   const fut=evs.filter(e=>e.d>=hoy).sort((a,b)=>a.d-b.d);
   let sal=fut.length?fut[0].d:null;
   return{ing,fin,lleva:ing>hoy?"Aún no ingresa":span(ing,hoy),falta:fin<=hoy?"Cumplido":span(hoy,fin),
@@ -755,6 +758,8 @@ function openDlg(it){
   {const b=$("cuinfo");b.hidden=!it;if(it){const t=textoCama(it.id);b.replaceChildren(el("span","","🛏️"));
     if(t){b.append(el("b","",t[0]));if(t[1])b.append(el("span","",t[1]))}else b.append(el("span","","Sin cama asignada"));
     const a=el("a","","Ver en Cuartos →");a.href="cuartos/";b.append(a)}}
+  {const b=$("salbox"),e=it&&salidaHoy(it);b.hidden=!e;if(e){const v=days(hoy,e.v);b.replaceChildren(el("span","","🚪"),el("b","","De salida"),el("span","",v<=0?"vuelve hoy":"vuelve el "+fd(e.v)));
+    if(isAdmin()){const x=el("button","p","Ya volvió");x.type="button";x.onclick=()=>yaVolvio(it);b.append(x)}}}
   {const fl=$("fichalink");fl.hidden=!it;fl.href="ficha/";// la cédula va por sessionStorage, no en la dirección
     fl.onclick=()=>{try{sessionStorage.setItem("ficha-abrir",JSON.stringify({ced:it.cedula||"",nom:(it.nombre||"").trim()}))}catch(x){}}} $("fotobt").hidden=!isAdmin(); $("fmsg").textContent="";
   f.salioel.value=it?.salio||""; f.vuelveel.value=it?.vuelve||""; f.nosalioel.value=it?.nosalio||""; salInfo();
@@ -1133,6 +1138,15 @@ let marcas={}, abiertoNo=null, llevar=[];
 // Registro de "le di la medicación para llevar" de la salida actual
 function salidaActual(i,f){return calc(i).evs.find(e=>f>=e.d&&f<e.v)}
 function llevarDe(i,e,lista){const a=iso(new Date(e.d.getFullYear(),e.d.getMonth(),e.d.getDate()-2)),b=iso(e.v);return (lista||llevar).filter(m=>String(m.id)===String(i.id)&&m.toma==="Salida"&&m.fecha>=a&&m.fecha<=b).pop()}
+// La salida en la que está hoy (si está de salida)
+function salidaHoy(i){return calc(i).evs.find(e=>hoy>=e.d&&(e.man?hoy<e.v:hoy<=e.v))}
+// "Ya volvió": termina la salida hoy (queda registrada: salió el … y volvió hoy)
+async function yaVolvio(i){if(!isAdmin())return;const e=salidaHoy(i);if(!e)return;
+  if(!confirm("¿Marcar que "+i.nombre.trim()+" ya volvió hoy? Desde ahora vuelve a contar para la medicación y Cuartos."))return;
+  const rec={id:i.id,nombre:i.nombre.trim(),cedula:i.cedula||"",tipo:i.tipo||"Privado",ingreso:i.ingreso,salioel:iso(e.d),vuelveel:iso(hoy),nosalioel:i.nosalio||""};
+  MEALS.forEach(m=>rec[m]=i[m]||"");
+  try{const res=await api(null,{action:ACT.update,record:rec});confirmar(res);if($("dlg").open)$("dlg").close();await reload()}
+  catch(err){alert("No se pudo marcar: "+err.message)}}
 async function marcarLlevar(i,quitar){if(!isAdmin())return;
   const meds=["desayuno","almuerzo","merienda","cena"].map(k=>String(i[k]||"").trim()).filter(Boolean).join(" · ");
   const prev=llevar.slice();
@@ -1189,6 +1203,7 @@ function renderMed(){
       if(isAdmin()&&m.fecha===iso(hoy)){const u=el("button","","Deshacer");u.type="button";u.onclick=()=>marcarLlevar(i,true);bt.append(u)}}
     else if(isAdmin()){const b=el("button","p","Le di la medicación para llevar");b.type="button";b.onclick=()=>marcarLlevar(i,false);bt.append(b)}
     else bt.append(el("span","est","Sin marcar"));
+    if(isAdmin()&&salidaHoy(i)){const v=el("button","","Ya volvió");v.type="button";v.onclick=()=>yaVolvio(i);bt.append(v)}
     r.append(bt);return r}));
 }
 async function marcar(i,estado,motivo){
@@ -1403,7 +1418,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261111222627";
+const APP_VER="20261112082808";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
