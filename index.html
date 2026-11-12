@@ -1421,10 +1421,17 @@ $("q").oninput=render; $("ft").onchange=render;
 $("sort").onclick=()=>{asc=!asc;$("sort").textContent="Ingreso "+(asc?"▲":"▼");render()};
 try{$("em").value=localStorage.getItem("internos-email")||"";localStorage.removeItem("internos-pw");if(localStorage.getItem("alas-token"))$("rec").checked=true;const su=localStorage.getItem("internos-api");if(su)API=su}catch(e){}
 (async()=>{const ses=sesionGuardada();if(!ses||!ses.email||!ses.token){document.documentElement.classList.remove("cargando");return}
+  // Si la planilla no contesta, no quedarse con el pájaro para siempre: avisar y ofrecer reintentar
+  const trabado=setTimeout(()=>{if(!document.documentElement.classList.contains("cargando"))return;document.documentElement.classList.remove("cargando");
+    falloCarga("La planilla de Google está tardando en contestar.")},25000);
   try{email=ses.email;token=ses.token||"";pass=ses.pass||"";const res=await api({action:ACT.check});role=parseRole(res);
-    if(!role){const t=res&&res.error;borrarSesion();token="";pass="";email="";if(t)$("lmsg").textContent=t;return}
-    guardarSesion();await load();show("app");render()}catch(e){}
-  finally{document.documentElement.classList.remove("cargando")}})();
+    if(!role){const t=res&&res.error;if(res&&(res.allowed===false||res.auth===false||t)){borrarSesion();token="";pass="";email="";if(t)$("lmsg").textContent=t;return}
+      throw new Error("respuesta inesperada de la planilla")}
+    guardarSesion();await load();show("app");render()}
+  catch(e){if(document.documentElement.classList.contains("cargando"))falloCarga("No se pudo conectar con la planilla ("+(e&&e.message||"error")+").")}
+  finally{clearTimeout(trabado);document.documentElement.classList.remove("cargando")}})();
+function falloCarga(t){const m=$("lmsg");m.replaceChildren(document.createTextNode(t+" Revisá que tengas internet. "));
+  const b=document.createElement("button");b.type="button";b.textContent="Reintentar";b.style.marginTop="8px";b.onclick=()=>{try{if(email&&token)sessionStorage.setItem("alas-paso",JSON.stringify({email,token,t:Date.now()}))}catch(x){}location.reload()};m.append(b)}
 $("apiurl").value=API;
 $("lf").addEventListener("submit",()=>{try{localStorage.setItem("internos-email",$("em").value.trim())}catch(e){}});
 </script>
@@ -1435,7 +1442,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261112091113";
+const APP_VER="20261112164017";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
