@@ -343,10 +343,11 @@ const dias=(a,b)=>Math.round((b-a)/864e5);
 function salidaHoy(o){
   const ing=o.ingreso,fin=addM(ing,DUR),skip=o.nosalio?+parse(o.nosalio):null;
   const numS=s=>Math.max(1,fullM(ing,new Date(s.getFullYear(),s.getMonth(),s.getDate()+15))-PRIMERA+1);
-  const man=o.salio&&o.vuelve?{n:numS(parse(o.salio)),d:parse(o.salio),v:parse(o.vuelve)}:null;
+  const man=o.salio&&o.vuelve?{n:numS(parse(o.salio)),d:parse(o.salio),v:parse(o.vuelve),man:true}:null;
   const evs=[];for(let n=1;;n++){const d=addM(ing,PRIMERA+n-1);if(d>=fin)break;if(+d===skip||(man&&man.n===n))continue;evs.push({d,v:new Date(d.getFullYear(),d.getMonth(),d.getDate()+DIAS_SAL(n))})}
   if(man)evs.push(man);
-  const e=evs.find(e=>HOY>=e.d&&HOY<e.v);return e?e.v:null;
+  // la salida automática de hoy no cuenta hasta que en Internos se toca «Ya salió»
+  const e=evs.find(e=>HOY>=e.d&&HOY<e.v&&(e.man||+e.d!==+HOY));return e?e.v:null;
 }
 const $=id=>document.getElementById(id);
 const el=(t,c,txt)=>{const e=document.createElement(t);if(c)e.className=c;if(txt!=null)e.textContent=txt;return e};
@@ -746,7 +747,7 @@ if("serviceWorker" in navigator&&location.protocol.startsWith("http"))window.add
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261112082808";
+const APP_VER="20261112091113";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}

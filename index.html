@@ -94,7 +94,8 @@ td.n{font-weight:700}
 .cuinfo{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:10px 0 4px;font-size:14px}
 .cuinfo b{font-weight:700}
 .salbox{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:color-mix(in srgb,var(--acc) 14%,var(--card));border:1px solid var(--acc);border-radius:10px;padding:8px 10px 8px 12px;margin:6px 0 4px;font-size:14px}
-.salbox b{font-weight:700}.salbox button{margin-left:auto}.cuinfo a{margin-left:auto;color:var(--ink);font-weight:600;font-size:13px}
+.salbox b{font-weight:700}
+.mrow .tx em.salhoy{display:inline-block;font-style:normal;font-size:12px;font-weight:700;color:var(--accx);background:var(--acc);border-radius:99px;padding:1px 8px;margin-left:6px}.salbox button{margin-left:auto}.cuinfo a{margin-left:auto;color:var(--ink);font-weight:600;font-size:13px}
 .foto .big{width:120px;height:120px;border-radius:14px;object-fit:cover;background:var(--line);display:grid;place-items:center;color:var(--mut);font-size:13px;text-align:center;flex:none}
 .foto .bt{display:grid;gap:8px}
 .foto input[type=file]{display:none}
@@ -357,7 +358,7 @@ html.cargando #login{display:none!important}
     <div class="msg" id="mmsg" role="alert"></div>
     <div class="mlist" id="mlist"></div>
     <h3 id="mfuerah" style="font:700 17px Fraunces,Georgia,serif;margin:18px 0 8px" hidden>De salida (no cuentan)</h3>
-    <p class="cnt" style="margin:-4px 0 8px">Marcá quién le dio la medicación para llevarse: esas iniciales van en la planilla del mes los días de salida.</p>
+    <p class="cnt" id="mfuerap" style="margin:-4px 0 8px">Marcá quién le dio la medicación para llevarse: esas iniciales van en la planilla del mes los días de salida.</p>
     <div class="mlist" id="mfuera"></div>
     <div class="acts" style="justify-content:flex-start;margin-top:18px"><button type="button" id="pabrir">🖨️ Planilla del mes</button></div>
   </section>
@@ -674,6 +675,9 @@ const fd=d=>String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padSt
 function planSalidas(ing,fin){const out=[];for(let n=1;;n++){const d=addM(ing,PRIMERA+n-1);if(d>=fin)break;
   out.push({n,d,v:new Date(d.getFullYear(),d.getMonth(),d.getDate()+DIAS_SAL(n))})}return out}
 function numSalidaD(ing,s){return Math.max(1,fullM(ing,new Date(s.getFullYear(),s.getMonth(),s.getDate()+15))-PRIMERA+1)} // tolera salidas adelantadas o atrasadas
+// Una salida automática que empieza hoy no cuenta hasta que se toca «Ya salió» (si no se toca, mañana ya cuenta)
+function pendiente(e){return !e.man&&+e.d===+hoy}
+function afueraEl(e,f){return f>=e.d&&f<e.v&&!(pendiente(e)&&+f===+hoy)}
 function calc(it){
   const ing=parse(it.ingreso), fin=addM(ing,DUR);
   const m0=ing>hoy?0:fullM(ing,hoy);
@@ -683,7 +687,7 @@ function calc(it){
   const evs=planSalidas(ing,fin).filter(p=>+p.d!==skip&&!(man&&man.n===p.n)).map(p=>({d:p.d,v:p.v}));
   if(man) evs.push(man);
   let vuelve="";
-  for(const e of evs) if(hoy>=e.d&&(e.man?hoy<e.v:hoy<=e.v)){const r=days(hoy,e.v);vuelve=r===0?"Hoy":r+(r===1?" día":" días")}
+  for(const e of evs) if(!pendiente(e)&&hoy>=e.d&&(e.man?hoy<e.v:hoy<=e.v)){const r=days(hoy,e.v);vuelve=r===0?"Hoy":r+(r===1?" día":" días")}
   const fut=evs.filter(e=>e.d>=hoy).sort((a,b)=>a.d-b.d);
   let sal=fut.length?fut[0].d:null;
   return{ing,fin,lleva:ing>hoy?"Aún no ingresa":span(ing,hoy),falta:fin<=hoy?"Cumplido":span(hoy,fin),
@@ -758,7 +762,10 @@ function openDlg(it){
   {const b=$("cuinfo");b.hidden=!it;if(it){const t=textoCama(it.id);b.replaceChildren(el("span","","🛏️"));
     if(t){b.append(el("b","",t[0]));if(t[1])b.append(el("span","",t[1]))}else b.append(el("span","","Sin cama asignada"));
     const a=el("a","","Ver en Cuartos →");a.href="cuartos/";b.append(a)}}
-  {const b=$("salbox"),e=it&&salidaHoy(it);b.hidden=!e;if(e){const v=days(hoy,e.v);b.replaceChildren(el("span","","🚪"),el("b","","De salida"),el("span","",v<=0?"vuelve hoy":"vuelve el "+fd(e.v)));
+  {const b=$("salbox"),e=it&&salidaHoy(it),pe=it&&!e&&salePend(it);b.hidden=!e&&!pe;
+    if(pe){b.replaceChildren(el("span","","🚪"),el("b","","Sale hoy"),el("span","","todavía está acá · vuelve el "+fd(pe.v)));
+      if(isAdmin()){const x=el("button","p","Ya salió");x.type="button";x.onclick=()=>yaSalio(it);b.append(x)}}
+    if(e){const v=days(hoy,e.v);b.replaceChildren(el("span","","🚪"),el("b","","De salida"),el("span","",v<=0?"vuelve hoy":"vuelve el "+fd(e.v)));
     if(isAdmin()){const x=el("button","p","Ya volvió");x.type="button";x.onclick=()=>yaVolvio(it);b.append(x)}}}
   {const fl=$("fichalink");fl.hidden=!it;fl.href="ficha/";// la cédula va por sessionStorage, no en la dirección
     fl.onclick=()=>{try{sessionStorage.setItem("ficha-abrir",JSON.stringify({ced:it.cedula||"",nom:(it.nombre||"").trim()}))}catch(x){}}} $("fotobt").hidden=!isAdmin(); $("fmsg").textContent="";
@@ -1136,16 +1143,24 @@ const tomaHora=()=>{const n=new Date(),h=n.getHours()+n.getMinutes()/60;return h
 let tomaSel=tomaHora(), tomaAMano=false;
 let marcas={}, abiertoNo=null, llevar=[];
 // Registro de "le di la medicación para llevar" de la salida actual
-function salidaActual(i,f){return calc(i).evs.find(e=>f>=e.d&&f<e.v)}
+function salidaActual(i,f){return calc(i).evs.find(e=>afueraEl(e,f))}
 function llevarDe(i,e,lista){const a=iso(new Date(e.d.getFullYear(),e.d.getMonth(),e.d.getDate()-2)),b=iso(e.v);return (lista||llevar).filter(m=>String(m.id)===String(i.id)&&m.toma==="Salida"&&m.fecha>=a&&m.fecha<=b).pop()}
 // La salida en la que está hoy (si está de salida)
-function salidaHoy(i){return calc(i).evs.find(e=>hoy>=e.d&&(e.man?hoy<e.v:hoy<=e.v))}
+function salidaHoy(i){return calc(i).evs.find(e=>!pendiente(e)&&hoy>=e.d&&(e.man?hoy<e.v:hoy<=e.v))}
+// Le toca salir hoy pero todavía no se tocó «Ya salió»
+function salePend(i){return calc(i).evs.find(e=>pendiente(e))}
+async function yaSalio(i){if(!isAdmin())return;const e=salePend(i);if(!e)return;
+  if(!confirm("¿Marcar que "+i.nombre.trim()+" ya salió? Vuelve el "+fd(e.v)+". Desde ahora no cuenta para la medicación ni Cuartos."))return;
+  const rec={id:i.id,nombre:i.nombre.trim(),cedula:i.cedula||"",tipo:i.tipo||"Privado",ingreso:i.ingreso,salioel:iso(hoy),vuelveel:iso(e.v),nosalioel:i.nosalio||""};
+  MEALS.forEach(m=>rec[m]=i[m]||"");
+  try{const res=await api(null,{action:ACT.update,record:rec});confirmar(res);if($("dlg").open)$("dlg").close();await reload();renderMed()}
+  catch(err){alert("No se pudo marcar: "+err.message)}}
 // "Ya volvió": termina la salida hoy (queda registrada: salió el … y volvió hoy)
 async function yaVolvio(i){if(!isAdmin())return;const e=salidaHoy(i);if(!e)return;
   if(!confirm("¿Marcar que "+i.nombre.trim()+" ya volvió hoy? Desde ahora vuelve a contar para la medicación y Cuartos."))return;
   const rec={id:i.id,nombre:i.nombre.trim(),cedula:i.cedula||"",tipo:i.tipo||"Privado",ingreso:i.ingreso,salioel:iso(e.d),vuelveel:iso(hoy),nosalioel:i.nosalio||""};
   MEALS.forEach(m=>rec[m]=i[m]||"");
-  try{const res=await api(null,{action:ACT.update,record:rec});confirmar(res);if($("dlg").open)$("dlg").close();await reload()}
+  try{const res=await api(null,{action:ACT.update,record:rec});confirmar(res);if($("dlg").open)$("dlg").close();await reload();renderMed()}
   catch(err){alert("No se pudo marcar: "+err.message)}}
 async function marcarLlevar(i,quitar){if(!isAdmin())return;
   const meds=["desayuno","almuerzo","merienda","cena"].map(k=>String(i[k]||"").trim()).filter(Boolean).join(" · ");
@@ -1166,7 +1181,7 @@ async function loadMed(){
     llevar=((r2&&r2.data)||[]).filter(m=>m.toma==="Salida");$("mmsg").textContent="";renderMed();
   }catch(e){$("mmsg").textContent="No se pudo cargar: "+e.message}
 }
-function fueraEl(i,f){const c=calc(i);return c.evs.some(e=>f>=e.d&&f<e.v)}
+function fueraEl(i,f){const c=calc(i);return c.evs.some(e=>afueraEl(e,f))}
 function renderMed(){
   $("mtomas").replaceChildren(...TOMAS.map(t=>{const b=el("button",t===tomaSel?"on":"",t);b.type="button";b.onclick=()=>{tomaSel=t;tomaAMano=t!==tomaHora();abiertoNo=null;renderMed()};return b}));
   $("mauto").textContent=tomaAMano?"Elegiste "+tomaSel+" a mano.":"Se eligió "+tomaSel+" por la hora. Tocá otra toma si hace falta.";
@@ -1182,6 +1197,7 @@ function renderMed(){
     const m=marcas[tomaSel+"|"+i.id],r=el("div","mrow"+(m?(m.estado==="Dada"?" dada":""):" falta")),t=el("div","tx");
     t.append(resaltarM(i.nombre.trim(),qm),el("span","",String(i[k]).trim()));r.append(avatar(i,"av"),t);
     const bt=el("div","bt");
+    if(salePend(i)){t.append(el("em","salhoy","🚪 Sale hoy"))}
     if(m){bt.append(el("span","est "+(m.estado==="Dada"?"ok":"no"),(m.estado==="Dada"?"✓ Dada":"✗ No la tomó"+(m.motivo?": "+m.motivo:""))+" · "+soloHora(m.hora)+" · "+String(m.usuario).split("@")[0]));
       if(isAdmin()){const u=el("button","","Deshacer");u.type="button";u.onclick=()=>marcar(i,"");bt.append(u)}}
     else if(!isAdmin()){bt.append(el("span","est","Sin marcar"))}
@@ -1190,6 +1206,7 @@ function renderMed(){
       const c=el("button","","Cancelar");c.type="button";c.onclick=()=>{abiertoNo=null;renderMed()};bt.append(inp,ok,c)}
     else{const d=el("button","p","✓ Dada");d.type="button";d.onclick=()=>marcar(i,"dada");
       const n=el("button","","✗ No la tomó");n.type="button";n.onclick=()=>{abiertoNo=i.id;renderMed();setTimeout(()=>{const x=$("mot-"+i.id);if(x)x.focus()},0)};bt.append(d,n)}
+    if(isAdmin()&&salePend(i)&&abiertoNo!==i.id){const y=el("button","","Ya salió");y.type="button";y.onclick=()=>yaSalio(i);bt.append(y)}
     r.append(bt);return r};
   const faltan=aca.filter(i=>!marcas[tomaSel+"|"+i.id]&&coincide(i)),ya=aca.filter(i=>marcas[tomaSel+"|"+i.id]&&coincide(i)),L=[];
   if(faltan.length){L.push(el("div","msec",qm?"Coinciden":"Faltan ("+faltan.length+")"));faltan.forEach(i=>L.push(fila(i)))}
@@ -1197,7 +1214,7 @@ function renderMed(){
   else if(!qm&&aca.length)L.push(el("p","empty","¡Listo! Ya pasaron todos en el "+tomaSel.toLowerCase()+"."));
   if(ya.length){L.push(el("div","msec","Ya marcados ("+ya.length+")"));ya.forEach(i=>L.push(fila(i)))}
   $("mlist").replaceChildren(...L);
-  const fuera2=fuera.filter(coincide);$("mfuerah").hidden=!fuera2.length;$("mfuera").replaceChildren(...fuera2.map(i=>{const r=el("div","mrow"),t=el("div","tx");t.append(el("b","",i.nombre.trim()),el("span","",String(i[k]).trim()));r.append(avatar(i,"av"),t);
+  const fuera2=fuera.filter(coincide);$("mfuerah").hidden=!fuera2.length;$("mfuerap").hidden=!fuera2.length;$("mfuera").replaceChildren(...fuera2.map(i=>{const r=el("div","mrow"),t=el("div","tx");t.append(el("b","",i.nombre.trim()),el("span","",String(i[k]).trim()));r.append(avatar(i,"av"),t);
     const e=salidaActual(i,f),m=e&&llevarDe(i,e),bt=el("div","bt");
     if(m){bt.append(el("span","est ok","✓ Se la llevó · "+m.fecha.slice(8,10)+"/"+m.fecha.slice(5,7)+" · "+String(m.usuario).split("@")[0]));
       if(isAdmin()&&m.fecha===iso(hoy)){const u=el("button","","Deshacer");u.type="button";u.onclick=()=>marcarLlevar(i,true);bt.append(u)}}
@@ -1418,7 +1435,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261112082808";
+const APP_VER="20261112091113";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
