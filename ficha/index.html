@@ -116,6 +116,22 @@
   .idx em.ok{color:#2f7d4f}
   @media (prefers-color-scheme:dark){.idx em.ok{color:#7fd3a0}}
   .hoja-ficha{background:#fff}
+  .inicio{display:grid;gap:12px;margin-top:6px}
+  .inicio h2{font:700 24px/1.2 Fraunces,Georgia,serif;margin:4px 0 2px;color:var(--ink)}
+  .big{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;color:var(--ink);font:inherit;cursor:pointer}
+  .big .bi{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:22px;background:var(--bg);border:1px solid var(--line);flex:none}
+  .big b{display:block;font-size:17px}.big small{display:block;font-size:13px;opacity:.8}
+  .big.main{background:var(--acc);border-color:var(--acc);color:var(--accx)}.big.main .bi{background:rgba(255,255,255,.35);border-color:transparent}
+  .isec{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--acct);margin-top:6px}
+  .draft{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}
+  .draft .av{width:42px;height:42px;border-radius:50%;background:var(--bg);border:1px solid var(--line);display:grid;place-items:center;font-weight:700;color:var(--mut);flex:none;font-size:14px}
+  .draft .tx{flex:1;min-width:0;text-align:left;background:none;border:0;padding:0;color:var(--ink);font:inherit;cursor:pointer}
+  .draft .tx b{display:block;font-size:16px}.draft .tx small{display:block;color:var(--mut);font-size:13px}
+  .draft .bar{display:block;height:6px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:6px}.draft .bar i{display:block;height:100%;background:var(--acc)}
+  .draft .x{border:0;background:none;color:var(--mut);font-size:20px;cursor:pointer;padding:8px}
+  .okbox{background:#e3f2e8;color:#2f7d4f;border-radius:16px;padding:18px;text-align:center;display:grid;gap:6px}
+  .okbox b{font:700 22px Fraunces,Georgia,serif}
+  @media (prefers-color-scheme:dark){.okbox{background:#1d3326;color:#7fd3a0}}
   .btn-sec{white-space:nowrap}
   .marca{white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}
   .marca small{letter-spacing:.04em}
@@ -128,11 +144,12 @@
 <body>
 <div class="app" id="app">
   <header class="top no-print">
-    <a class="btn-sec volver" href="../" aria-label="Volver a Internos" title="Volver a Internos">‹</a>
+    <a class="btn-sec volver" id="btnVolver" href="../" aria-label="Volver a Internos" title="Volver a Internos">‹</a>
+    <button class="btn-sec ic" id="btnInicio" aria-label="Inicio de la ficha" title="Inicio de la ficha" hidden>⌂</button>
     <img class="logo" src="../logo.png" alt="">
     <div class="marca">Ficha de ingreso<small>Alas de Libertad</small></div>
     <div class="sp"></div>
-    <button class="btn-sec ic" id="btnGuard" aria-label="Fichas guardadas" title="Fichas guardadas">🗂</button>
+    <button class="btn-sec ic" id="btnMas" aria-label="Nueva ficha" title="Nueva ficha" hidden>＋</button>
     <button class="btn-sec" id="btnIndice">Preguntas</button>
     <button class="btn-sec" id="btnVer">Ver ficha</button>
   </header>
@@ -222,15 +239,50 @@ const COMPROMISOS = [
 ];
 
 /* ---------- Estado ---------- */
-const CLAVE = "alas_ficha_ingreso_borrador";
+const CLAVE = "alas_ficha_ingreso_borrador";      // versión vieja (una sola ficha); se pasa a la lista
+const CLAVE_B = "alas_fichas_sin_terminar";        // [{id,D,paso,upd}] fichas a medias
+const CLAVE_C = "alas_ficha_corrigiendo";          // {D,paso} ficha guardada que se está corrigiendo
 let D = {};
 let paso = 0;
-let modo = "preguntas"; // o "ficha"
+let modo = "inicio"; // inicio | preguntas | ficha | lista | ok
+let borradores = [];
+let actual = null;   // {tipo:"bor",id} o {tipo:"corr"}
+let okInfo = null;
 
-function guardar(){ try{ localStorage.setItem(CLAVE, JSON.stringify({D, paso})); }catch(e){} }
+function guardar(){
+  try{
+    if(!actual) return;
+    if(actual.tipo==="corr"){ localStorage.setItem(CLAVE_C, JSON.stringify({D, paso})); return; }
+    let b=borradores.find(x=>x.id===actual.id);
+    if(!b){ b={id:actual.id}; borradores.unshift(b); }
+    b.D=D; b.paso=paso; b.upd=Date.now();
+    localStorage.setItem(CLAVE_B, JSON.stringify(borradores));
+  }catch(e){}
+}
+function guardarLista(){ try{ localStorage.setItem(CLAVE_B, JSON.stringify(borradores)); }catch(e){} }
 function cargar(){
-  try{ const r = JSON.parse(localStorage.getItem(CLAVE)||"null"); if(r && r.D){ D=r.D; paso=Math.min(r.paso||0,Q.length-1); return true; } }catch(e){}
-  return false;
+  try{ borradores = JSON.parse(localStorage.getItem(CLAVE_B)||"[]"); if(!Array.isArray(borradores)) borradores=[]; }catch(e){ borradores=[]; }
+  borradores = borradores.filter(b=>b&&b.id&&!vacia(b.D));
+  try{ // la ficha única de antes pasa a «Sin terminar» (si no estaba guardada)
+    const r = JSON.parse(localStorage.getItem(CLAVE)||"null");
+    if(r && r.D && !r.D._guardada && Object.keys(r.D).some(k=>!k.startsWith("_") && r.D[k]!=="" && r.D[k]!=null)){
+      borradores.unshift({id:"b"+Date.now().toString(36),D:r.D,paso:r.paso||0,upd:Date.now()}); guardarLista(); }
+    localStorage.removeItem(CLAVE);
+  }catch(e){}
+}
+function pctDe(d){ const g=D; D=d||{}; const vs=Q.filter(visible); const n=vs.filter(q=>{const v=D[q.k]; return !(v==null||v===""||(Array.isArray(v)&&!v.length));}).length; D=g; return vs.length?Math.round(n/vs.length*100):0; }
+function nuevaFicha(pref){
+  if(actual&&actual.tipo==="bor"&&vacia(D)){ borradores=borradores.filter(b=>b.id!==actual.id); guardarLista(); }
+  D=Object.assign({},pref||{}); paso=0; actual={tipo:"bor",id:"b"+Date.now().toString(36)+Math.random().toString(36).slice(2,5)};
+  modo="preguntas"; guardar(); nota(pref&&pref.nombre?"Ficha nueva de "+pref.nombre+": el nombre y la cédula ya están puestos.":""); render();
+}
+function seguir(b){ D=b.D||{}; paso=Math.min(b.paso||0,Q.length-1); actual={tipo:"bor",id:b.id}; modo="preguntas"; nota(""); render(); }
+// Una ficha sin ninguna respuesta propia (solo las fechas que se ponen solas) no queda en «Sin terminar»
+function vacia(d){ d=d||{}; return !Q.some(q=>{ if(q.def) return false; const v=d[q.k]; return !(v==null||v===""||(Array.isArray(v)&&!v.length)); }); }
+function irInicio(){
+  if(actual&&actual.tipo==="corr"){ try{ localStorage.removeItem(CLAVE_C); }catch(e){} }
+  if(actual&&actual.tipo==="bor"&&vacia(D)){ borradores=borradores.filter(b=>b.id!==actual.id); guardarLista(); }
+  actual=null; D={}; paso=0; modo="inicio"; nota(""); render();
 }
 function aplicarDefaults(q){
   if(q.def && (D[q.k]===undefined || D[q.k]==="")){
@@ -255,7 +307,13 @@ function resumen(q){
 
 /* ---------- Pantalla de preguntas ---------- */
 function render(){
+  const enFicha = modo==="preguntas"||modo==="ficha";
+  $("#btnVolver").hidden = modo!=="inicio"; $("#btnInicio").hidden = modo==="inicio";
+  $("#btnMas").hidden = modo==="inicio"; $("#btnIndice").hidden = !enFicha; $("#btnVer").hidden = !enFicha;
   $("#btnVer").textContent = modo!=="preguntas" ? "Volver" : "Ver ficha";
+  if(actual&&actual.tipo==="corr"&&enFicha) nota("✏️ Corrigiendo la ficha guardada de "+(val("nombre")||"este residente")+". Tus fichas sin terminar no se tocan. Para no guardar cambios, tocá ⌂.");
+  if(modo==="inicio") return renderInicio();
+  if(modo==="ok") return renderOk();
   if(modo==="ficha") return renderFicha();
   if(modo==="lista") return renderLista();
   const q = Q[paso];
@@ -469,10 +527,6 @@ function renderFicha(){
         <button class="guardar" id="bGuardar">${D._guardada?"💾 Guardar cambios":"💾 Guardar ficha"}</button>
         <button class="pdf" id="bPdf">Descargar PDF para imprimir</button>
         <button id="bEditar">Volver a las preguntas</button>
-        <button id="bNueva">Empezar ficha nueva</button>
-      </div>
-      <div class="confirm" id="conf">¿Borrar todos los datos de esta ficha y empezar una nueva?
-        <div class="fila"><button id="cNo">Cancelar</button><button class="si" id="cSi">Sí, borrar</button></div>
       </div>
       <div class="msg" id="msg"></div>
     </div>
@@ -483,9 +537,6 @@ function renderFicha(){
   document.querySelectorAll(".tipoSel .tp").forEach(b=>b.addEventListener("click",()=>{ D.tipoIng=b.dataset.t; guardar();
     document.querySelectorAll(".tipoSel .tp").forEach(x=>{ const on=x===b; x.classList.toggle("on",on); x.setAttribute("aria-pressed",on); }); }));
   $("#bEditar").addEventListener("click", ()=>{ modo="preguntas"; guardar(); render(); });
-  $("#bNueva").addEventListener("click", ()=>$("#conf").classList.add("show"));
-  $("#cNo").addEventListener("click", ()=>$("#conf").classList.remove("show"));
-  $("#cSi").addEventListener("click", ()=>{ D={}; paso=0; modo="preguntas"; try{localStorage.removeItem(CLAVE);}catch(e){} render(); });
   window.scrollTo(0,0);
 }
 function aviso(t){ const m=$("#msg"); if(!m) return; m.textContent=t; m.classList.add("show"); }
@@ -587,25 +638,60 @@ async function guardarFicha(btn){
         extra = q==="nuevo" ? " "+rec["Nombre"].split(" ")[0]+" ya quedó agregado a la lista de Internos ("+val("tipoIng")+", ingreso "+fmtFecha(val("fechaIngreso")||val("fecha"))+")." : " Ya estaba en la lista de Internos.";
       }catch(e){ extra=" ⚠ Pero no se agregó a Internos: "+e.message+"."; }
     }
-    btn.textContent="✔ Guardada"; aviso("✔ Ficha guardada. La encontrás en 🗂 Fichas guardadas."+extra);
-    setTimeout(()=>{ btn.disabled=false; btn.textContent="💾 Guardar cambios"; },2500);
+    const eraCorr = actual&&actual.tipo==="corr";
+    if(eraCorr){ try{ localStorage.removeItem(CLAVE_C); }catch(e){} }
+    else if(actual){ borradores=borradores.filter(b=>b.id!==actual.id); guardarLista(); }
+    okInfo={nombre:rec["Nombre"], corr:eraCorr, extra:extra.trim(), datos:Object.assign({},D)};
+    actual=null; modo="ok"; nota(""); render();
   }catch(e){ btn.disabled=false; btn.textContent=D._guardada?"💾 Guardar cambios":"💾 Guardar ficha"; aviso("No se pudo guardar: "+e.message); }
 }
-// Pasa una ficha guardada al formulario (avisa si hay otra a medio hacer sin guardar)
-function sinGuardar(){ return !!(val("nombre") && !D._guardada); }
+// Abre una ficha guardada aparte (no toca las fichas sin terminar)
 function abrirGuardada(f){
-  if(sinGuardar() && D._id!==f.id && !confirm("Tenés la ficha de "+val("nombre")+" sin guardar. Si abrís esta, se pierde. ¿Seguir?")) return;
-  D=Object.assign({},f.D,{_id:f.id,_guardada:f.act||"sí"}); paso=0; modo="ficha"; guardar(); nota(""); render();
+  D=Object.assign({},f.D,{_id:f.id,_guardada:f.act||"sí"}); paso=0; actual={tipo:"corr"}; modo="ficha"; guardar(); render();
 }
 async function abrirPorCedula(ced,nom){
   $("#vista").innerHTML='<p class="hint" style="margin-top:20px">Buscando la ficha de '+esc(nom||ced)+'…</p>';
   try{
     const c=nced(ced); const ls=c?(await leerFichas()).filter(f=>nced(f.cedula)===c).sort((a,b)=>(b.act).localeCompare(a.act)):[];
-    if(ls.length){ abrirGuardada(ls[0]); if(modo==="ficha") nota("Ficha de ingreso guardada de "+ls[0].nombre+"."); return; }
-    if(sinGuardar() && nced(val("cedula"))!==c && !confirm("Tenés la ficha de "+val("nombre")+" sin guardar. ¿La descarto para empezar la de "+(nom||ced)+"?")){ render(); return; }
-    if(!(nced(val("cedula"))===c && c)){ D={nombre:nom,cedula:ced}; paso=0; }
-    modo="preguntas"; guardar(); nota((nom||"Este interno")+" todavía no tiene ficha guardada. Empezá una: el nombre y la cédula ya están puestos."); render();
-  }catch(e){ nota("No se pudo buscar la ficha: "+e.message); modo="preguntas"; render(); }
+    if(ls.length){ abrirGuardada(ls[0]); return; }
+    const b=c&&borradores.find(x=>nced(x.D&&x.D.cedula)===c);
+    if(b){ seguir(b); nota((nom||"Este interno")+" tiene una ficha sin terminar: seguís desde donde quedó."); return; }
+    nuevaFicha({nombre:nom,cedula:ced}); nota((nom||"Este interno")+" todavía no tiene ficha guardada. Empezá una: el nombre y la cédula ya están puestos.");
+  }catch(e){ nota("No se pudo buscar la ficha: "+e.message); modo="inicio"; render(); }
+}
+function renderInicio(){
+  borradores.sort((a,b)=>(b.upd||0)-(a.upd||0));
+  let corr=null; try{ corr=JSON.parse(localStorage.getItem(CLAVE_C)||"null"); }catch(e){}
+  $("#vista").innerHTML=`<div class="inicio">
+    <h2>¿Qué querés hacer?</h2>
+    <button type="button" class="big main" id="iNueva"><span class="bi">＋</span><span><b>Nueva ficha</b><small>Empieza vacía, siempre</small></span></button>
+    ${corr&&corr.D?`<div class="isec">Corrección sin guardar</div>
+      <div class="draft"><span class="av">${esc(inic(corr.D.nombre))}</span><button type="button" class="tx" id="iCorr"><b>${esc(corr.D.nombre||"Sin nombre")}</b><small>✏️ Estabas corrigiendo su ficha guardada · tocá para seguir</small></button><button type="button" class="x" id="iCorrX" aria-label="Descartar la corrección">✕</button></div>`:""}
+    ${borradores.length?`<div class="isec">Sin terminar · ${borradores.length}</div>`+borradores.map(b=>{const p=pctDe(b.D);return `<div class="draft"><span class="av">${esc(inic(b.D&&b.D.nombre)||"?")}</span><button type="button" class="tx" data-id="${esc(b.id)}"><b>${esc((b.D&&b.D.nombre)||"Sin nombre todavía")}</b><small>${p}% hecha · tocá para seguir</small><span class="bar"><i style="width:${p}%"></i></span></button><button type="button" class="x" data-x="${esc(b.id)}" aria-label="Descartar la ficha de ${esc((b.D&&b.D.nombre)||"sin nombre")}">✕</button></div>`}).join(""):""}
+    <button type="button" class="big" id="iGuard"><span class="bi">🗂</span><span><b>Fichas guardadas</b><small>Ver, imprimir o corregir</small></span></button>
+  </div>`;
+  $("#iNueva").onclick=()=>nuevaFicha();
+  $("#iGuard").onclick=()=>{ modo="lista"; render(); };
+  if($("#iCorr")){ $("#iCorr").onclick=()=>{ D=corr.D; paso=Math.min(corr.paso||0,Q.length-1); actual={tipo:"corr"}; modo="ficha"; render(); };
+    $("#iCorrX").onclick=()=>{ if(confirm("¿Descartar los cambios sin guardar de la ficha de "+(corr.D.nombre||"este residente")+"? La ficha guardada queda como estaba.")){ try{localStorage.removeItem(CLAVE_C);}catch(e){} render(); } }; }
+  document.querySelectorAll(".draft .tx[data-id]").forEach(t=>t.onclick=()=>seguir(borradores.find(b=>b.id===t.dataset.id)));
+  document.querySelectorAll(".draft .x[data-x]").forEach(x=>x.onclick=()=>{ const b=borradores.find(z=>z.id===x.dataset.x);
+    if(confirm("¿Descartar la ficha de "+((b.D&&b.D.nombre)||"sin nombre")+"? Se borra lo que tenía y no se puede recuperar.")){ borradores=borradores.filter(z=>z!==b); guardarLista(); render(); } });
+  window.scrollTo(0,0);
+}
+function renderOk(){
+  const o=okInfo||{nombre:""};
+  $("#vista").innerHTML=`<div class="inicio">
+    <div class="okbox"><span>✔</span><b>${o.corr?"Cambios guardados":"Ficha de "+esc(String(o.nombre).split(" ")[0])+" guardada"}</b>
+      <span>${o.corr?"Se actualizó la misma ficha, no se duplicó.":esc(o.extra||"Salió de «Sin terminar».")}</span></div>
+    <button type="button" class="big" id="oVer"><span class="bi">🖨</span><span><b>Ver e imprimir</b><small>Descargar el PDF de esta ficha</small></span></button>
+    <button type="button" class="big main" id="oNueva"><span class="bi">＋</span><span><b>Nueva ficha</b><small>Empieza vacía</small></span></button>
+    <button type="button" class="big" id="oInicio"><span class="bi">⌂</span><span><b>Volver al inicio</b></span></button>
+  </div>`;
+  $("#oVer").onclick=()=>{ D=Object.assign({},o.datos); paso=0; actual={tipo:"corr"}; modo="ficha"; guardar(); render(); };
+  $("#oNueva").onclick=()=>nuevaFicha();
+  $("#oInicio").onclick=irInicio;
+  window.scrollTo(0,0);
 }
 async function renderLista(){
   nota("");
@@ -636,7 +722,8 @@ $("#btnIndice").addEventListener("click", ()=>{ renderIndice(); $("#panel").clas
 $("#cerrarPanel").addEventListener("click", ()=>$("#panel").classList.remove("open"));
 $("#panel").addEventListener("click", e=>{ if(e.target.id==="panel") $("#panel").classList.remove("open"); });
 $("#btnVer").addEventListener("click", ()=>{ modo = modo==="preguntas"?"ficha":"preguntas"; guardar(); render(); });
-$("#btnGuard").addEventListener("click", ()=>{ modo="lista"; render(); });
+$("#btnInicio").addEventListener("click", irInicio);
+$("#btnMas").addEventListener("click", ()=>nuevaFicha());
 cargar();
 { let A=null; try{ A=JSON.parse(sessionStorage.getItem("ficha-abrir")||"null"); sessionStorage.removeItem("ficha-abrir"); }catch(e){}
   if(A&&(A.ced||A.nom)) abrirPorCedula(A.ced||"",A.nom||""); else render(); }
