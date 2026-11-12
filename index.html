@@ -95,6 +95,7 @@ td.n{font-weight:700}
 .cuinfo b{font-weight:700}
 .salbox{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:color-mix(in srgb,var(--acc) 14%,var(--card));border:1px solid var(--acc);border-radius:10px;padding:8px 10px 8px 12px;margin:6px 0 4px;font-size:14px}
 .salbox b{font-weight:700}
+.salbox .salguard{flex-basis:100%;font-size:13px;color:var(--mut)}
 .mrow .tx em.salhoy{display:inline-block;font-style:normal;font-size:12px;font-weight:700;color:var(--accx);background:var(--acc);border-radius:99px;padding:1px 8px;margin-left:6px}.salbox button{margin-left:auto}.cuinfo a{margin-left:auto;color:var(--ink);font-weight:600;font-size:13px}
 .foto .big{width:120px;height:120px;border-radius:14px;object-fit:cover;background:var(--line);display:grid;place-items:center;color:var(--mut);font-size:13px;text-align:center;flex:none}
 .foto .bt{display:grid;gap:8px}
@@ -1148,6 +1149,16 @@ let marcas={}, abiertoNo=null, llevar=[];
 // Registro de "le di la medicación para llevar" de la salida actual
 function salidaActual(i,f){return calc(i).evs.find(e=>afueraEl(e,f))}
 function llevarDe(i,e,lista){const a=iso(new Date(e.d.getFullYear(),e.d.getMonth(),e.d.getDate()-2)),b=iso(e.v);return (lista||llevar).filter(m=>String(m.id)===String(i.id)&&m.toma==="Salida"&&m.fecha>=a&&m.fecha<=b).pop()}
+// Guarda «Ya salió» / «Ya volvió»: mientras Google contesta, la ficha queda bloqueada para no pisar el cambio con las fechas viejas
+async function guardarSalida(rec){
+  const abierta=$("dlg").open,sv=$("save"),bx=$("salbox");
+  if(abierta){sv.disabled=true;sv.textContent="Guardando…";bx.querySelectorAll("button").forEach(b=>b.disabled=true);
+    bx.append(el("span","salguard","Guardando… (puede tardar unos segundos)"))}
+  try{const res=await api(null,{action:ACT.update,record:rec});confirmar(res);
+    if(abierta){$("f").salioel.value=rec.salioel;$("f").vuelveel.value=rec.vuelveel;$("f").nosalioel.value=rec.nosalioel;$("dlg").close()}
+    await reload();renderMed()}
+  catch(err){alert("No se pudo marcar: "+err.message)}
+  finally{sv.disabled=false;sv.textContent="Guardar";const g=bx.querySelector(".salguard");if(g)g.remove();bx.querySelectorAll("button").forEach(b=>b.disabled=false)}}
 // La salida en la que está hoy (si está de salida)
 function salidaHoy(i){return calc(i).evs.find(e=>!pendiente(e)&&hoy>=e.d&&hoy<=e.v)}
 // Le toca salir hoy pero todavía no se tocó «Ya salió»
@@ -1156,8 +1167,7 @@ async function yaSalio(i){if(!isAdmin())return;const e=salePend(i);if(!e)return;
   if(!confirm("¿Marcar que "+i.nombre.trim()+" ya salió? Vuelve el "+fd(e.v)+". Desde ahora no cuenta para la medicación ni Cuartos."))return;
   const rec={id:i.id,nombre:i.nombre.trim(),cedula:i.cedula||"",tipo:i.tipo||"Privado",ingreso:i.ingreso,salioel:iso(hoy),vuelveel:iso(e.v),nosalioel:i.nosalio||""};
   MEALS.forEach(m=>rec[m]=i[m]||"");
-  try{const res=await api(null,{action:ACT.update,record:rec});confirmar(res);if($("dlg").open)$("dlg").close();await reload();renderMed()}
-  catch(err){alert("No se pudo marcar: "+err.message)}}
+  await guardarSalida(rec)}
 // "Ya volvió": termina la salida hoy (queda registrada: salió el … y volvió hoy)
 async function yaVolvio(i){if(!isAdmin())return;const e=salidaHoy(i);if(!e)return;
   if(!confirm("¿Marcar que "+i.nombre.trim()+" ya volvió hoy? Desde ahora vuelve a contar para la medicación y Cuartos."))return;
@@ -1166,8 +1176,7 @@ async function yaVolvio(i){if(!isAdmin())return;const e=salidaHoy(i);if(!e)retur
   const rec={id:i.id,nombre:i.nombre.trim(),cedula:i.cedula||"",tipo:i.tipo||"Privado",ingreso:i.ingreso,
     salioel:mismoDia?"":iso(e.d),vuelveel:mismoDia?"":iso(ayer),nosalioel:mismoDia?iso(e.d):(i.nosalio||"")};
   MEALS.forEach(m=>rec[m]=i[m]||"");
-  try{const res=await api(null,{action:ACT.update,record:rec});confirmar(res);if($("dlg").open)$("dlg").close();await reload();renderMed()}
-  catch(err){alert("No se pudo marcar: "+err.message)}}
+  await guardarSalida(rec)}
 async function marcarLlevar(i,quitar){if(!isAdmin())return;
   const meds=["desayuno","almuerzo","merienda","cena"].map(k=>String(i[k]||"").trim()).filter(Boolean).join(" · ");
   const prev=llevar.slice();
@@ -1448,7 +1457,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261112191037";
+const APP_VER="20261112192348";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
