@@ -272,6 +272,7 @@ html.cargando #login{display:none!important}
       <select id="sf" aria-label="Filtrar por sector"><option value="*">Todos</option><option value="">Sin sector</option></select>
     </div>
     <p class="cap" id="scnt" style="margin:-4px 0 10px"></p>
+    <div style="margin:-2px 0 12px"><button type="button" id="borrarsec">🗑 Borrar todos los sectores</button></div>
     <div class="wrap"><table>
       <thead><tr><th>Nombre</th><th>Lleva</th><th>Sector</th><th>Dónde duerme</th></tr></thead>
       <tbody id="srows"></tbody>
@@ -310,6 +311,7 @@ html.cargando #login{display:none!important}
 <dialog id="odlg"><div class="mn">
   <h2>Más opciones</h2>
   <div class="ops"><button type="button" id="o-desh"><b>↶ Deshacer</b><small>el último cambio</small></button><button type="button" id="o-act"><b>↻ Actualizar</b><small>traer lo último de la planilla</small></button></div>
+  <div class="ops"><button type="button" id="o-vaciar"><b>🗑 Vaciar cuartos</b><small>todos quedan sin cama · Tropilla no se toca</small></button></div>
   <div class="row"><button type="button" id="o-cerrar">Cerrar</button></div>
 </div></dialog>
 <dialog id="pdlg"><div class="mn">
@@ -542,7 +544,7 @@ function render(){
   {const n=sinSector().filter(p=>p.antes&&p.antes!==p.cuarto).length;$("pend").hidden=!isAdmin()||!n;$("pendt").textContent=n+(n===1?" cambió de cuarto":" cambiaron de cuarto")+" · sin guardar en el historial"}
   renderSectores();renderHist();renderNJ();$("deshacer").disabled=!deshacer.length;
 }
-function renderSectores(){
+function renderSectores(){$("borrarsec").hidden=!isAdmin();
   const fsel=$("sf").value;
   $("sum2").replaceChildren(...[["Todos",gente.length,"*"],...SECTORES.map(s=>[s,gente.filter(p=>p.sector===s).length,s]),...(gente.some(p=>p.sector===SINS)?[["Tropilla sin sector",gente.filter(p=>p.sector===SINS).length,SINS]]:[]),["Sin sector",sinSector().length,""]]
     .map(([l,n,v])=>{const s=el("button","pill fil"+(fsel===v?" on":""));s.type="button";s.append(l+" ",el("b","",String(n)));s.onclick=()=>{$("sf").value=v;renderSectores()};return s}));
@@ -659,6 +661,16 @@ $("masops").onclick=()=>{$("o-desh").disabled=!deshacer.length;$("odlg").showMod
 $("o-cerrar").onclick=()=>$("odlg").close();
 $("o-desh").onclick=()=>{$("odlg").close();$("deshacer").click()};
 $("o-act").onclick=()=>{$("odlg").close();$("recargar").click()};
+// Reiniciar: vaciar todas las camas de los cuartos (Tropilla y los sectores quedan igual)
+$("o-vaciar").onclick=()=>{$("odlg").close();if(!isAdmin())return;
+  const ps=gente.filter(p=>!p.sector&&p.cuarto);if(!ps.length){toast("Los cuartos ya están vacíos");return}
+  if(!confirm("¿Vaciar todos los cuartos? "+(ps.length===1?"1 persona queda":ps.length+" personas quedan")+" sin cama (también el cuarto 3). Tropilla no se toca. Si te arrepentís, usá Deshacer."))return;
+  antesDeCambiar("Vació todos los cuartos ("+ps.length+" personas sin cama)");ps.forEach(p=>{p.cuarto="";p.antes=""});sel=null;render();guardarPronto();toast("Cuartos vacíos: "+ps.length+" sin cama")};
+// Reiniciar: borrar todos los sectores (salen de Tropilla y quedan sin cama)
+$("borrarsec").onclick=()=>{if(!isAdmin())return;
+  const ps=gente.filter(p=>p.sector);if(!ps.length){toast("Nadie tiene sector");return}
+  if(!confirm("¿Borrar el sector de todos? "+(ps.length===1?"1 persona sale de Tropilla y queda":ps.length+" personas salen de Tropilla y quedan")+" sin cama. Si te arrepentís, usá Deshacer."))return;
+  antesDeCambiar("Borró todos los sectores ("+ps.length+" personas)");ps.forEach(p=>{p.sector="";p.cuarto="";p.antes=""});render();guardarPronto();toast("Sectores borrados: "+ps.length+" sin sector")};
 $("sq").oninput=renderSectores; $("sf").onchange=renderSectores;
 $("recargar").onclick=()=>cargar().catch(e=>estado("No se pudo actualizar: "+e.message,true));
 $("guardar").onclick=async()=>{
@@ -747,7 +759,7 @@ if("serviceWorker" in navigator&&location.protocol.startsWith("http"))window.add
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261112192348";
+const APP_VER="20261113122939";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
