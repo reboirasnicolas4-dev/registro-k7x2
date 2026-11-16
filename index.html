@@ -619,7 +619,8 @@ const MEALS=["desayuno","almuerzo","merienda","cena"];
 /* ===== Estado ===== */
 let filtroStat="", email="", pass="", role="", items=[], asc=true, cur=null, delArm=false, scriptViejo=false;
 const $=id=>document.getElementById(id);
-const isAdmin=()=>role==="Admin";
+let soloCopia=false; // abierta con la copia guardada: no se edita hasta que Google conteste
+const isAdmin=()=>role==="Admin"&&!soloCopia;
 
 /* ===== Sesión: se guarda un código que vence a los 30 días, nunca la contraseña ===== */
 let token="";
@@ -633,14 +634,14 @@ function guardarSesion(){try{const rec=$("rec").checked;
 function pasarSesion(){try{if(token)sessionStorage.setItem("alas-paso",JSON.stringify({email,token,t:Date.now()}))}catch(x){}}
 function sesionGuardada(){try{const p=JSON.parse(sessionStorage.getItem("alas-paso")||"null");sessionStorage.removeItem("alas-paso");sessionStorage.removeItem("alas-sesion");
   if(p&&p.token&&Date.now()-p.t<60000)return p;return JSON.parse(localStorage.getItem("alas-token")||"null")}catch(x){return null}}
-function borrarSesion(){try{localStorage.removeItem("alas-token");localStorage.removeItem("internos-pw");sessionStorage.removeItem("alas-sesion");sessionStorage.removeItem("alas-paso")}catch(x){}}
+function borrarSesion(){try{localStorage.removeItem("alas-cache");localStorage.removeItem("alas-cache-cuartos");localStorage.removeItem("alas-token");localStorage.removeItem("internos-pw");sessionStorage.removeItem("alas-sesion");sessionStorage.removeItem("alas-paso")}catch(x){}}
 function cerrarSesion(){fotosChicas={};fotosGrandes={};fotosPedidas=new Set();if(token)api({action:"logout"}).catch(()=>{});borrarSesion();token="";pass=""}
 document.addEventListener("click",e=>{if(e.target.closest('a[href="cuartos/"],a[href^="ficha/"]'))pasarSesion()});
 
 /* ===== Comunicación con Google Sheets (Apps Script) ===== */
 /* Google a veces deja un pedido colgado y nunca llega: los pedidos que se pueden repetir sin problema
    (leer, ver usuario, actualizar) se cortan a los pocos segundos y se vuelven a mandar solos. */
-const REPETIBLE=a=>/^(get|check|list)/i.test(a||"")||["updateRow","updateInterno","marcarMed"].includes(a);
+const REPETIBLE=a=>/^(get|check|list)/i.test(a||"")||["updateRow","updateInterno","marcarMed","setSheet","inicio"].includes(a);
 async function postGoogle(url,datos){
   const body=JSON.stringify(datos),esperas=REPETIBLE(datos.action)?[7000,8000,9000,10000,12000]:[0];let err;
   for(const ms of esperas){
@@ -690,17 +691,31 @@ function confirmar(res){
 // La planilla guarda la hora como hora de Sheets y llega con la fecha 1899-12-30 delante: dejar solo HH:MM
 const soloHora=h=>{const m=String(h||"").match(/(\d{1,2}):(\d{2})(?!.*\d{1,2}:\d{2})/);return m?m[1]+":"+m[2]:String(h||"")};
 let camas={};   // id del interno -> {cuarto, sector} de la pestaña Cuartos
-async function cargarCamas(){try{const r=await api({action:"getSheet",sheet:"Cuartos"});const m={};
-  ((r&&r.data)||[]).forEach(o=>{if(!o.id)return;const fuera=String(o.sector||"")==="Fuera";m[String(o.id)]={cuarto:fuera?"":String(o.cuarto??""),sector:fuera?"":String(o.sector||""),fuera}});camas=m}catch(e){}}
+async function cargarCamas(){try{const r=await api({action:"getSheet",sheet:"Cuartos"});aplicarCamas((r&&r.data)||[])}catch(e){}}
+function aplicarCamas(data){const m={};
+  (data||[]).forEach(o=>{if(!o.id)return;const fuera=String(o.sector||"")==="Fuera";m[String(o.id)]={cuarto:fuera?"":String(o.cuarto??""),sector:fuera?"":String(o.sector||""),fuera}});camas=m}
 function textoCama(id){const c=camas[id];if(c&&c.fuera)return["No entra en cuartos",""];if(!c||(!c.sector&&!c.cuarto))return null;
   return c.sector?["Tropilla",c.sector==="Tropilla"?"Sin sector":"Sector: "+c.sector]:["Cuarto "+c.cuarto,""]}
+/* Copia de lo último que se vio, para abrir al instante (solo con "Recordarme"; se borra al salir) */
+function guardarCache(arr,cu){try{if(!token||!localStorage.getItem("alas-token"))return;
+  localStorage.setItem("alas-cache",JSON.stringify({email,role,t:Date.now(),internos:arr,cuartos:cu}))}catch(x){}}
+function leerCache(em){try{const c=JSON.parse(localStorage.getItem("alas-cache")||"null");return c&&c.email===em&&Array.isArray(c.internos)?c:null}catch(x){return null}}
 async function load(){
+  let arr=null,cu=null;
+  // Un solo pedido con todo (usuario, internos y cuartos); si el script es viejo, como antes
+  if(token){const r=await api({action:"inicio",hojas:["Cuartos"]});
+    if(r&&Array.isArray(r.internos)){const rr=parseRole(r);if(rr)role=rr;arr=r.internos;cu=(r.hojas&&r.hojas.Cuartos)||[];aplicarCamas(cu)}
+    else if(r&&r.allowed===false){sesionVencida(r.error);throw new Error(r.error||"sesión vencida")}}
+  if(!arr){
   const pc=cargarCamas();
   const res=await api({action:ACT.list});
   await pc;
   if(typeof res==="string") throw new Error(res||"Respuesta vacía");
   if(res&&res.error) throw new Error(res.error);
-  const arr=Array.isArray(res)?res:(res.data||res.internos||res.records||[]);
+  arr=Array.isArray(res)?res:(res.data||res.internos||res.records||[]);
+  cu=Object.keys(camas).map(id=>({id,cuarto:camas[id].cuarto,sector:camas[id].fuera?"Fuera":camas[id].sector}));
+  if(!role){const c=await api({action:ACT.check});role=parseRole(c)}}
+  guardarCache(arr,cu);
   scriptViejo=arr.length>0&&!arr.some(o=>Object.keys(o).some(k=>norm(k)==="id"));
   items=arr.map(toItem);
   setTimeout(cargarFotos,0);
@@ -1189,15 +1204,16 @@ let marcas={}, abiertoNo=null, llevar=[];
 function salidaActual(i,f){return calc(i).evs.find(e=>afueraEl(e,f))}
 function llevarDe(i,e,lista){const a=iso(new Date(e.d.getFullYear(),e.d.getMonth(),e.d.getDate()-2)),b=iso(e.v);return (lista||llevar).filter(m=>String(m.id)===String(i.id)&&m.toma==="Salida"&&m.fecha>=a&&m.fecha<=b).pop()}
 // Guarda «Ya salió» / «Ya volvió»: mientras Google contesta, la ficha queda bloqueada para no pisar el cambio con las fechas viejas
+// Se ve hecho al instante y se manda a Google por detrás; si Google falla, vuelve atrás y avisa
 async function guardarSalida(rec){
-  const abierta=$("dlg").open,sv=$("save"),bx=$("salbox");
-  if(abierta){sv.disabled=true;sv.textContent="Guardando…";bx.querySelectorAll("button").forEach(b=>b.disabled=true);
-    bx.append(el("span","salguard","Guardando… (puede tardar unos segundos)"))}
-  try{const res=await api(null,{action:ACT.update,record:rec});confirmar(res);
-    if(abierta){$("f").salioel.value=rec.salioel;$("f").vuelveel.value=rec.vuelveel;$("f").nosalioel.value=rec.nosalioel;$("dlg").close()}
-    await reload();renderMed()}
-  catch(err){alert("No se pudo marcar: "+err.message)}
-  finally{sv.disabled=false;sv.textContent="Guardar";const g=bx.querySelector(".salguard");if(g)g.remove();bx.querySelectorAll("button").forEach(b=>b.disabled=false)}}
+  const i=items.find(x=>x.id===rec.id),antes=i?{salio:i.salio,vuelve:i.vuelve,nosalio:i.nosalio}:null;
+  if(i){i.salio=rec.salioel;i.vuelve=rec.vuelveel;i.nosalio=rec.nosalioel}
+  if($("dlg").open)$("dlg").close();
+  render();if(vista==="M")renderMed();
+  const am=$("amsg");am.textContent="Guardando "+rec.nombre+"…";
+  try{const res=await api(null,{action:ACT.update,record:rec});confirmar(res);if(am.textContent.startsWith("Guardando "+rec.nombre))am.textContent="";
+    reload().then(()=>{if(vista==="M")renderMed()})}
+  catch(err){if(i&&antes)Object.assign(i,antes);render();if(vista==="M")renderMed();am.textContent="";alert("No se pudo guardar lo de "+rec.nombre+" ("+err.message+"). Quedó como estaba: probá de nuevo.")}}
 // La salida en la que está hoy (si está de salida)
 function salidaHoy(i){return calc(i).evs.find(e=>!pendiente(e)&&hoy>=e.d&&hoy<=e.v)}
 // Le toca salir hoy pero todavía no se tocó «Ya salió»
@@ -1245,7 +1261,7 @@ function renderMed(){
   const con=items.filter(i=>i.nombre&&i.ingreso&&String(i[k]||"").trim()&&parse(i.ingreso)<=f).sort((a,b)=>a.nombre.localeCompare(b.nombre,"es"));
   const fuera=con.filter(i=>fueraEl(i,f)),aca=con.filter(i=>!fueraEl(i,f));
   const hechas=aca.filter(i=>marcas[tomaSel+"|"+i.id]).length;
-  $("mcnt").textContent=(aca.length?(hechas+" de "+aca.length+" marcadas · "+(aca.length-hechas===0?"¡completo! ✔":"faltan "+(aca.length-hechas))):"Nadie toma medicación en el "+tomaSel.toLowerCase()+".")+(isAdmin()?"":" · Solo los Admin pueden marcar.");
+  $("mcnt").textContent=(aca.length?(hechas+" de "+aca.length+" marcadas · "+(aca.length-hechas===0?"¡completo! ✔":"faltan "+(aca.length-hechas))):"Nadie toma medicación en el "+tomaSel.toLowerCase()+".")+(isAdmin()?"":soloCopia?" · Esperando a Google para poder marcar…":" · Solo los Admin pueden marcar.");
   $("mbar").style.width=(aca.length?Math.round(hechas/aca.length*100):0)+"%";
   const fila=i=>{
     const m=marcas[tomaSel+"|"+i.id],r=el("div","mrow"+(m?(m.estado==="Dada"?" dada":""):" falta")),t=el("div","tx");
@@ -1537,11 +1553,19 @@ try{$("em").value=localStorage.getItem("internos-email")||"";localStorage.remove
   // Si la planilla no contesta, no quedarse con el pájaro para siempre: avisar y ofrecer reintentar
   const trabado=setTimeout(()=>{if(!document.documentElement.classList.contains("cargando"))return;document.documentElement.classList.remove("cargando");
     falloCarga("La planilla de Google está tardando en contestar.")},90000);
-  try{email=ses.email;token=ses.token||"";pass=ses.pass||"";const res=await api({action:ACT.check});role=parseRole(res);
-    if(!role){const t=res&&res.error;if(res&&(res.allowed===false||res.auth===false||t)){borrarSesion();token="";pass="";email="";if(t)$("lmsg").textContent=t;return}
-      throw new Error("respuesta inesperada de la planilla")}
-    guardarSesion();await load();show("app");render()}
-  catch(e){if(document.documentElement.classList.contains("cargando"))falloCarga("No se pudo conectar con la planilla ("+(e&&e.message||"error")+").")}
+  email=ses.email;token=ses.token||"";pass=ses.pass||"";
+  // Hay copia guardada: se abre al instante con eso y se actualiza por detrás
+  const cache=leerCache(email);
+  if(cache){clearTimeout(trabado);role=cache.role||"";items=cache.internos.map(toItem);aplicarCamas(cache.cuartos||[]);
+    soloCopia=true;document.documentElement.classList.remove("cargando");show("app");render();
+    const am=$("amsg");am.textContent="Actualizando…";
+    try{await load();soloCopia=false;guardarSesion();am.textContent="";render();if(vista==="M")renderMed()}
+    catch(e){if(token){const h=new Date(cache.t);am.textContent="Google no contesta: se ve lo guardado a las "+String(h.getHours()).padStart(2,"0")+":"+String(h.getMinutes()).padStart(2,"0")+" del "+fd(h)+". Deslizá hacia abajo para reintentar."}}
+    return}
+  try{await load();
+    if(!role)throw new Error("respuesta inesperada de la planilla");
+    guardarSesion();show("app");render()}
+  catch(e){if(token&&document.documentElement.classList.contains("cargando"))falloCarga("No se pudo conectar con la planilla ("+(e&&e.message||"error")+").")}
   finally{clearTimeout(trabado);document.documentElement.classList.remove("cargando")}})();
 function falloCarga(t){const m=$("lmsg");m.replaceChildren(document.createTextNode(t+" Revisá que tengas internet. "));
   const b=document.createElement("button");b.type="button";b.textContent="Reintentar";b.style.marginTop="8px";b.onclick=()=>{try{if(email&&token)sessionStorage.setItem("alas-paso",JSON.stringify({email,token,t:Date.now()}))}catch(x){}location.reload()};m.append(b)}
@@ -1555,7 +1579,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261116183236";
+const APP_VER="20261116184440";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}

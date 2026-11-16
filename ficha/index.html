@@ -593,7 +593,7 @@ function nota(t){ const n=$("#nota"); n.textContent=t||""; n.hidden=!t; }
 function sesion(){ try{ const p=JSON.parse(sessionStorage.getItem("alas-paso")||"null"); if(p&&p.token) return p; return JSON.parse(localStorage.getItem("alas-token")||"null"); }catch(e){ return null; } }
 /* Google a veces deja un pedido colgado y nunca llega: los pedidos que se pueden repetir sin problema
    (leer, ver usuario, actualizar) se cortan a los pocos segundos y se vuelven a mandar solos. */
-const REPETIBLE=a=>/^(get|check|list)/i.test(a||"")||["updateRow","updateInterno","marcarMed"].includes(a);
+const REPETIBLE=a=>/^(get|check|list)/i.test(a||"")||["updateRow","updateInterno","marcarMed","setSheet","inicio"].includes(a);
 async function postGoogle(url,datos){
   const body=JSON.stringify(datos),esperas=REPETIBLE(datos.action)?[7000,8000,9000,10000,12000]:[0];let err;
   for(const ms of esperas){

@@ -353,7 +353,8 @@ function salidaHoy(o){
 }
 const $=id=>document.getElementById(id);
 const el=(t,c,txt)=>{const e=document.createElement(t);if(c)e.className=c;if(txt!=null)e.textContent=txt;return e};
-const isAdmin=()=>/admin/i.test(role);
+let soloCopia=false; // abierta con la copia guardada: no se edita hasta que Google conteste
+const isAdmin=()=>/admin/i.test(role)&&!soloCopia;
 const HOY=(()=>{const n=new Date();return new Date(n.getFullYear(),n.getMonth(),n.getDate())})();
 const fd=d=>String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+d.getFullYear();
 const parse=s=>{const[y,m,d]=String(s).slice(0,10).split("-").map(Number);return new Date(y,(m||1)-1,d||1)};
@@ -373,14 +374,14 @@ function guardarSesion(){try{const rec=$("rec").checked;
 function pasarSesion(){try{if(token)sessionStorage.setItem("alas-paso",JSON.stringify({email,token,t:Date.now()}))}catch(x){}}
 function sesionGuardada(){try{const p=JSON.parse(sessionStorage.getItem("alas-paso")||"null");sessionStorage.removeItem("alas-paso");sessionStorage.removeItem("alas-sesion");
   if(p&&p.token&&Date.now()-p.t<60000)return p;return JSON.parse(localStorage.getItem("alas-token")||"null")}catch(x){return null}}
-function borrarSesion(){try{localStorage.removeItem("alas-token");localStorage.removeItem("internos-pw");sessionStorage.removeItem("alas-sesion");sessionStorage.removeItem("alas-paso")}catch(x){}}
+function borrarSesion(){try{localStorage.removeItem("alas-cache");localStorage.removeItem("alas-cache-cuartos");localStorage.removeItem("alas-token");localStorage.removeItem("internos-pw");sessionStorage.removeItem("alas-sesion");sessionStorage.removeItem("alas-paso")}catch(x){}}
 function cerrarSesion(){if(token)api({action:"logout"}).catch(()=>{});borrarSesion();token="";pass=""}
 document.addEventListener("click",e=>{if(e.target.closest('a[href="../"]'))pasarSesion()});
 
 /* ===== Comunicación con la hoja (mismo script que Internos) ===== */
 /* Google a veces deja un pedido colgado y nunca llega: los pedidos que se pueden repetir sin problema
    (leer, ver usuario, actualizar) se cortan a los pocos segundos y se vuelven a mandar solos. */
-const REPETIBLE=a=>/^(get|check|list)/i.test(a||"")||["updateRow","updateInterno","marcarMed"].includes(a);
+const REPETIBLE=a=>/^(get|check|list)/i.test(a||"")||["updateRow","updateInterno","marcarMed","setSheet","inicio"].includes(a);
 async function postGoogle(url,datos){
   const body=JSON.stringify(datos),esperas=REPETIBLE(datos.action)?[7000,8000,9000,10000,12000]:[0];let err;
   for(const ms of esperas){
@@ -399,10 +400,22 @@ async function api(datos){
   return o;
 }
 function sesionVencida(txt){borrarSesion();token="";pass="";role="";gente=[];$("app").hidden=true;$("login").hidden=false;modoSetup(false);$("lmsg").textContent=txt||"Tu sesión venció. Ingresá de nuevo con tu contraseña."}
+/* Copia de lo último que se vio, para abrir al instante (solo con "Recordarme"; se borra al salir) */
+function leerCache(em){try{const c=JSON.parse(localStorage.getItem("alas-cache-cuartos")||"null");return c&&c.email===em&&c.d?c:null}catch(x){return null}}
 async function cargar(){
   estado("Cargando…");
-  const [int,cu,rot,nj]=await Promise.all([api({action:"getInternos"}),api({action:"getSheet",sheet:HOJA_CUARTOS}),api({action:"getSheet",sheet:HOJA_ROT}),api({action:"getSheet",sheet:HOJA_NJ})]);
+  let int,cu,rot,nj;
+  // Un solo pedido con todo; si el script es viejo, como antes
+  const r=await api({action:"inicio",hojas:[HOJA_CUARTOS,HOJA_ROT,HOJA_NJ]});
+  if(r&&Array.isArray(r.internos)){if(r.role)role=String(r.role);const h=r.hojas||{};int=r.internos;cu={data:h[HOJA_CUARTOS]||[]};rot={data:h[HOJA_ROT]||[]};nj={data:h[HOJA_NJ]||[]}}
+  else if(r&&r.allowed===false){sesionVencida(r.error);throw new Error(r.error||"sesión vencida")}
+  else [int,cu,rot,nj]=await Promise.all([api({action:"getInternos"}),api({action:"getSheet",sheet:HOJA_CUARTOS}),api({action:"getSheet",sheet:HOJA_ROT}),api({action:"getSheet",sheet:HOJA_NJ})]);
   if(!Array.isArray(int))throw new Error((int&&int.error)||"no se pudo leer Internos");
+  soloCopia=false;
+  try{if(token&&localStorage.getItem("alas-token"))localStorage.setItem("alas-cache-cuartos",JSON.stringify({email,role,t:Date.now(),d:[int,cu,rot,nj]}))}catch(x){}
+  armar(int,cu,rot,nj);
+}
+function armar(int,cu,rot,nj){
   const guardado={};((cu&&cu.data)||[]).forEach(o=>{if(o.id)guardado[String(o.id)]=o});
   gente=int.filter(o=>String(o.nombre||"").trim()&&o.ingreso).map(o=>{const g=guardado[String(o.id)]||{};
     return{id:String(o.id),nombre:String(o.nombre).trim(),cedula:String(o.cedula||""),ingreso:parse(toISO(o.ingreso)),
@@ -764,15 +777,26 @@ $("lf").addEventListener("submit",async e=>{
 $("out").onclick=()=>{cerrarSesion();email="";role="";gente=[];$("lmsg").textContent="";$("app").hidden=true;$("login").hidden=false;modoSetup(false)};
 try{$("em").value=localStorage.getItem("internos-email")||"";localStorage.removeItem("internos-pw");if(localStorage.getItem("alas-token"))$("rec").checked=true;const su=localStorage.getItem("internos-api");if(su)API=su}catch(e){}
 (async()=>{const ses=sesionGuardada();if(!ses||!ses.email||!ses.token){document.documentElement.classList.remove("cargando");return}
-  try{email=ses.email;token=ses.token||"";pass=ses.pass||"";const res=await api({action:"checkUser"});
-  if(!res||!res.allowed){const t=res&&res.error;borrarSesion();token="";pass="";email="";if(t)$("lmsg").textContent=t;return}
-  guardarSesion();role=String(res.role||"");$("whoem").textContent=email;$("whorole").textContent=role;$("login").hidden=true;$("app").hidden=false;await cargar()}catch(e){}
+  email=ses.email;token=ses.token||"";pass=ses.pass||"";
+  // Hay copia guardada: se abre al instante y se actualiza por detrás
+  const cache=leerCache(email);
+  if(cache){soloCopia=true;role=String(cache.role||"");$("whoem").textContent=email;$("whorole").textContent=role;$("login").hidden=true;$("app").hidden=false;
+    try{armar(...cache.d)}catch(x){}document.documentElement.classList.remove("cargando");
+    try{await cargar();guardarSesion();$("whorole").textContent=role}
+    catch(e){soloCopia=true;render();if(token){const h=new Date(cache.t);estado("Google no contesta: se ve lo guardado a las "+String(h.getHours()).padStart(2,"0")+":"+String(h.getMinutes()).padStart(2,"0")+". Probá ⋯ → Actualizar.")}}
+    return}
+  try{role="";$("whoem").textContent=email;$("login").hidden=true;$("app").hidden=false;
+    await cargar();
+    if(!role){const res=await api({action:"checkUser"});
+      if(!res||!res.allowed){const t=res&&res.error;borrarSesion();token="";pass="";email="";$("app").hidden=true;$("login").hidden=false;if(t)$("lmsg").textContent=t;return}
+      role=String(res.role||"");render()}
+    guardarSesion();$("whorole").textContent=role}catch(e){if(token)estado("No se pudo cargar: "+e.message+". Probá ⋯ → Actualizar.",true)}
   finally{document.documentElement.classList.remove("cargando")}})();
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261116183236";
+const APP_VER="20261116184440";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
