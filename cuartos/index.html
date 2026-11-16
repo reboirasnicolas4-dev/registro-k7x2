@@ -374,7 +374,7 @@ function guardarSesion(){try{const rec=$("rec").checked;
 function pasarSesion(){try{if(token)sessionStorage.setItem("alas-paso",JSON.stringify({email,token,t:Date.now()}))}catch(x){}}
 function sesionGuardada(){try{const p=JSON.parse(sessionStorage.getItem("alas-paso")||"null");sessionStorage.removeItem("alas-paso");sessionStorage.removeItem("alas-sesion");
   if(p&&p.token&&Date.now()-p.t<60000)return p;return JSON.parse(localStorage.getItem("alas-token")||"null")}catch(x){return null}}
-function borrarSesion(){try{localStorage.removeItem("alas-cache");localStorage.removeItem("alas-cache-cuartos");localStorage.removeItem("alas-token");localStorage.removeItem("internos-pw");sessionStorage.removeItem("alas-sesion");sessionStorage.removeItem("alas-paso")}catch(x){}}
+function borrarSesion(){try{localStorage.removeItem("alas-cache");localStorage.removeItem("alas-cache-cuartos");localStorage.removeItem("alas-cache-med");localStorage.removeItem("alas-token");localStorage.removeItem("internos-pw");sessionStorage.removeItem("alas-sesion");sessionStorage.removeItem("alas-paso")}catch(x){}}
 function cerrarSesion(){if(token)api({action:"logout"}).catch(()=>{});borrarSesion();token="";pass=""}
 document.addEventListener("click",e=>{if(e.target.closest('a[href="../"]'))pasarSesion()});
 
@@ -796,7 +796,7 @@ if("serviceWorker" in navigator&&location.protocol.startsWith("http"))window.add
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261116184440";
+const APP_VER="20261116191401";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}

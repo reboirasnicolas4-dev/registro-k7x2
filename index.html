@@ -634,7 +634,7 @@ function guardarSesion(){try{const rec=$("rec").checked;
 function pasarSesion(){try{if(token)sessionStorage.setItem("alas-paso",JSON.stringify({email,token,t:Date.now()}))}catch(x){}}
 function sesionGuardada(){try{const p=JSON.parse(sessionStorage.getItem("alas-paso")||"null");sessionStorage.removeItem("alas-paso");sessionStorage.removeItem("alas-sesion");
   if(p&&p.token&&Date.now()-p.t<60000)return p;return JSON.parse(localStorage.getItem("alas-token")||"null")}catch(x){return null}}
-function borrarSesion(){try{localStorage.removeItem("alas-cache");localStorage.removeItem("alas-cache-cuartos");localStorage.removeItem("alas-token");localStorage.removeItem("internos-pw");sessionStorage.removeItem("alas-sesion");sessionStorage.removeItem("alas-paso")}catch(x){}}
+function borrarSesion(){try{marcasDe="";marcas={};llevar=[];localStorage.removeItem("alas-cache");localStorage.removeItem("alas-cache-cuartos");localStorage.removeItem("alas-cache-med");localStorage.removeItem("alas-token");localStorage.removeItem("internos-pw");sessionStorage.removeItem("alas-sesion");sessionStorage.removeItem("alas-paso")}catch(x){}}
 function cerrarSesion(){fotosChicas={};fotosGrandes={};fotosPedidas=new Set();if(token)api({action:"logout"}).catch(()=>{});borrarSesion();token="";pass=""}
 document.addEventListener("click",e=>{if(e.target.closest('a[href="cuartos/"],a[href^="ficha/"]'))pasarSesion()});
 
@@ -1199,7 +1199,11 @@ $("rq").oninput=renderReg;$("ra").onchange=renderReg;$("rrefresh").onclick=loadR
 const TOMAS=["Desayuno","Almuerzo","Merienda","Cena"];
 const tomaHora=()=>{const n=new Date(),h=n.getHours()+n.getMinutes()/60;return h<11?"Desayuno":h<15.5?"Almuerzo":h<19?"Merienda":"Cena"};
 let tomaSel=tomaHora(), tomaAMano=false;
-let marcas={}, abiertoNo=null, llevar=[];
+let marcas={}, abiertoNo=null, llevar=[], marcasDe="";
+/* Copia de las marcas del día, para que Medicación abra al instante (solo con "Recordarme"; se borra al salir) */
+function guardarCacheMed(){try{if(!token||!localStorage.getItem("alas-token")||!marcasDe)return;
+  localStorage.setItem("alas-cache-med",JSON.stringify({email,fecha:marcasDe,marcas,llevar,t:Date.now()}))}catch(x){}}
+function leerCacheMed(f){try{const c=JSON.parse(localStorage.getItem("alas-cache-med")||"null");return c&&c.email===email&&c.fecha===f?c:null}catch(x){return null}}
 // Registro de "le di la medicación para llevar" de la salida actual
 function salidaActual(i,f){return calc(i).evs.find(e=>afueraEl(e,f))}
 function llevarDe(i,e,lista){const a=iso(new Date(e.d.getFullYear(),e.d.getMonth(),e.d.getDate()-2)),b=iso(e.v);return (lista||llevar).filter(m=>String(m.id)===String(i.id)&&m.toma==="Salida"&&m.fecha>=a&&m.fecha<=b).pop()}
@@ -1243,13 +1247,17 @@ async function marcarLlevar(i,quitar){if(!isAdmin())return;
 function fechaMed(){return $("mfecha").value||iso(hoy)}
 async function loadMed(){
   $("mfecha").value=iso(hoy); if(!tomaAMano)tomaSel=tomaHora();
-  $("mmsg").textContent="Cargando…";
+  // Al instante con lo que ya hay (en memoria o la copia guardada) y se actualiza por detrás
+  const f0=fechaMed();let hay=marcasDe===f0;
+  if(!hay){const c=leerCacheMed(f0);if(c){marcas=c.marcas||{};llevar=c.llevar||[];marcasDe=f0;hay=true}}
+  if(hay){$("mmsg").textContent="";renderMed()}else $("mmsg").textContent="Cargando…";
   try{const d0=new Date(hoy.getFullYear(),hoy.getMonth(),hoy.getDate()-12);
     const [r,r2]=await Promise.all([api({action:"getEntregas",fecha:fechaMed()}),api({action:"getEntregas",desde:iso(d0),hasta:iso(hoy)})]);
     if(!r||r.ok!==true)throw new Error((r&&r.error)||"respuesta inesperada");
+    if(fechaMed()!==f0)return;
     marcas={};(r.data||[]).forEach(m=>marcas[m.toma+"|"+m.id]=m);
-    llevar=((r2&&r2.data)||[]).filter(m=>m.toma==="Salida");$("mmsg").textContent="";renderMed();
-  }catch(e){$("mmsg").textContent="No se pudo cargar: "+e.message}
+    llevar=((r2&&r2.data)||[]).filter(m=>m.toma==="Salida");marcasDe=f0;guardarCacheMed();$("mmsg").textContent="";renderMed();
+  }catch(e){$("mmsg").textContent=hay?"Google no contesta: se ven las marcas que había. Deslizá hacia abajo para reintentar.":"No se pudo cargar: "+e.message}
 }
 function fueraEl(i,f){const c=calc(i);return c.evs.some(e=>afueraEl(e,f))}
 function renderMed(){
@@ -1300,7 +1308,7 @@ async function marcar(i,estado,motivo){
   if(estado){$("mq").value="";$("mok").textContent=(estado==="dada"?"✓ Dada a ":"✗ No la tomó: ")+i.nombre.trim();clearTimeout(marcar.t);marcar.t=setTimeout(()=>$("mok").textContent="",4000)}
   renderMed(); if(estado)$("mq").focus({preventScroll:true});
   try{const r=await api({action:"marcarMed",fecha:fechaMed(),toma:tomaSel,id:i.id,nombre:i.nombre.trim(),estado,motivo:motivo||"",medicacion:String(i[tomaSel.toLowerCase()]||"")});
-    if(!r||r.ok!==true)throw new Error((r&&r.error)||"no se confirmó");
+    if(!r||r.ok!==true)throw new Error((r&&r.error)||"no se confirmó");guardarCacheMed();
   }catch(e){if(antes)marcas[key]=antes;else delete marcas[key];renderMed();$("mmsg").textContent="No se guardó la marca de "+i.nombre.trim()+": "+e.message}
 }
 const nq=s=>String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
@@ -1579,7 +1587,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261116184440";
+const APP_VER="20261116191401";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
