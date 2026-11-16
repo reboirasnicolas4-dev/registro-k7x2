@@ -595,7 +595,7 @@ function sesion(){ try{ const p=JSON.parse(sessionStorage.getItem("alas-paso")||
    (leer, ver usuario, actualizar) se cortan a los pocos segundos y se vuelven a mandar solos. */
 const REPETIBLE=a=>/^(get|check|list)/i.test(a||"")||["updateRow","updateInterno","marcarMed"].includes(a);
 async function postGoogle(url,datos){
-  const body=JSON.stringify(datos),esperas=REPETIBLE(datos.action)?[9000,12000,16000]:[0];let err;
+  const body=JSON.stringify(datos),esperas=REPETIBLE(datos.action)?[7000,8000,9000,10000,12000]:[0];let err;
   for(const ms of esperas){
     const ctl=ms?new AbortController():null,tm=ms?setTimeout(()=>ctl.abort(),ms):0;
     try{const r=await fetch(url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body,signal:ctl?ctl.signal:undefined});
