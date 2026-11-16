@@ -251,6 +251,15 @@ label.opt:has(input:checked){border:2px solid var(--acc)}
   #print td.ce,#print td.f{text-align:center}
   #print tr.mides td.nm,#print tr.mides td.ce,#print tr.mides td.f{background:#b3b3b3!important;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   #print tr{break-inside:avoid}
+  #print.med>table{display:none}
+  #print:not(.med) #pmed{display:none}
+  #print #pmed .mt{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 3mm}
+  #print #pmed .mt b{font-size:13pt}#print #pmed .mt span{font-size:10pt}
+  #print #pmed td,#print #pmed th{white-space:normal;height:auto;padding:1.2mm 1.5mm;line-height:1.15;text-align:center;font-size:var(--mfs,10pt)}
+  #print #pmed td:first-child{font-weight:700;width:22%}
+  #print #pmed td:last-child,#print #pmed th:last-child{width:11%}
+  #print #pmed tr.sal td{color:#777}
+  #print #pmed tr.sal td:first-child small{font-weight:400}
   #print tr.blank td{height:var(--rh,7mm)}
 }
 /* Pantalla de espera mientras entra solo (sin mostrar el ingreso) */
@@ -348,6 +357,7 @@ html.cargando #login{display:none!important}
     <div class="mtop">
       <div class="tomas" id="mtomas"></div>
       <small class="mauto" id="mauto"></small>
+      <button type="button" id="mlabrir" style="width:100%;margin:2px 0 8px">📄 Lista de medicación del día <small style="display:block;font-weight:400;color:var(--mut)">Descargar · Compartir · Imprimir</small></button>
       <div class="msb"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
         <input id="mq" type="search" placeholder="¿Quién viene?" autocomplete="off" enterkeyhint="done" aria-label="Buscar al que viene a tomar la medicación">
         <button type="button" id="mqx" aria-label="Borrar búsqueda" hidden>×</button></div>
@@ -445,6 +455,17 @@ html.cargando #login{display:none!important}
   <div class="msg" id="tmsg" role="alert"></div>
   <div class="acts"><button type="button" id="tcancel">Cancelar</button><button type="submit" class="p" id="tsave">Guardar</button></div>
 </form></dialog>
+<dialog id="mldlg"><div class="ff">
+  <h2>Lista de medicación del día</h2>
+  <p style="margin:0;color:var(--mut);font-size:13px">Una hoja con todos los internos y su medicación de desayuno, almuerzo, merienda y cena, como la planilla de papel. Sale con lo que está cargado en la app. Los que están de salida van en gris.</p>
+  <div class="msg" id="mlmsg" role="alert"></div>
+  <div class="acts">
+    <button type="button" id="mlcancel">Cancelar</button>
+    <button type="button" id="mldesc">Descargar</button>
+    <button type="button" id="mlshare">Compartir</button>
+    <button type="button" id="mlprint" class="p">🖨️ Imprimir</button>
+  </div>
+</div></dialog>
 <dialog id="pdlg"><form id="pf" class="ff" method="dialog">
   <h2>Planilla de suministros</h2>
   <p style="margin:0;color:var(--mut);font-size:13px">Una hoja por interno que toma medicación, igual a la planilla de papel, para imprimir.</p>
@@ -571,6 +592,7 @@ html.cargando #login{display:none!important}
 
 <!-- Lista para imprimir (invisible en pantalla) -->
 <section id="print" aria-hidden="true">
+  <div id="pmed"></div>
   <table>
     <thead><tr><th></th><th>Residentes</th><th>Cédula</th><th>Fecha de Ingreso</th></tr></thead>
     <tbody id="prows"></tbody>
@@ -1329,6 +1351,7 @@ $("uf").addEventListener("submit",e=>{e.preventDefault();const q=$("unew").value
 
 /* ===== Imprimir lista de residentes ===== */
 function buildPrint(){
+  $("print").classList.remove("med");
   const tb=$("prows"); tb.replaceChildren();
   const all=items.filter(i=>i.nombre&&i.ingreso&&conTipo(i)).map(i=>({i,ing:parse(i.ingreso)})).sort((a,b)=>a.ing-b.ing);
   all.forEach(({i,ing},k)=>{
@@ -1341,7 +1364,9 @@ function buildPrint(){
   const filas=all.length+2+1, rh=Math.min(7,255/filas), fs=Math.max(6,Math.min(11,rh*1.7));
   const pr=$("print"); pr.style.setProperty("--rh",rh.toFixed(2)+"mm"); pr.style.setProperty("--fs",fs.toFixed(1)+"pt");
 }
-window.addEventListener("beforeprint",buildPrint);
+let mlModo=false;
+window.addEventListener("beforeprint",()=>{if(!mlModo)buildPrint()});
+window.addEventListener("afterprint",()=>{mlModo=false});
 $("imprimir").onclick=()=>{if($("dlg").open)$("dlg").close();buildPrint();window.print()};
 /* ===== Compartir lista en PDF (WhatsApp) ===== */
 const LIBS=["https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js","https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"];
@@ -1432,6 +1457,55 @@ $("sshare").onclick=async()=>{
     catch(e){if(e.name!=="AbortError"){bajar(r.blob,r.nombre);$("smsg").textContent="Este celular no dejó compartir directo; el PDF se descargó. Mandalo desde WhatsApp con el clip."}}
   }else{bajar(r.blob,r.nombre);$("smsg").textContent="Este dispositivo no permite compartir archivos directo; el PDF se descargó. Mandalo desde WhatsApp con el clip (Documento)."}
 };
+/* ===== Lista de medicación del día (formato planilla de papel) ===== */
+const ML_K=["desayuno","almuerzo","merienda","cena"];
+function medLista(){
+  return items.filter(i=>i.nombre&&i.ingreso&&ML_K.some(k=>String(i[k]||"").trim()))
+    .map(i=>({i,ing:parse(i.ingreso)})).sort((a,b)=>a.ing-b.ing)
+    .map(({i})=>({nom:i.nombre.trim(),sal:!!salidaHoy(i),m:ML_K.map(k=>partirMeds(i[k]))}));
+}
+const DIAL=["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+const mlFecha=()=>DIAL[hoy.getDay()]+" "+fd(hoy);
+function mlArmarPDF(){
+  const L=medLista();if(!L.length)throw new Error("nadie tiene medicación cargada");
+  const doc=new window.jspdf.jsPDF({unit:"mm",format:"a4"}),W=210,mx=10;
+  doc.setFont("helvetica","bold");doc.setFontSize(13);doc.text("Medicación · Alas de Libertad",mx,14);
+  doc.setFont("helvetica","normal");doc.setFontSize(10);doc.text(mlFecha(),W-mx,14,{align:"right"});
+  /* Achica la letra para que entre todo en una sola hoja */
+  const lin=L.reduce((t,r)=>t+Math.max(1,r.sal?2:1,...r.m.map(x=>x.length)),0)+1;
+  const fs=Math.max(6,Math.min(10,(297-18-8-(L.length+1)*2)/(lin*.41)));
+  doc.autoTable({startY:18,head:[["Interno","Desayuno","Almuerzo","Merienda","Cena",""]],
+    body:L.map(r=>[r.nom+(r.sal?"\n(de salida)":""),...r.m.map(x=>x.join("\n")),""]),theme:"grid",
+    styles:{font:"helvetica",fontSize:fs,textColor:0,lineColor:0,lineWidth:.25,cellPadding:1,halign:"center",valign:"middle"},
+    headStyles:{fillColor:255,textColor:0,fontStyle:"bold",fontSize:Math.min(11,fs+1)},
+    columnStyles:{0:{fontStyle:"bold",cellWidth:40},5:{cellWidth:20}},
+    didParseCell:h=>{if(h.section==="body"&&L[h.row.index].sal)h.cell.styles.textColor=120},
+    margin:{left:mx,right:mx,top:8,bottom:8}});
+  return{blob:doc.output("blob"),nombre:"Medicacion_"+iso(hoy)+".pdf"};
+}
+function mlImprimir(){
+  const L=medLista(),P=$("pmed");
+  if(!L.length){$("mlmsg").textContent="Nadie tiene medicación cargada.";return}
+  const t=el("table"),hd=el("tr");["Interno","Desayuno","Almuerzo","Merienda","Cena",""].forEach(x=>hd.append(el("th","",x)));t.append(hd);
+  L.forEach(r=>{const tr=el("tr",r.sal?"sal":""),n=el("td","",r.nom);if(r.sal){n.append(el("br"),el("small","","(de salida)"))}tr.append(n);
+    r.m.forEach(x=>{const td=el("td");x.forEach((m,k)=>{if(k)td.append(el("br"));td.append(document.createTextNode(m))});tr.append(td)});tr.append(el("td"));t.append(tr)});
+  const tit=el("div","mt");tit.append(el("b","","Medicación · Alas de Libertad"),el("span","",mlFecha()));
+  P.replaceChildren(tit,t);
+  const lin=L.reduce((s,r)=>s+Math.max(1,r.sal?2:1,...r.m.map(x=>x.length)),0)+1;
+  $("print").style.setProperty("--mfs",Math.max(6.5,Math.min(10.5,(250-(L.length+1)*2.6)/(lin*.42))).toFixed(1)+"pt");
+  mlModo=true;$("print").classList.add("med");$("mldlg").close();
+  setTimeout(()=>{window.print()},50);
+}
+$("mlabrir").onclick=()=>{$("mlmsg").textContent="";$("mldlg").showModal();
+  if(!listoPDF()){$("mldesc").disabled=$("mlshare").disabled=true;loadLibs().catch(e=>{$("mlmsg").textContent="No se pudo preparar el PDF ("+e.message+"). Imprimir igual funciona."}).finally(()=>{$("mldesc").disabled=$("mlshare").disabled=!listoPDF()})}};
+$("mlcancel").onclick=()=>$("mldlg").close();
+$("mlprint").onclick=mlImprimir;
+$("mldesc").onclick=()=>{try{const r=mlArmarPDF();bajar(r.blob,r.nombre)}catch(e){$("mlmsg").textContent="No se pudo armar el PDF: "+e.message}};
+$("mlshare").onclick=async()=>{$("mlmsg").textContent="";let r;try{r=mlArmarPDF()}catch(e){$("mlmsg").textContent="No se pudo armar el PDF: "+e.message;return}
+  const file=new File([r.blob],r.nombre,{type:"application/pdf"});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:"Medicación"});$("mldlg").close()}
+    catch(e){if(e.name!=="AbortError"){bajar(r.blob,r.nombre);$("mlmsg").textContent="Se descargó el PDF: mandalo desde WhatsApp con el clip."}}}
+  else{bajar(r.blob,r.nombre);$("mlmsg").textContent="Se descargó el PDF: mandalo desde WhatsApp con el clip (Documento)."}};
 $("q").oninput=render; $("ft").onchange=render;
 $("sort").onclick=()=>{asc=!asc;$("sort").textContent="Ingreso "+(asc?"▲":"▼");render()};
 try{$("em").value=localStorage.getItem("internos-email")||"";localStorage.removeItem("internos-pw");if(localStorage.getItem("alas-token"))$("rec").checked=true;const su=localStorage.getItem("internos-api");if(su)API=su}catch(e){}
@@ -1457,7 +1531,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261113122939";
+const APP_VER="20261116070630";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
