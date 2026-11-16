@@ -378,10 +378,23 @@ function cerrarSesion(){if(token)api({action:"logout"}).catch(()=>{});borrarSesi
 document.addEventListener("click",e=>{if(e.target.closest('a[href="../"]'))pasarSesion()});
 
 /* ===== Comunicación con la hoja (mismo script que Internos) ===== */
+/* Google a veces deja un pedido colgado y nunca llega: los pedidos que se pueden repetir sin problema
+   (leer, ver usuario, actualizar) se cortan a los pocos segundos y se vuelven a mandar solos. */
+const REPETIBLE=a=>/^(get|check|list)/i.test(a||"")||["updateRow","updateInterno","marcarMed"].includes(a);
+async function postGoogle(url,datos){
+  const body=JSON.stringify(datos),esperas=REPETIBLE(datos.action)?[9000,12000,16000]:[0];let err;
+  for(const ms of esperas){
+    const ctl=ms?new AbortController():null,tm=ms?setTimeout(()=>ctl.abort(),ms):0;
+    try{const r=await fetch(url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body,signal:ctl?ctl.signal:undefined});
+      const t=await r.text();clearTimeout(tm);return {r,t}}
+    catch(e){clearTimeout(tm);err=e.name==="AbortError"?new Error("Google no contestó"):e}
+  }
+  throw err;
+}
 async function api(datos){
-  const r=await fetch(API,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(Object.assign(credenciales(),datos))});
+  const {r,t}=await postGoogle(API,Object.assign(credenciales(),datos));
   if(!r.ok)throw new Error("HTTP "+r.status);
-  const t=await r.text(); let o; try{o=JSON.parse(t)}catch(e){throw new Error("respuesta inesperada de la hoja")}
+  let o; try{o=JSON.parse(t)}catch(e){throw new Error("respuesta inesperada de la hoja")}
   if(o&&o.auth===false&&datos.action!=="logout"){sesionVencida(o.error);throw new Error(o.error||"sesión vencida")}
   return o;
 }
@@ -759,7 +772,7 @@ if("serviceWorker" in navigator&&location.protocol.startsWith("http"))window.add
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261116071336";
+const APP_VER="20261116182341";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
