@@ -462,7 +462,7 @@ html.cargando #login{display:none!important}
 </form></dialog>
 <dialog id="mldlg"><div class="ff">
   <h2>Lista de medicación del día</h2>
-  <p style="margin:0;color:var(--mut);font-size:13px">Una hoja con todos los internos y su medicación de desayuno, almuerzo, merienda y cena, como la planilla de papel. Sale con lo que está cargado en la app. Los que están de salida van en gris.</p>
+  <p style="margin:0;color:var(--mut);font-size:13px">Una hoja con todos los internos y su medicación de desayuno, almuerzo, merienda y cena, como la planilla de papel. Sale con lo que está cargado en la app. Salen todos, también los que están de salida.</p>
   <div class="msg" id="mlmsg" role="alert"></div>
   <div class="acts">
     <button type="button" id="mlcancel">Cancelar</button>
@@ -1467,7 +1467,7 @@ const ML_K=["desayuno","almuerzo","merienda","cena"];
 function medLista(){
   return items.filter(i=>i.nombre&&i.ingreso&&ML_K.some(k=>String(i[k]||"").trim()))
     .map(i=>({i,ing:parse(i.ingreso)})).sort((a,b)=>a.ing-b.ing)
-    .map(({i})=>({nom:i.nombre.trim(),sal:!!salidaHoy(i),m:ML_K.map(k=>partirMeds(i[k]))}));
+    .map(({i})=>({nom:i.nombre.trim(),sal:false,m:ML_K.map(k=>partirMeds(i[k]))}));
 }
 const DIAL=["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
 const mlFecha=()=>DIAL[hoy.getDay()]+" "+fd(hoy);
@@ -1543,7 +1543,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261116071138";
+const APP_VER="20261116071336";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
