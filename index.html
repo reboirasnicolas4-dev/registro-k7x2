@@ -202,6 +202,11 @@ label.opt:has(input:checked){border:2px solid var(--acc)}
 .opts label:has(input:checked){border-color:var(--acc);background:color-mix(in srgb,var(--acc) 10%,transparent)}
 /* ===== Impresión (solo papel; no cambia la pantalla) ===== */
 #print{display:none}
+.pmedm{position:fixed;left:-300mm;top:0;width:190mm;font:400 11pt/1.2 Arial,Helvetica,sans-serif;visibility:hidden}
+.pmedm .mt{display:flex;justify-content:space-between;margin:0 0 3mm}.pmedm .mt b{font-size:13pt}.pmedm .mt span{font-size:10pt}
+.pmedm table{border-collapse:collapse;width:100%}
+.pmedm td,.pmedm th{border:1px solid #000;white-space:normal;padding:var(--mpd,1.2mm) 1.5mm;line-height:1.15;text-align:center;font-size:var(--mfs,10pt);box-sizing:border-box}
+.pmedm small{font-size:inherit}
 /* ===== Celular: cada fila se ve como una tarjeta ===== */
 @media (max-width:700px){
   .wrap.cards{overflow:visible;background:none;border:0;border-radius:0}
@@ -255,7 +260,7 @@ label.opt:has(input:checked){border:2px solid var(--acc)}
   #print:not(.med) #pmed{display:none}
   #print #pmed .mt{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 3mm}
   #print #pmed .mt b{font-size:13pt}#print #pmed .mt span{font-size:10pt}
-  #print #pmed td,#print #pmed th{white-space:normal;height:auto;padding:1.2mm 1.5mm;line-height:1.15;text-align:center;font-size:var(--mfs,10pt)}
+  #print #pmed td,#print #pmed th{white-space:normal;height:auto;padding:var(--mpd,1.2mm) 1.5mm;line-height:1.15;text-align:center;font-size:var(--mfs,10pt)}
   #print #pmed td:first-child{font-weight:700;width:22%}
   #print #pmed td:last-child,#print #pmed th:last-child{width:11%}
   #print #pmed tr.sal td{color:#777}
@@ -1468,20 +1473,23 @@ const DIAL=["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"
 const mlFecha=()=>DIAL[hoy.getDay()]+" "+fd(hoy);
 function mlArmarPDF(){
   const L=medLista();if(!L.length)throw new Error("nadie tiene medicación cargada");
-  const doc=new window.jspdf.jsPDF({unit:"mm",format:"a4"}),W=210,mx=10;
+  const lin=L.reduce((t,r)=>t+Math.max(1,r.sal?2:1,...r.m.map(x=>x.length)),0)+1;
+  let fs=Math.max(4,Math.min(10,(297-18-8-(L.length+1)*2)/(lin*.41))),doc;
+  for(;;){doc=mlDoc(L,fs);if(doc.getNumberOfPages()<=1||fs<=3.5)break;fs-=.4}
+  return{blob:doc.output("blob"),nombre:"Medicacion_"+iso(hoy)+".pdf"};
+}
+function mlDoc(L,fs){
+  const doc=new window.jspdf.jsPDF({unit:"mm",format:"a4"}),W=210,mx=10,pad=Math.max(.4,Math.min(1,fs/10));
   doc.setFont("helvetica","bold");doc.setFontSize(13);doc.text("Medicación · Alas de Libertad",mx,14);
   doc.setFont("helvetica","normal");doc.setFontSize(10);doc.text(mlFecha(),W-mx,14,{align:"right"});
-  /* Achica la letra para que entre todo en una sola hoja */
-  const lin=L.reduce((t,r)=>t+Math.max(1,r.sal?2:1,...r.m.map(x=>x.length)),0)+1;
-  const fs=Math.max(6,Math.min(10,(297-18-8-(L.length+1)*2)/(lin*.41)));
   doc.autoTable({startY:18,head:[["Interno","Desayuno","Almuerzo","Merienda","Cena",""]],
     body:L.map(r=>[r.nom+(r.sal?"\n(de salida)":""),...r.m.map(x=>x.join("\n")),""]),theme:"grid",
-    styles:{font:"helvetica",fontSize:fs,textColor:0,lineColor:0,lineWidth:.25,cellPadding:1,halign:"center",valign:"middle"},
+    styles:{font:"helvetica",fontSize:fs,textColor:0,lineColor:0,lineWidth:.25,cellPadding:pad,halign:"center",valign:"middle"},
     headStyles:{fillColor:255,textColor:0,fontStyle:"bold",fontSize:Math.min(11,fs+1)},
     columnStyles:{0:{fontStyle:"bold",cellWidth:40},5:{cellWidth:20}},
     didParseCell:h=>{if(h.section==="body"&&L[h.row.index].sal)h.cell.styles.textColor=120},
-    margin:{left:mx,right:mx,top:8,bottom:8}});
-  return{blob:doc.output("blob"),nombre:"Medicacion_"+iso(hoy)+".pdf"};
+    margin:{left:mx,right:mx,top:8,bottom:6}});
+  return doc;
 }
 function mlImprimir(){
   const L=medLista(),P=$("pmed");
@@ -1490,9 +1498,13 @@ function mlImprimir(){
   L.forEach(r=>{const tr=el("tr",r.sal?"sal":""),n=el("td","",r.nom);if(r.sal){n.append(el("br"),el("small","","(de salida)"))}tr.append(n);
     r.m.forEach(x=>{const td=el("td");x.forEach((m,k)=>{if(k)td.append(el("br"));td.append(document.createTextNode(m))});tr.append(td)});tr.append(el("td"));t.append(tr)});
   const tit=el("div","mt");tit.append(el("b","","Medicación · Alas de Libertad"),el("span","",mlFecha()));
-  P.replaceChildren(tit,t);
-  const lin=L.reduce((s,r)=>s+Math.max(1,r.sal?2:1,...r.m.map(x=>x.length)),0)+1;
-  $("print").style.setProperty("--mfs",Math.max(6.5,Math.min(10.5,(250-(L.length+1)*2.6)/(lin*.42))).toFixed(1)+"pt");
+  t.className="pmedt";
+  /* Mide fuera de pantalla y achica la letra hasta que entre todo en una sola hoja A4 */
+  const box=el("div","pmedm");box.append(tit,t);document.body.append(box);
+  const mm=box.getBoundingClientRect().width/190;let fs=10.5,pd=1.2;
+  for(;fs>4;fs-=.25){box.style.setProperty("--mfs",fs+"pt");box.style.setProperty("--mpd",pd+"mm");if(box.getBoundingClientRect().height<=272*mm)break;pd=Math.max(.3,pd-.06)}
+  box.remove();P.replaceChildren(tit,t);
+  $("print").style.setProperty("--mfs",fs+"pt");$("print").style.setProperty("--mpd",pd+"mm");
   mlModo=true;$("print").classList.add("med");$("mldlg").close();
   setTimeout(()=>{window.print()},50);
 }
@@ -1531,7 +1543,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261116070630";
+const APP_VER="20261116071138";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
