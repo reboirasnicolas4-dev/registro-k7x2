@@ -1500,6 +1500,12 @@ async function marcarLlevar(i,quitar){if(!isAdmin())return;
   try{const r=await api({action:"marcarMed",fecha:iso(hoy),toma:"Salida",id:i.id,nombre:i.nombre.trim(),estado:quitar?"":"llevar",medicacion:meds});if(!r||r.ok!==true)throw new Error((r&&r.error)||"no se confirmó")}
   catch(e){llevar=prev;renderMed();$("mmsg").textContent="No se guardó: "+e.message}}
 function fechaMed(){return $("mfecha").value||iso(hoy)}
+/* Marcas recién hechas: mientras Google no las devuelve, se mantienen en pantalla (no se pierden al actualizar) */
+const pendM={};
+function aplicarPendientes(f){const ahora=Date.now();
+  Object.keys(pendM).forEach(k=>{const p=pendM[k];if(p.f!==f)return;
+    if(p.ok&&ahora-p.t>180000){delete pendM[k];return}
+    if(p.m)marcas[k]=p.m;else delete marcas[k]})}
 async function loadMed(){
   $("mfecha").value=iso(hoy); if(!tomaAMano)tomaSel=tomaHora();
   // Al instante con lo que ya hay (en memoria o la copia guardada) y se actualiza por detrás
@@ -1510,7 +1516,7 @@ async function loadMed(){
     const [r,r2]=await Promise.all([api({action:"getEntregas",fecha:fechaMed()}),api({action:"getEntregas",desde:iso(d0),hasta:iso(hoy)})]);
     if(!r||r.ok!==true)throw new Error((r&&r.error)||"respuesta inesperada");
     if(fechaMed()!==f0)return;
-    marcas={};(r.data||[]).forEach(m=>marcas[m.toma+"|"+m.id]=m);
+    marcas={};(r.data||[]).forEach(m=>marcas[m.toma+"|"+m.id]=m);aplicarPendientes(f0);
     llevar=((r2&&r2.data)||[]).filter(m=>m.toma==="Salida");marcasDe=f0;guardarCacheMed();$("mmsg").textContent="";renderMed();
   }catch(e){$("mmsg").textContent=hay?"Google no contesta: se ven las marcas que había. Deslizá hacia abajo para reintentar.":"No se pudo cargar: "+e.message}
 }
@@ -1564,11 +1570,13 @@ async function marcar(i,estado,motivo,toma){
   if(!isAdmin())return;toma=toma||tomaSel;
   const key=toma+"|"+i.id,antes=marcas[key];abiertoNo=null;abiertoMas=null;
   if(estado)marcas[key]={toma,id:i.id,estado:estado==="dada"?"Dada":"No la tomó",motivo:motivo||"",hora:new Date().toTimeString().slice(0,5),usuario:email};else delete marcas[key];
+  const pend={m:marcas[key]||null,t:Date.now(),f:fechaMed()};pendM[key]=pend;
   if(estado){$("mq").value="";aviso((estado==="dada"?"✓ Dada a ":"✗ No la tomó: ")+i.nombre.trim().split(/\s+/).slice(0,2).join(" "),()=>marcar(i,"","",toma))}
   renderMed(); if(vista==="H")renderHoy(); else if(estado&&vista==="M")$("mq").focus({preventScroll:true});
   try{const r=await api({action:"marcarMed",fecha:fechaMed(),toma,id:i.id,nombre:i.nombre.trim(),estado,motivo:motivo||"",medicacion:String(i[toma.toLowerCase()]||"")});
-    if(!r||r.ok!==true)throw new Error((r&&r.error)||"no se confirmó");guardarCacheMed();
-  }catch(e){if(antes)marcas[key]=antes;else delete marcas[key];renderMed();$("mmsg").textContent="No se guardó la marca de "+i.nombre.trim()+": "+e.message}
+    if(!r||r.ok!==true)throw new Error((r&&r.error)||"no se confirmó");pend.ok=true;pend.t=Date.now();guardarCacheMed();
+  }catch(e){if(pendM[key]===pend)delete pendM[key];if(antes)marcas[key]=antes;else delete marcas[key];renderMed();if(vista==="H")renderHoy();
+    const msg="✗ No se guardó la marca de "+i.nombre.trim().split(/\s+/).slice(0,2).join(" ")+" (Google no contestó). Marcalo de nuevo.";$("mmsg").textContent=msg;aviso(msg)}
 }
 const nq=s=>String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 function resaltarM(nombre,q){const b=el("b");const i=q?nq(nombre).indexOf(q):-1;if(i<0){b.textContent=nombre;return b}
@@ -1875,7 +1883,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261117092107";
+const APP_VER="20261117124549";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
