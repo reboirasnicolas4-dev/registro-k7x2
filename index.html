@@ -88,6 +88,7 @@ h1{font:700 34px/1.1 Fraunces,Georgia,serif;margin:0}
 .hmini{display:block;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;min-height:84px}
 .hmini b{display:block;font-size:24px;font-family:Fraunces,Georgia,serif}.hmini span{display:block;font-size:12.5px;color:var(--mut);font-weight:500;line-height:1.3}
 .hmini.w{border-color:var(--acc)}
+.havis p{margin:0 0 4px;color:var(--mut);font-size:14px}
 .toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translate(-50%,160%);width:min(520px,calc(100% - 24px));z-index:40;display:flex;align-items:center;gap:10px;background:var(--ink);color:var(--bg);border-radius:14px;padding:12px 14px;font-weight:600;box-shadow:0 8px 24px #0005;transition:transform .25s,opacity .25s,visibility .25s;opacity:0;visibility:hidden}
 .toast.on{transform:translate(-50%,0);opacity:1;visibility:visible}.toast button{margin-left:auto;background:none;border:0;color:var(--acc);font-weight:700;padding:4px 6px;min-height:0}
 .mrow .bt{display:flex;gap:6px;flex-wrap:wrap}
@@ -367,6 +368,7 @@ html.cargando #login{display:none!important}
     <div class="hcard" id="hsal"></div>
     <div class="hgrid" id="hgrid"></div>
     <div class="hcard" id="hhacer" hidden></div>
+    <div class="hcard havis" id="havis" hidden><h4>🔔 Avisos en el celular</h4><p>Te avisa todos los días a las 8 quién sale (desde 4 días antes) y quién vuelve mañana y hoy.</p><div class="acts" style="justify-content:flex-start"><button type="button" class="p" id="havisSi">Activar avisos</button><button type="button" id="havisNo">Ahora no</button></div></div>
   </section>
   <section id="vInt" hidden>
   <div class="stats" id="stats"></div>
@@ -467,6 +469,7 @@ html.cargando #login{display:none!important}
       <a href="ficha/" class="mi" style="--c:#7fb069"><b class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8M9 2.8h6v2.4H9z"/><path d="M6 4H5a1 1 0 0 0-1 1v15a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1h-1"/><path d="M8 10h8M8 14h8M8 18h5"/></svg></b><span>Ficha de ingreso<small>Preguntas al nuevo y ficha para imprimir</small></span><i>›</i></a>
       <button type="button" class="mi" data-go="R" id="miR" hidden style="--c:#d9b12f"><b class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg></b><span>Registro<small>Quién cambió qué y cuándo</small></span><i>›</i></button>
       <button type="button" class="mi" data-go="U" id="miU" hidden style="--c:#f7a823"><b class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M11 12l8-8M16 7l3 3M14 9l2 2"/></svg></b><span>Usuarios<small>Agregar, quitar y códigos</small></span><i>›</i></button>
+      <button type="button" class="mi" id="miAvisos" hidden style="--c:#f7a823"><b class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20a2 2 0 0 0 4 0"/></svg></b><span>Avisos en este celular<small id="avisost">Salidas y vueltas, todos los días a las 8</small></span><i>›</i></button>
       <button type="button" class="mi" id="tema" style="--c:#8db4ff"><b class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></b><span>Apariencia<small id="temat">Automática (como el celular)</small></span><i>›</i></button>
       <button type="button" class="mi" id="imprimir" style="--c:var(--mut)"><b class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V4h10v5M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2M7 14h10v6H7z"/></svg></b><span>Imprimir lista<small>Desde la computadora</small></span><i>›</i></button>
     </div>
@@ -506,6 +509,18 @@ html.cargando #login{display:none!important}
   <div class="msg" id="tmsg" role="alert"></div>
   <div class="acts"><button type="button" id="tcancel">Cancelar</button><button type="submit" class="p" id="tsave">Guardar</button></div>
 </form></dialog>
+<dialog id="avdlg"><div class="ff">
+  <h2>🔔 Avisos en este celular</h2>
+  <p style="margin:0;color:var(--mut);font-size:14px">Todos los días a las 8 te llega un aviso con quién sale (desde 4 días antes: en 4 días, en 3, en 2, mañana, hoy) y quién vuelve mañana y hoy. Solo para los Admin.</p>
+  <p id="avest" style="margin:0;font-weight:600"></p>
+  <div class="msg" id="avmsg" role="alert"></div>
+  <div class="acts">
+    <button type="button" id="avcerrar">Cerrar</button>
+    <button type="button" id="avoff" hidden>Desactivar</button>
+    <button type="button" id="avprueba" hidden>Mandar aviso de prueba</button>
+    <button type="button" id="avon" class="p" hidden>Activar avisos</button>
+  </div>
+</div></dialog>
 <dialog id="mldlg"><div class="ff">
   <h2>Lista de medicación del día</h2>
   <p style="margin:0;color:var(--mut);font-size:13px">Una hoja con todos los internos y su medicación de desayuno, almuerzo, merienda y cena, como la planilla de papel. Sale con lo que está cargado en la app. Salen todos, también los que están de salida.</p>
@@ -684,7 +699,12 @@ function pasarSesion(){try{if(token)sessionStorage.setItem("alas-paso",JSON.stri
 function sesionGuardada(){try{const p=JSON.parse(sessionStorage.getItem("alas-paso")||"null");sessionStorage.removeItem("alas-paso");sessionStorage.removeItem("alas-sesion");
   if(p&&p.token&&Date.now()-p.t<60000)return p;return JSON.parse(localStorage.getItem("alas-token")||"null")}catch(x){return null}}
 function borrarSesion(){try{marcasDe="";marcas={};llevar=[];localStorage.removeItem("alas-cache");localStorage.removeItem("alas-cache-cuartos");localStorage.removeItem("alas-cache-med");localStorage.removeItem("alas-token");localStorage.removeItem("internos-pw");sessionStorage.removeItem("alas-sesion");sessionStorage.removeItem("alas-paso")}catch(x){}}
-function cerrarSesion(){fotosChicas={};fotosGrandes={};fotosPedidas=new Set();if(token)api({action:"logout"}).catch(()=>{});borrarSesion();token="";pass=""}
+function cerrarSesion(){fotosChicas={};fotosGrandes={};fotosPedidas=new Set();
+  // Al salir, este celular deja de recibir los avisos; después se cierra la sesión
+  let av=null;try{av=JSON.parse(localStorage.getItem("alas-aviso")||"null");localStorage.removeItem("alas-aviso")}catch(x){}
+  const c=credenciales(),fin=()=>{if(c.token)postGoogle(API,Object.assign({},c,{action:"logout"})).catch(()=>{})};
+  if(c.token&&av&&av.token)postGoogle(API,Object.assign({},c,{action:"quitarAviso",tokenAviso:av.token})).catch(()=>{}).finally(fin);else fin();
+  borrarSesion();token="";pass=""}
 document.addEventListener("click",e=>{if(e.target.closest('a[href="cuartos/"],a[href^="ficha/"]'))pasarSesion()});
 
 /* ===== Comunicación con Google Sheets (Apps Script) ===== */
@@ -862,6 +882,7 @@ function render(){
     tb.append(tr);
   });
   if(vista==="H")renderHoy();
+  pintarAvisos();if(!soloCopia)setTimeout(renovarAviso,4000);
 }
 function openDlg(it){
   cur=it||null; delArm=false; $("msg").textContent=""; $("del").textContent="Borrar (se cargó por error)"; $("delbox").hidden=true;
@@ -1051,6 +1072,42 @@ function verTab(k){vista=k;Object.entries(VISTAS).forEach(([t,[v]])=>{$(v).hidde
 document.querySelectorAll("#bnav button").forEach(b=>b.onclick=()=>verTab(b.dataset.v));
 document.querySelectorAll("[data-back]").forEach(b=>b.onclick=()=>verTab("X"));
 document.querySelectorAll("#vMas [data-go]").forEach(b=>b.onclick=()=>verTab(b.dataset.go));
+/* ===== Avisos al celular (Firebase Cloud Messaging), solo para los Admin ===== */
+const FB_CONF={apiKey:"AIzaSyC3mDOcJqIa4HfMOCsCQod2tbi30zkmUUs",authDomain:"alas-de-libertad.firebaseapp.com",projectId:"alas-de-libertad",storageBucket:"alas-de-libertad.firebasestorage.app",messagingSenderId:"39658390390",appId:"1:39658390390:web:4cfb1fdc7a29b26b0eb057"};
+const FB_VAPID="BMlKSgGNTNQi3bo7ylruO37vO3AtGbYKeLP0ddH4QVl6zUzGj-JDbqLhUKbLBNoXjjnhrcQ5iiiJm_APymRA09I";
+const FB_JS="https://www.gstatic.com/firebasejs/10.12.2/";
+const avisosPosibles=()=>"Notification" in window&&"serviceWorker" in navigator&&"PushManager" in window&&location.protocol==="https:";
+const esAdminRol=()=>role==="Admin";
+function leerAv(){try{return JSON.parse(localStorage.getItem("alas-aviso")||"null")}catch(x){return null}}
+function cargarJS(u){return new Promise((ok,no)=>{if(document.querySelector('script[src="'+u+'"]'))return ok();const s=document.createElement("script");s.src=u;s.onload=ok;s.onerror=()=>no(new Error("no se pudo cargar Firebase"));document.head.append(s)})}
+async function fbMensajes(){await cargarJS(FB_JS+"firebase-app-compat.js");await cargarJS(FB_JS+"firebase-messaging-compat.js");if(!firebase.apps.length)firebase.initializeApp(FB_CONF);return firebase.messaging()}
+async function tokenAviso(){const reg=await navigator.serviceWorker.register("sw.js");await navigator.serviceWorker.ready;const m=await fbMensajes();return m.getToken({vapidKey:FB_VAPID,serviceWorkerRegistration:reg})}
+function dispositivo(){const u=navigator.userAgent;return(/Android/.test(u)?"Android":/iPhone|iPad/.test(u)?"iPhone":/Windows/.test(u)?"Windows":/Mac/.test(u)?"Mac":"Otro")+(window.matchMedia("(display-mode: standalone)").matches?" · app":" · navegador")}
+async function guardarTokenAviso(t){const r=await api({action:"guardarAviso",tokenAviso:t,dispositivo:dispositivo()});if(!r||r.ok!==true)throw new Error((r&&r.error)||"no se pudo guardar");
+  try{localStorage.setItem("alas-aviso",JSON.stringify({email,token:t,dia:iso(hoy)}))}catch(x){}}
+function estadoAvisos(){if(!avisosPosibles())return"no";if(Notification.permission==="denied")return"bloq";const a=leerAv();return Notification.permission==="granted"&&a&&a.email===email?"on":"off"}
+function pintarAvisos(){const ok=esAdminRol();$("miAvisos").hidden=!ok;if(!ok)return;const e=estadoAvisos();
+  $("avisost").textContent=e==="on"?"Activados · salidas y vueltas a las 8":e==="bloq"?"Bloqueados en este celular":e==="no"?"Este celular no los admite":"Desactivados · tocá para activar";
+  let no=false;try{no=localStorage.getItem("alas-aviso-no")===iso(hoy)}catch(x){}$("havis").hidden=e!=="off"||no}
+function abrirAvisos(){const e=estadoAvisos();$("avmsg").textContent="";
+  $("avest").textContent=e==="on"?"✔ Activados en este celular.":e==="bloq"?"Están bloqueados: hay que permitir las notificaciones de esta app en la configuración del celular (Ajustes → Apps → Chrome o Internos → Notificaciones) y volver a entrar.":e==="no"?"Este celular o navegador no admite avisos."+(/iPhone|iPad/.test(navigator.userAgent)?" En iPhone primero instalá la app en la pantalla de inicio (Compartir → Agregar a inicio) y abrila desde ahí.":""):"Todavía no están activados en este celular.";
+  $("avon").hidden=e!=="off";$("avoff").hidden=$("avprueba").hidden=e!=="on";$("avdlg").showModal()}
+async function activarAvisos(){$("avmsg").textContent="Activando…";
+  try{const p=await Notification.requestPermission();if(p!=="granted"){$("avmsg").textContent="No se dio permiso para las notificaciones.";pintarAvisos();return}
+    await guardarTokenAviso(await tokenAviso());$("avmsg").textContent="";pintarAvisos();
+    try{$("avdlg").close()}catch(x){}aviso("🔔 Avisos activados en este celular")}
+  catch(e){$("avmsg").textContent="No se pudo activar: "+e.message}}
+async function desactivarAvisos(){const a=leerAv();$("avmsg").textContent="Desactivando…";
+  try{if(a&&a.token)await api({action:"quitarAviso",tokenAviso:a.token});try{(await fbMensajes()).deleteToken()}catch(x){}
+    localStorage.removeItem("alas-aviso");$("avdlg").close();pintarAvisos();aviso("Avisos desactivados en este celular")}
+  catch(e){$("avmsg").textContent="No se pudo: "+e.message}}
+$("miAvisos").onclick=abrirAvisos;$("avcerrar").onclick=()=>$("avdlg").close();$("avon").onclick=activarAvisos;$("avoff").onclick=desactivarAvisos;
+$("avprueba").onclick=async()=>{$("avmsg").textContent="Mandando…";try{const r=await api({action:"avisoPrueba"});if(!r||r.ok!==true)throw new Error((r&&r.error)||"no se pudo");
+  const env=r.enviados||[];$("avmsg").textContent=env.includes("ok")?"Listo: en unos segundos te llega el aviso.":env.length?"Google contestó: "+env.join(", "):"No hay ningún celular tuyo anotado: tocá Desactivar y activalos de nuevo."}catch(e){$("avmsg").textContent="No se pudo: "+e.message}};
+$("havisSi").onclick=()=>activarAvisos();$("havisNo").onclick=()=>{try{localStorage.setItem("alas-aviso-no",iso(hoy))}catch(x){}$("havis").hidden=true};
+// Una vez por día, si ya están activados, se renueva el token por las dudas (sin preguntar nada)
+async function renovarAviso(){try{if(renovarAviso.p||!esAdminRol()||soloCopia||estadoAvisos()!=="on")return;const a=leerAv();if(a.dia===iso(hoy))return;renovarAviso.p=1;
+  const t=await tokenAviso();if(t)await guardarTokenAviso(t)}catch(x){}}
 // Apariencia: automática (como el celular), clara u oscura; vale para Internos, Cuartos y Ficha
 const TEMAS=[["","Automática (como el celular)"],["claro","Clara"],["oscuro","Oscura"]];
 function pintarTema(){let t="";try{t=localStorage.getItem("alas-tema")||""}catch(x){}$("temat").textContent=(TEMAS.find(x=>x[0]===t)||TEMAS[0])[1]+" · tocá para cambiar"}
@@ -1720,7 +1777,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261116211721";
+const APP_VER="20261116214856";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
