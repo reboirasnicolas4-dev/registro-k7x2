@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<script>try{var tm=localStorage.getItem("alas-tema");if(tm)document.documentElement.dataset.tema=tm}catch(e){}</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ficha de ingreso – Alas de Libertad</title>
@@ -99,6 +100,10 @@
   :root{--bg:#f6f1e7;--card:#fffdf8;--ink:#2a2118;--mut:#6b6157;--line:#ddd5c4;--acc:#f7a823;--accx:#281a08;--acct:#9a5a00;
     --naranja:var(--acc);--naranja-claro:color-mix(in srgb,var(--acc) 16%,var(--card));--marron:var(--ink);--tinta:var(--ink);--gris:var(--mut);--linea:var(--line);--fondo:var(--bg);--blanco:var(--card);color-scheme:light}
   @media (prefers-color-scheme:dark){:root{--bg:#16120e;--card:#211b15;--ink:#f0e8da;--mut:#b3a99b;--line:#3a3027;--acct:#f7a823;color-scheme:dark}}
+:root[data-tema=claro]{--bg:#f6f1e7;--card:#fffdf8;--ink:#2a2118;--mut:#6b6157;--line:#ddd5c4;--acc:#f7a823;--accx:#281a08;--acct:#9a5a00;
+    --naranja:var(--acc);--naranja-claro:color-mix(in srgb,var(--acc) 16%,var(--card));--marron:var(--ink);--tinta:var(--ink);--gris:var(--mut);--linea:var(--line);--fondo:var(--bg);--blanco:var(--card);color-scheme:light}
+:root[data-tema=oscuro]{--bg:#16120e;--card:#211b15;--ink:#f0e8da;--mut:#b3a99b;--line:#3a3027;--acct:#f7a823;color-scheme:dark}
+
   html,body{font-family:"Hanken Grotesk",system-ui,sans-serif}
   .marca,.panel h3,.lista h2{font-family:Fraunces,Georgia,serif}
   .marca{font-size:22px;font-weight:700}
