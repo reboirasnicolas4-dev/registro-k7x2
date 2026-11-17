@@ -839,7 +839,7 @@ try{$("em").value=localStorage.getItem("internos-email")||"";localStorage.remove
   if(cache){soloCopia=true;role=String(cache.role||"");$("whoem").textContent=email;$("whorole").textContent=role;$("login").hidden=true;$("app").hidden=false;
     try{armar(...cache.d)}catch(x){}document.documentElement.classList.remove("cargando");
     try{await cargar();guardarSesion();$("whorole").textContent=role}
-    catch(e){soloCopia=true;render();if(token){const h=new Date(cache.t);estado("Google no contesta: se ve lo guardado a las "+String(h.getHours()).padStart(2,"0")+":"+String(h.getMinutes()).padStart(2,"0")+". Probá ⋯ → Actualizar.")}}
+    catch(e){soloCopia=true;render();if(!token)estado("");if(token){const h=new Date(cache.t);estado("Google no contesta: se ve lo guardado a las "+String(h.getHours()).padStart(2,"0")+":"+String(h.getMinutes()).padStart(2,"0")+". Probá ⋯ → Actualizar.")}}
     return}
   try{role="";$("whoem").textContent=email;$("login").hidden=true;$("app").hidden=false;
     await cargar();
@@ -852,7 +852,7 @@ if("serviceWorker" in navigator&&location.protocol.startsWith("http"))window.add
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261117134109";
+const APP_VER="20261117141625";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}

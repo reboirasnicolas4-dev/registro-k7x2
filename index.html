@@ -1878,7 +1878,7 @@ try{$("em").value=localStorage.getItem("internos-email")||"";localStorage.remove
     soloCopia=true;document.documentElement.classList.remove("cargando");show("app");render();
     const am=$("amsg");am.textContent="Actualizando…";
     try{await load();soloCopia=false;guardarSesion();am.textContent="";render();if(vista==="M")renderMed()}
-    catch(e){if(token){const h=new Date(cache.t);am.textContent="Google no contesta: se ve lo guardado a las "+String(h.getHours()).padStart(2,"0")+":"+String(h.getMinutes()).padStart(2,"0")+" del "+fd(h)+". Deslizá hacia abajo para reintentar."}}
+    catch(e){if(!token)am.textContent="";if(token){const h=new Date(cache.t);am.textContent="Google no contesta: se ve lo guardado a las "+String(h.getHours()).padStart(2,"0")+":"+String(h.getMinutes()).padStart(2,"0")+" del "+fd(h)+". Deslizá hacia abajo para reintentar."}}
     return}
   try{await load();
     if(!role)throw new Error("respuesta inesperada de la planilla");
@@ -1897,7 +1897,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261117134109";
+const APP_VER="20261117141625";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
