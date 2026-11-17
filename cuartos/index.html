@@ -192,7 +192,7 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
   .nj .r{padding:10px 12px}
 }
 @media (max-width:700px) and (prefers-reduced-motion:reduce){.chev{transition:none}}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:700;max-width:92vw;text-align:center;z-index:5}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:700;max-width:92vw;text-align:center;z-index:30}
 /* Pantalla de espera mientras entra solo (sin mostrar el ingreso) */
 #splash{display:none;position:fixed;inset:0;z-index:50;background:var(--bg);place-items:center;align-content:center;gap:18px;text-align:center}
 html.cargando #splash{display:grid}
@@ -205,6 +205,32 @@ html.cargando #login{display:none!important}
 @keyframes vuelo{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-10px) rotate(3deg)}}
 @keyframes ola{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.6);opacity:0}}
 @media (prefers-reduced-motion:reduce){#splash .ave,#splash .anillo{animation:none}}
+
+/* ===== Camas como cuadritos, buscador, ventanitas abajo (2026-11) ===== */
+.cbusca{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:0 12px;margin:0 0 12px}
+.cbusca input{flex:1;border:0;background:none;padding:11px 0;font:inherit;color:var(--ink);outline:none;min-width:0}
+.room .beds{display:grid!important;grid-template-columns:1fr 1fr;gap:6px}
+.room .bed{border-radius:11px!important;padding:6px 8px!important;min-height:44px!important;width:auto!important}
+.room .bed.occ{display:grid!important;grid-template-columns:26px minmax(0,1fr);column-gap:7px;align-items:center;row-gap:2px}
+.room .bed.occ .n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13.5px}
+.bed .tags{grid-column:2;display:flex!important;gap:3px;flex-wrap:wrap;justify-content:flex-start!important}
+.bed .tags .tag{font-size:10.5px;padding:0 6px}
+.bed .ini{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:11px;font-weight:700;background:var(--soft);color:var(--ink);flex:none}
+.room .bed.free{display:flex!important;justify-content:center;color:var(--mut);font-size:13px}
+.room .bed.libres{display:none!important}
+.bed.salida,.chip.salida{opacity:.6}
+.bed.hl,.chip.hl{outline:2px solid var(--acc);background:var(--soft)!important;opacity:1}
+.toast .tund{margin-left:12px;background:none;border:0;color:var(--acc);font-weight:700;padding:2px 4px;min-height:0;cursor:pointer}
+.aviso2{margin:0;background:var(--soft);border:1px solid var(--acc);border-radius:12px;padding:9px 11px;font-size:13.5px}
+.rlist{border:1px solid var(--line);border-radius:12px;padding:0 12px;max-height:50vh;overflow:auto}
+.rlist .rr{display:flex;gap:8px;align-items:center;padding:9px 0;border-top:1px solid var(--line);font-size:14px}.rlist .rr:first-child{border-top:0}
+.rlist .rr b{flex:1;font-weight:600;min-width:0}.rlist .rr span{color:var(--mut);font-size:13px;white-space:nowrap}.rlist .rr em{font-style:normal;font-weight:700;color:var(--acc)}.rlist .rr em.mal{color:var(--bad)}
+.rbtns button{flex:1}
+@media (max-width:700px){
+  dialog#menu,dialog#rdlg{margin:auto 0 0;width:100%;max-width:100%;border-radius:20px 20px 0 0;max-height:88vh}
+  .toast{bottom:calc(92px + env(safe-area-inset-bottom,0px))!important}
+  #mops{grid-template-columns:repeat(3,1fr)}#mops button{text-align:center;padding:9px 4px}#mops button small{font-size:11px}
+}
 </style>
 </head>
 <body>
@@ -259,6 +285,7 @@ html.cargando #login{display:none!important}
     </div>
     <div class="sum" id="sum"></div>
     <div class="sum3" id="sum3"></div>
+    <div class="cbusca"><span>🔍</span><input id="cq" type="search" placeholder="¿Dónde duerme…? (escribí un nombre)" autocomplete="off" aria-label="Buscar en qué cuarto duerme"></div>
     <div class="hint" id="hint" hidden></div>
     <div class="trop" id="trop">
       <div class="hd" id="trophd"><h2>Tropilla</h2><span class="cap" id="tcap"></span><span class="obar" id="tbar"><i></i></span><span class="chev">›</span></div>
@@ -309,6 +336,13 @@ html.cargando #login{display:none!important}
     <button id="mfuera">No entra en cuartos</button>
     <button id="mcerrar">Cancelar</button>
   </div>
+</div></dialog>
+<dialog id="rdlg"><div class="mn">
+  <h2>Así quedaría</h2>
+  <p class="aviso2">Todavía <b>no se guardó nada</b>. Mirá los cambios y tocá <b>Confirmar</b>. Si no te gusta, <b>Mezclar de nuevo</b>.</p>
+  <div class="rlist" id="rlist"></div>
+  <p class="sub2" id="rnota"></p>
+  <div class="row rbtns"><button type="button" id="rcan">Cancelar</button><button type="button" id="rmez">🔀 Mezclar de nuevo</button><button type="button" class="p" id="rok">✔ Confirmar</button></div>
 </div></dialog>
 <div class="toast" id="toast" hidden></div>
 <div class="pend" id="pend" hidden><span id="pendt"></span><button type="button" id="pendg">Guardar rotación</button></div>
@@ -363,7 +397,9 @@ const HOY=(()=>{const n=new Date();return new Date(n.getFullYear(),n.getMonth(),
 const fd=d=>String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+d.getFullYear();
 const parse=s=>{const[y,m,d]=String(s).slice(0,10).split("-").map(Number);return new Date(y,(m||1)-1,d||1)};
 function toISO(v){v=String(v||"").trim();if(/^\d{4}-\d{2}-\d{2}/.test(v))return v.slice(0,10);const m=v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);return m?m[3]+"-"+m[2].padStart(2,"0")+"-"+m[1].padStart(2,"0"):""}
-function toast(t){const e=$("toast");e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,2600)}
+function toast(t,undo){const e=$("toast");e.replaceChildren(document.createTextNode(t));
+  if(undo&&deshacer.length){const u=el("button","tund","Deshacer");u.type="button";u.onclick=()=>{e.hidden=true;$("deshacer").click()};e.append(u)}
+  e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,undo?5000:2600)}
 function estado(t,err){$("estado").textContent=t||"";$("estado").classList.toggle("err",!!err)}
 
 /* ===== Sesión: se guarda un código que vence a los 30 días, nunca la contraseña ===== */
@@ -488,8 +524,8 @@ const nom1=p=>p.nombre.split(" ")[0];
 function donde(p){return p.sector?"Tropilla ("+(p.sector===SINS?"sin sector":p.sector)+")":p.cuarto?"Cuarto "+p.cuarto:"Sin cama"}
 
 // Rotación: cada uno a un cuarto distinto del que tenía, parejo y sin pasar camas. El cuarto 3 no se toca.
-function rotar(){
-  antesDeCambiar("Rotó los cuartos");
+// Arma una rotación posible sin tocar nada (para la vista previa)
+function planRot(){
   const fijos=CUARTOS.filter(c=>c.manual).map(c=>c.id), rot=CUARTOS.filter(c=>!c.manual);
   const lista=sinSector().filter(p=>!fijos.includes(p.cuarto));
   for(let i=lista.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[lista[i],lista[j]]=[lista[j],lista[i]]}
@@ -502,19 +538,31 @@ function rotar(){
     const c=orden.find(c=>c.id!==p.cuarto&&!choca(p,c.id))||orden.find(c=>!choca(p,c.id))||orden.find(c=>c.id!==p.cuarto)||orden[0];
     if(!c)break;nuevo[p.id]=c.id;libres[c.id]--;
   }
-  lista.forEach(p=>{p.antes=p.cuarto;p.cuarto=nuevo[p.id]||""});
-  sel=null;render();guardarPronto();
-  const sin=lista.filter(p=>!p.cuarto).length;
-  toast(sin?"Faltan "+sin+" cama(s): ubicalos a mano o en el cuarto 3":"Cuartos rotados. Revisalos y tocá «Guardar rotación»");
+  return{lista,nuevo};
 }
+let planActual=null;
+function verPlan(){planActual=planRot();const {lista,nuevo}=planActual,nc=id=>id?"Cuarto "+id:"sin cama";
+  const filas=lista.slice().sort((a,b)=>a.nombre.localeCompare(b.nombre,"es")).map(p=>{const r=el("div","rr");r.append(el("b","",p.nombre));
+    const sp=el("span","",nc(p.cuarto)+" → ");sp.append(el("em",nuevo[p.id]?"":"mal",nc(nuevo[p.id])));r.append(sp);return r});
+  const sin=lista.filter(p=>!nuevo[p.id]).length;
+  $("rlist").replaceChildren(...filas);$("rnota").textContent=(sin?"⚠ "+sin+" queda"+(sin===1?"":"n")+" sin cama: después ubicalo"+(sin===1?"":"s")+" a mano. ":"")+"El cuarto 3 y Tropilla no se tocan.";
+  if(!$("rdlg").open)$("rdlg").showModal()}
+function rotar(){verPlan()}
+function confirmarRot(){if(!planActual)return;const {lista,nuevo}=planActual;planActual=null;$("rdlg").close();
+  antesDeCambiar("Rotó los cuartos");lista.forEach(p=>{p.antes=p.cuarto;p.cuarto=nuevo[p.id]||""});sel=null;render();
+  $("guardar").click()}
 
 /* ===== Pantalla ===== */
 function personaBtn(p,cls,extra){
-  const b=el("div",cls+(sel===p.id?" sel":""));b.append(el("span","n",p.nombre));if(extra)b.append(extra);
+  const b=el("div",cls+(sel===p.id?" sel":"")+(p.afuera?" salida":"")+(coincide(p)?" hl":""));
+  const ini=p.nombre.trim().split(/\s+/).slice(0,2).map(x=>x[0]||"").join("").toUpperCase();
+  b.append(el("i","ini",ini),el("span","n",p.nombre));if(extra&&extra.childNodes.length){extra.className="tags";b.append(extra)}
   if(isAdmin()){b.tabIndex=0;b.setAttribute("role","button");b.onclick=()=>tocar(p);b.onkeydown=e=>{if(e.key==="Enter")tocar(p)}}
   return b;
 }
-let abiertos=new Set(), quiereAbrir=null;
+let abiertos=new Set(["T","0","1","2","3","4"]), quiereAbrir=null, busca="";
+const sinTilde=t=>String(t).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+const coincide=p=>busca&&sinTilde(p.nombre).includes(busca);
 function plegable(card,clave){card.classList.toggle("abierto",abiertos.has(clave)||!!sel);
   const hd=card.querySelector(".hd");if(hd)hd.onclick=e=>{if(window.innerWidth>700)return;abiertos.has(clave)?abiertos.delete(clave):abiertos.add(clave);card.classList.toggle("abierto",abiertos.has(clave)||!!sel)}}
 const barra=(o,cap)=>{const b=el("span","obar"),i=el("i");i.style.width=Math.min(100,o/cap*100)+"%";b.append(i);return b};
@@ -544,7 +592,7 @@ function render(){
   $("tbar").firstChild.style.width=Math.min(100,conS.length/CAMAS_TROPILLA*100)+"%";plegable($("trop"),"T");
   $("secs").replaceChildren(...GRUPOS.filter(s=>s!==SINS||conS.some(p=>p.sector===SINS)).map(s=>{const d=el("div","sec"),ps=conS.filter(p=>p.sector===s);d.append(el("h3","",secNom(s)+" · "+ps.length));
     if(!ps.length)d.append(el("div","cap","Nadie"));
-    ps.forEach(p=>{const b=el(isAdmin()?"button":"span","chip"+(isAdmin()?" btn":""),p.nombre);if(isAdmin()){b.type="button";b.onclick=()=>tocar(p)}d.append(b)});return d}));
+    ps.forEach(p=>{const b=el(isAdmin()?"button":"span","chip"+(isAdmin()?" btn":"")+(coincide(p)?" hl":"")+(p.afuera?" salida":""),p.nombre);if(isAdmin()){b.type="button";b.onclick=()=>tocar(p)}d.append(b)});return d}));
   // Sin cama
   const sc=$("sincama");sc.classList.toggle("vacio",!sueltos.length);
   const nota=el("p","cap",sueltos.length?(isAdmin()?"Tocá a cada uno para mandarlo a un cuarto. Acá aparecen también los que ingresan nuevos.":"Todavía no tienen cama asignada."):"Todos tienen cama. Si ingresa alguien nuevo, aparece acá.");nota.style.margin="0 0 8px";
@@ -553,6 +601,7 @@ function render(){
   // en el celular, los que no tienen cama van arriba de todo
   if(sueltos.length)$("trop").before(sc);else $("grid").before(sc);
   // Cuartos
+  if(busca){const k=CUARTOS.find(c=>enCuarto(c.id).some(coincide));if(k)abiertos.add(k.id);if(gente.some(p=>p.sector&&coincide(p)))abiertos.add("T")}
   $("grid").replaceChildren(...CUARTOS.map(c=>{
     const ps=enCuarto(c.id),card=el("div","room"+(c.manual?" man":"")),hd=el("div","hd");
     hd.append(el("h2","","Cuarto "+c.id),el("span","cap"+(ps.length===c.camas?" full":ps.length>c.camas?" over":""),ps.length+"/"+c.camas+" camas"),barra(ps.length,c.camas),el("span","chev","›"));
@@ -560,14 +609,14 @@ function render(){
     const beds=el("div","beds");
     ps.forEach(p=>{const tags=el("span");tags.style.cssText="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end";
       const con=conflictos(p);if(con.length)tags.append(el("span","tag mal","⚠ con "+con.map(nom1).join(", ")));
-      if(p.afuera)tags.append(el("span","tag out","de salida · vuelve "+fd(p.afuera).slice(0,5)));
+      if(p.afuera)tags.append(el("span","tag out","🚪 vuelve "+fd(p.afuera).slice(0,5)));
       const sg=seguidas(p);if(sg>=3)tags.append(el("span","tag nuevo",sg+" rotaciones seguidas acá"));
       if(c.manual)tags.append(el("span","tag "+(puede3(p)?"sigue":"nuevo"),(puede3(p)?"":"⚠ ")+llevaTxt(p)));
       else if(sg<3&&p.antes&&p.antes!==p.cuarto)tags.append(el("span","tag nuevo","antes "+p.antes));
       else if(sg<3&&p.antes)tags.append(el("span","tag sigue","sigue"));
       beds.append(personaBtn(p,"bed occ",tags))});
     if(c.camas>ps.length)beds.append(el("div","bed libres","+"+(c.camas-ps.length)+(c.camas-ps.length===1?" libre":" libres")));
-    for(let k=ps.length;k<c.camas;k++){const b=el("div","bed free"+(sel?" target":""),"Cama libre");if(sel){b.tabIndex=0;b.setAttribute("role","button");b.onclick=()=>mover(sel,c.id);b.onkeydown=e=>{if(e.key==="Enter")mover(sel,c.id)}}beds.append(b)}
+    for(let k=ps.length;k<c.camas;k++){const b=el("div","bed free"+(sel?" target":""),sel?"Mover acá":"libre");if(sel){b.tabIndex=0;b.setAttribute("role","button");b.onclick=()=>mover(sel,c.id);b.onkeydown=e=>{if(e.key==="Enter")mover(sel,c.id)}}beds.append(b)}
     card.append(beds);return card}));
   $("nota").textContent=sel?(modo==="nj"?"Tocá a la persona que no tiene que estar en el mismo cuarto. Tocalo de nuevo para cancelar.":"Tocá a la otra persona para intercambiarlos, o una cama libre para moverlo. Tocalo de nuevo para cancelar."):"Tocá a cualquier persona y elegí a qué cuarto mandarla.";
   $("nota").classList.toggle("activa",!!sel);
@@ -661,15 +710,16 @@ function elegirSector(p){
   $("mops").replaceChildren(...GRUPOS.map(s=>{const n=gente.filter(x=>x.sector===s).length,aca=p.sector===s,b=el("button",aca?"act":"");b.type="button";
     b.append(el("b","",secNom(s)),el("small","",aca?"Está acá":n+(n===1?" persona":" personas")));b.disabled=aca;
     b.onclick=()=>{$("menu").close();const antes=donde(p);antesDeCambiar(p.nombre+" → Tropilla ("+secNom(s)+")");p.sector=s;p.cuarto="";p.antes="";sel=null;render();guardarPronto();
-      toast(nom1(p)+" va a Tropilla"+(s===SINS?"":" ("+s+")")+(antes.startsWith("Cuarto")?" (deja el "+antes.toLowerCase()+")":""))};return b}));
+      toast(nom1(p)+" va a Tropilla"+(s===SINS?"":" ("+s+")")+(antes.startsWith("Cuarto")?" (deja el "+antes.toLowerCase()+")":""),true)};return b}));
 }
+const toast2=t=>toast(t,true);
 function mandar(p,cuarto){
   abiertos.add(cuarto);
   antesDeCambiar(p.nombre+" → cuarto "+cuarto);
   const tenia=p.sector;if(tenia)p.sector="";p.cuarto=cuarto;sel=null;render();guardarPronto();
-  const ch=conflictos(p);if(ch.length){toast("⚠ "+nom1(p)+" quedó con "+ch.map(nom1).join(", ")+" (marcados para no juntar)");return}
+  const ch=conflictos(p);if(ch.length){toast2("⚠ "+nom1(p)+" quedó con "+ch.map(nom1).join(", ")+" (marcados para no juntar)");return}
   const ojo=CUARTOS.find(c=>c.id===cuarto).manual&&!puede3(p);
-  toast((ojo?"Ojo: lleva "+llevaTxt(p)+". ":"")+nom1(p)+" va al cuarto "+cuarto+(tenia?" (deja "+tenia+")":""));
+  toast2((ojo?"Ojo: lleva "+llevaTxt(p)+". ":"")+nom1(p)+" va al cuarto "+cuarto+(tenia?" (deja "+tenia+")":""));
 }
 function mover(id,cuarto){const p=gente.find(x=>x.id===id);mandar(p,cuarto)}
 $("mcerrar").onclick=()=>$("menu").close();
@@ -685,7 +735,9 @@ $("msacar").onclick=()=>{const p=menuP;$("menu").close();
   if(p.sector){antesDeCambiar(p.nombre+" salió de Tropilla ("+secNom(p.sector)+")");p.sector="";p.cuarto="";p.antes="";render();guardarPronto();toast(nom1(p)+" salió de Tropilla y quedó sin cama");return}
   antesDeCambiar(p.nombre+" quedó sin cama");p.cuarto="";render();guardarPronto();toast(nom1(p)+" quedó sin cama")};
 $("mswap").onclick=()=>{const p=menuP;$("menu").close();sel=p.id;modo="swap";render();toast("Tocá a la otra persona para intercambiarlos")};
-$("rotar").onclick=()=>{rotar();CUARTOS.forEach(c=>abiertos.add(c.id));render()};
+$("rotar").onclick=()=>{if(!isAdmin())return;rotar()};
+$("cq").oninput=()=>{busca=sinTilde($("cq").value.trim());render();if(busca){const h=document.querySelector("#v-cuartos .hl");if(h)h.scrollIntoView({behavior:"smooth",block:"center"})}};
+$("rcan").onclick=()=>{planActual=null;$("rdlg").close();toast("Cancelado: no se cambió nada")};$("rmez").onclick=verPlan;$("rok").onclick=confirmarRot;
 $("pendg").onclick=()=>$("guardar").click();
 $("masops").onclick=()=>{$("o-desh").disabled=!deshacer.length;$("odlg").showModal()};
 $("o-cerrar").onclick=()=>$("odlg").close();
@@ -800,7 +852,7 @@ if("serviceWorker" in navigator&&location.protocol.startsWith("http"))window.add
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261116214856";
+const APP_VER="20261116220248";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
