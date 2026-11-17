@@ -160,7 +160,7 @@ main{padding-bottom:110px}
 .ptr{height:0;overflow:hidden;text-align:center;color:var(--mut);font-size:13px;transition:height .15s}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
 .chip{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);background:var(--card);border-radius:99px;padding:7px 9px;white-space:nowrap;font-weight:600;font-size:13px;transition:background .15s,border-color .15s}
-#fchips{flex-wrap:nowrap;gap:5px}@media (max-width:370px){#fchips .chip svg{display:none}}.chip svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:none}
+#fchips{flex-wrap:wrap;gap:6px}#fchips .chip{flex:none}@media (max-width:370px){#fchips .chip svg{display:none}}.chip svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .chip .n{background:var(--line);color:var(--ink);border-radius:99px;padding:0 6px;font-size:11px;font-weight:700;line-height:1.5}
 .chip.on{background:var(--acc);color:var(--accx);border-color:var(--acc)}.chip.on .n{background:var(--accx);color:var(--acc)}
 .chip.share{margin-left:auto;flex:none;width:36px;height:36px;padding:0;justify-content:center;color:var(--acc);border-color:var(--acc);background:color-mix(in srgb,var(--acc) 12%,var(--card))}.chip.share svg{width:19px;height:19px}
@@ -1720,7 +1720,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261116210914";
+const APP_VER="20261116211721";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
