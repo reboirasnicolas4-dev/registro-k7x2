@@ -1129,8 +1129,10 @@ $("avprueba").onclick=async()=>{$("avmsg").textContent="Mandando…";try{const r
   const env=r.enviados||[];$("avmsg").textContent=env.includes("ok")?"Listo: en unos segundos te llega el aviso.":env.length?"Google contestó: "+env.join(", "):"No hay ningún celular tuyo anotado: tocá Desactivar y activalos de nuevo."}catch(e){$("avmsg").textContent="No se pudo: "+e.message}};
 $("havisSi").onclick=()=>activarAvisos();$("havisNo").onclick=()=>{try{localStorage.setItem("alas-aviso-no",iso(hoy))}catch(x){}$("havis").hidden=true};
 // Una vez por día, si ya están activados, se renueva el token por las dudas (sin preguntar nada)
-async function renovarAviso(){try{if(renovarAviso.p||!esAdminRol()||soloCopia||estadoAvisos()!=="on")return;const a=leerAv();if(a.dia===iso(hoy))return;renovarAviso.p=1;
-  const t=await tokenAviso();if(t)await guardarTokenAviso(t)}catch(x){}}
+// Cada vez que se abre la app se pide el código del celular; si cambió (Google a veces lo cambia solo), se anota enseguida en la planilla
+async function renovarAviso(){try{if(renovarAviso.p||!esAdminRol()||soloCopia||estadoAvisos()!=="on")return;const a=leerAv();renovarAviso.p=1;
+  const t=await tokenAviso();if(t&&(t!==a.token||a.dia!==iso(hoy)))await guardarTokenAviso(t)}catch(x){renovarAviso.p=0}}
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){renovarAviso.p=0;setTimeout(renovarAviso,3000)}});
 // Apariencia: automática (como el celular), clara u oscura; vale para Internos, Cuartos y Ficha
 const TEMAS=[["","Automática (como el celular)"],["claro","Clara"],["oscuro","Oscura"]];
 function pintarTema(){let t="";try{t=localStorage.getItem("alas-tema")||""}catch(x){}$("temat").textContent=(TEMAS.find(x=>x[0]===t)||TEMAS[0])[1]+" · tocá para cambiar"}
@@ -1818,7 +1820,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261116221517";
+const APP_VER="20261117092107";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
