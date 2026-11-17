@@ -241,6 +241,12 @@ label.opt:has(input:checked){border:2px solid var(--acc)}
 .drow .pl{display:flex;grid-column:2}.drow .nt{grid-column:2;color:var(--mut);font-size:13.5px}
 .drow .bt{grid-column:2;display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}.drow .bt button{font-size:13.5px;padding:8px 12px}
 .ulist{display:grid;gap:10px}
+.lnkb{background:none;border:0;color:var(--acc);font:inherit;font-weight:700;cursor:pointer;padding:6px;text-decoration:underline}
+.solc{border-color:var(--acc)!important}.solc .acts2{display:flex;gap:8px;flex:1 1 100%}.solc .acts2 button{flex:1;padding:10px;font-weight:700}
+.solc .si{background:#2f7d43;color:#fff;border-color:#2f7d43}.solc .no{color:var(--bad)}
+.solav{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--card);border:1px solid var(--acc);border-radius:14px;padding:12px 14px;margin:0 0 12px;font:inherit;color:var(--ink);cursor:pointer}
+.solav b{display:block}.solav small{color:var(--mut)}.solok{background:#e7f4ea;border:1px solid #2f7d43;color:#1d5a2c;border-radius:12px;padding:14px;text-align:center}
+@media (prefers-color-scheme:dark){.solok{background:#1d2a20;color:#8fd19e}}:root[data-tema=oscuro] .solok{background:#1d2a20;color:#8fd19e}
 .uc{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;gap:10px 14px;align-items:center;flex-wrap:wrap}
 .uc .em{font-weight:700;flex:1 1 220px;overflow-wrap:anywhere}.uc .st{font-size:13px;color:var(--mut);flex:1 1 100%}
 .uc .st.w{color:var(--ink)}.uc select{width:auto}.uc button{font-size:13px;padding:8px 10px}
@@ -360,13 +366,31 @@ html.cargando #login{display:none!important}
     <div class="msg" id="lmsg" role="alert"></div>
     <button class="p" id="lbtn" type="submit">Ingresar</button>
     <small style="color:var(--mut);text-align:center">¿Te olvidaste la contraseña? Pedile un código nuevo a Nicolás.</small>
+    <button type="button" class="lnkb" id="pedirU">¿No tenés usuario? Pedilo acá</button>
   </form>
+</section>
+
+<!-- Pedir usuario nuevo -->
+<section id="pedir" class="box" hidden>
+  <div id="pform" style="display:grid;gap:12px">
+    <h2>Pedir usuario</h2>
+    <p>Completá tus datos. Nicolás tiene que aprobarte antes de que puedas entrar.</p>
+    <label>Nombre y apellido<input id="pnom" autocomplete="name" placeholder="Ej: Juan Pérez" maxlength="60"></label>
+    <label>Correo electrónico (va a ser tu usuario)<input id="pcor" type="email" autocomplete="username" placeholder="nombre@correo.com"></label>
+    <label>Elegí tu contraseña (mínimo 6 caracteres)<input id="pp1" type="password" autocomplete="new-password"></label>
+    <label>Repetila<input id="pp2" type="password" autocomplete="new-password"></label>
+    <div class="msg" id="pmsg" role="alert"></div>
+    <button class="p" id="penv" type="button">Enviar solicitud</button>
+  </div>
+  <div id="pok" hidden style="display:grid;gap:12px"><div class="solok"><div style="font-size:30px">✅</div><b>¡Solicitud enviada!</b><br>Cuando Nicolás te apruebe, vas a poder entrar con tu correo y la contraseña que elegiste.</div></div>
+  <button type="button" id="pvolver">‹ Volver a Ingresar</button>
 </section>
 
 <!-- 3) Acceso denegado -->
 <section id="denied" class="box deny" hidden>
   <h2>Acceso denegado</h2>
   <p id="dtxt"></p>
+  <button class="p" id="pedirU2" type="button">Pedir usuario con este correo</button>
   <button id="retry">Probar con otro correo</button>
 </section>
 
@@ -380,6 +404,7 @@ html.cargando #login{display:none!important}
   <div class="ptr" id="ptr"></div>
   <div class="msg" id="amsg" role="alert"></div>
   <section id="vHoy">
+    <button type="button" class="solav" id="solav" hidden></button>
     <p class="hfecha" id="hfecha"></p>
     <div class="hcard" id="htoma"></div>
     <div class="hcard" id="hsal"></div>
@@ -442,6 +467,7 @@ html.cargando #login{display:none!important}
   </section>
   <section id="vUsu" hidden>
     <button type="button" class="back" data-back>‹ Más</button>
+    <div id="usol"></div>
     <form id="uf" class="bar">
       <input id="unew" type="email" required placeholder="Correo del usuario nuevo (Gmail)" aria-label="Correo del usuario nuevo" autocomplete="off">
       <select id="urol" aria-label="Rol"><option>Usuario</option><option>Admin</option></select>
@@ -872,7 +898,7 @@ async function subirFoto(file){
   }catch(e){$("fmsg").textContent="No se pudo subir: "+e.message}
 }
 function cell(tr,txt,cls,hl){const td=el("td",cls);if(hl)td.append(el("span","y",txt));else td.textContent=txt;tr.append(td)}
-function show(which){["login","denied","app"].forEach(k=>$(k).hidden=k!==which)}
+function show(which){["login","denied","app","pedir"].forEach(k=>$(k).hidden=k!==which)}
 function render(){
   $("hoy").textContent="Hoy es "+fd(hoy)+". Tratamiento de "+DUR+" meses; primera salida a los "+PRIMERA+" meses.";
   $("amsg").textContent=scriptViejo?"Atención: tu Apps Script de Google sigue con el código viejo, así que agregar, editar y eliminar no van a funcionar. Pegá el código nuevo, guardalo y publicá una Nueva versión (Implementar > Administrar implementaciones > lápiz > Nueva versión).":"";
@@ -884,7 +910,7 @@ function render(){
       s.append(el("b","",String(n)),el("span","",l));s.onclick=()=>{filtroStat=(filtroStat===f?"":f);render();if(filtroStat)$("rows").closest(".wrap").scrollIntoView({behavior:"smooth",block:"start"})};return s}));
   {const fb=$("fstat");fb.hidden=!filtroStat;if(filtroStat){fb.replaceChildren(el("span","",filtroStat==="sal"?"Mostrando solo los que salen en "+AV_SAL+" días o menos":filtroStat==="fuera"?"Mostrando solo los que están de salida":"Mostrando solo los que terminan en "+AV_FIN+" días o menos"));
     const x=el("button","","Ver todos");x.type="button";x.onclick=()=>{filtroStat="";render()};fb.append(x)}}
-  $("finbox").hidden=true; $("miR").hidden=!isAdmin(); $("miU").hidden=$("goU").hidden=email!=="reboirasnicolas4@gmail.com";
+  $("finbox").hidden=true; $("miR").hidden=!isAdmin(); $("miU").hidden=$("goU").hidden=email!=="reboirasnicolas4@gmail.com";if(email==="reboirasnicolas4@gmail.com"&&!solRevisadas){solRevisadas=true;setTimeout(revisarSolicitudes,1500)}
   $("me").textContent=$("meBig").textContent=(email[0]||"?").toUpperCase(); $("add").hidden=!isAdmin()||vista!=="I";
   {const cf=$("cfuera"),nf=all.filter(x=>salidaHoy(x.i)).length;cf.hidden=!nf&&filtroStat!=="fuera";cf.classList.toggle("on",filtroStat==="fuera");cf.querySelector(".n").textContent=nf;cf.onclick=()=>{filtroStat=filtroStat==="fuera"?"":"fuera";render()}}
   document.querySelectorAll("#fchips .chip[data-t]").forEach(b=>{b.classList.toggle("on",b.dataset.t===ft&&filtroStat!=="fuera");const n=b.querySelector(".n");if(n)n.textContent=all.filter(x=>!b.dataset.t||x.i.tipo===b.dataset.t).length});
@@ -1590,7 +1616,7 @@ $("ef").addEventListener("submit",async e=>{
 let usuarios=[], uArm="";
 async function loadUsu(){$("umsg").textContent="Cargando…";
   try{const r=await api({action:"listUsuarios"});if(!r||r.ok!==true)throw new Error((r&&r.error)||"respuesta inesperada");
-    usuarios=r.data||[];$("umsg").textContent="";renderUsu()}catch(e){$("umsg").textContent="No se pudo cargar: "+e.message}}
+    usuarios=r.data||[];if(Array.isArray(r.solicitudes)){solicitudes=r.solicitudes;pintarAvisoSol()}$("umsg").textContent="";renderUsu()}catch(e){$("umsg").textContent="No se pudo cargar: "+e.message}}
 function mostrarCodigo(quien,cod,dias,nuevo){const b=$("ucode");b.hidden=false;b.replaceChildren();
   const txt="Hola! Para entrar a la app de Internos de Alas de Libertad: abrí "+location.origin+location.pathname.replace(/cuartos\/?$/,"")+" , poné tu correo ("+quien+"), este código: "+cod+" y elegí tu contraseña. El código vence en "+dias+" días.";
   b.append(el("div","",(nuevo?"Usuario agregado. ":"Contraseña borrada. ")+"Pasale este código a "+quien+":"),el("div","cd",cod),
@@ -1606,7 +1632,7 @@ async function accionUsu(datos,txtOk){$("umsg").textContent="Guardando…";
   try{const r=await api(datos);if(!r||r.ok!==true)throw new Error((r&&r.error)||"respuesta inesperada");
     $("umsg").textContent="";if(r.codigo)mostrarCodigo(datos.quien,r.codigo,r.dias,datos.action==="addUsuario");else if(txtOk){$("ucode").hidden=true}
     await loadUsu();if(txtOk)$("umsg").textContent=txtOk}catch(e){$("umsg").textContent="No se pudo: "+e.message}}
-function renderUsu(){const L=$("ulist");L.replaceChildren();
+function renderUsu(){renderSol();const L=$("ulist");L.replaceChildren();
   usuarios.slice().sort((a,b)=>(b.email===email)-(a.email===email)||a.email.localeCompare(b.email)).forEach(u=>{
     const yo=u.email===email,c=el("div","uc");c.append(el("span","em",u.email+(yo?" (vos)":"")));
     const sel=el("select");["Usuario","Admin"].forEach(r=>{const o=el("option","",r);o.selected=(/admin/i.test(u.rol)?"Admin":"Usuario")===r;sel.append(o)});
@@ -1620,6 +1646,35 @@ function renderUsu(){const L=$("ulist");L.replaceChildren();
       c.append(nc,q)}
     const [t,w]=estadoUsu(u);c.append(el("span","st"+(w?" w":""),(w?"⚠️ ":"✔ ")+t));L.append(c)});
   if(!usuarios.length)L.append(el("p","sub","No hay usuarios."))}
+/* ===== Solicitudes de usuario nuevo ===== */
+let solicitudes=[],solRevisadas=false;
+async function revisarSolicitudes(){try{const r=await api({action:"listSolicitudes"});if(r&&r.ok===true){solicitudes=r.data||[];pintarAvisoSol();if(vista==="U")renderSol()}}catch(e){}}
+function pintarAvisoSol(){const n=solicitudes.length,a=$("solav"),sm=$("miU").querySelector("small");
+  a.hidden=!n;if(n){a.replaceChildren(el("span","","👤"),(()=>{const d=el("span","");d.style.flex="1";d.append(el("b","",n===1?"1 persona pide usuario":n+" personas piden usuario"),el("small","","Tocá para ver y aprobar"));return d})(),el("span","","›"))}
+  if(sm){sm.textContent=n?"👤 "+n+(n===1?" pide":" piden")+" usuario":"Agregar, quitar y códigos";sm.style.color=n?"var(--bad)":"";sm.style.fontWeight=n?"700":""}}
+$("solav").onclick=()=>verTab("U");
+function renderSol(){const B=$("usol");B.replaceChildren();if(!solicitudes.length)return;
+  const h=el("h3","","👤 Piden usuario");h.style.cssText="font:700 18px Fraunces,Georgia,serif;margin:4px 0 8px";B.append(h);
+  const L=el("div","ulist");L.style.marginBottom="18px";
+  solicitudes.forEach(s=>{const c=el("div","uc solc");c.append(el("span","em",s.nombre||s.email));
+    const sel=el("select");["Usuario","Admin"].forEach(r=>sel.append(el("option","",r)));sel.setAttribute("aria-label","Rol para "+s.email);c.append(sel);
+    c.append(el("span","st",s.email+" · pidió el "+fd(new Date(s.fecha))+" · Usuario solo mira; Admin puede cambiar datos"));
+    const ac=el("div","acts2"),no=el("button","no","Rechazar"),si=el("button","si","Permitir");no.type=si.type="button";
+    no.onclick=()=>{if(uArm!=="r"+s.email){uArm="r"+s.email;no.textContent="¿Seguro? Tocá de nuevo";return}uArm="";accionUsu({action:"rechazarSolicitud",quien:s.email},"Rechazaste la solicitud de "+s.email+".")};
+    si.onclick=()=>accionUsu({action:"aprobarSolicitud",quien:s.email,rolNuevo:sel.value},"✅ "+(s.nombre||s.email)+" ya puede entrar como "+sel.value+".");
+    ac.append(no,si);c.append(ac);L.append(c)});
+  B.append(L)}
+function abrirPedir(correo){$("pform").hidden=false;$("pok").hidden=true;$("pmsg").textContent="";$("pcor").value=correo||$("em").value.trim();$("pp1").value=$("pp2").value="";show("pedir");setTimeout(()=>$("pnom").focus(),50)}
+$("pedirU").onclick=()=>abrirPedir();
+$("pedirU2").onclick=()=>abrirPedir(email);
+$("pvolver").onclick=()=>{$("lmsg").textContent="";show("login")};
+$("penv").onclick=async()=>{const n=$("pnom").value.trim(),c=$("pcor").value.trim().toLowerCase(),a=$("pp1").value,b=$("pp2").value,m=$("pmsg");
+  m.textContent=n.length<2?"Poné tu nombre y apellido.":!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c)?"Poné un correo válido.":a.length<6?"La contraseña tiene que tener al menos 6 caracteres.":a!==b?"Las dos contraseñas no coinciden.":"";
+  if(m.textContent)return;const bt=$("penv");bt.disabled=true;bt.textContent="Enviando…";
+  try{const {t}=await postGoogle(API,{action:"pedirUsuario",email:c,nombre:n,newPassword:a});const r=JSON.parse(t);
+    if(!r||r.ok!==true){m.textContent=(r&&r.error)||"No se pudo enviar.";return}
+    $("pp1").value=$("pp2").value="";$("em").value=c;$("pform").hidden=true;$("pok").hidden=false}
+  catch(e){m.textContent="No se pudo conectar. Probá de nuevo."}finally{bt.disabled=false;bt.textContent="Enviar solicitud"}};
 $("uf").addEventListener("submit",e=>{e.preventDefault();const q=$("unew").value.trim().toLowerCase();if(!q)return;
   accionUsu({action:"addUsuario",quien:q,rolNuevo:$("urol").value}).then(()=>{if(!$("ucode").hidden)$("unew").value=""})});
 
