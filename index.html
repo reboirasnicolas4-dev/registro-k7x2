@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <script>try{var tm=localStorage.getItem("alas-tema");if(tm)document.documentElement.dataset.tema=tm}catch(e){}</script>
-<script src="bloqueo.js?v=1"></script>
+<script src="bloqueo.js?v=2"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Internos</title>
@@ -1041,7 +1041,9 @@ $("lf").addEventListener("submit",async e=>{
 $("em").addEventListener("input",()=>{if(!$("setup").hidden)modoSetup(false)});
 $("retry").onclick=()=>{email="";pass="";role="";$("em").value="";modoSetup(false);show("login")};
 /* Bloqueo con PIN (bloqueo.js): Más → Seguridad */
-try{AlasBloqueo.logueado=()=>!!token;AlasBloqueo.salir=()=>$("out").click()}catch(x){}
+try{AlasBloqueo.logueado=()=>!!token;AlasBloqueo.salir=()=>$("out").click();
+  // al poner el PIN o la huella: si hay versión nueva o cambió el día se recarga; si no, se traen los datos frescos
+  AlasBloqueo.alDesbloquear=async()=>{try{cambioDeDia()}catch(x){}try{await buscarVersion()}catch(x){}try{if(token)actualizarVista()}catch(x){}}}catch(x){}
 function pintarSeg(){try{$("segt").textContent=AlasBloqueo.activo()?"PIN activado · tocá para cambiar":"PIN y huella para abrir la app"}catch(x){}}
 $("miSeg").onclick=()=>{try{AlasBloqueo.configurar()}catch(x){}};
 document.addEventListener("click",()=>setTimeout(pintarSeg,300));pintarSeg();
@@ -2023,7 +2025,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261118105535";
+const APP_VER="20261118110344";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}

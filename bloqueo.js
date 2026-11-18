@@ -167,6 +167,8 @@
     bloqueada = false; marcarUso();
     if (lock) { lock.hidden = true; lock.innerHTML = ""; }
     document.documentElement.classList.remove("alas-bloq");
+    // al desbloquear, la app se pone al día (versión nueva, fecha de hoy y datos)
+    try { var A = window.AlasBloqueo; if (A && typeof A.alDesbloquear === "function") setTimeout(A.alDesbloquear, 50); } catch (e) {}
   }
   function salirConContraseña(txt) {
     grabar(null);
