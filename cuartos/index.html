@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <script>try{var tm=localStorage.getItem("alas-tema");if(tm)document.documentElement.dataset.tema=tm}catch(e){}</script>
+<script src="../bloqueo.js?v=1"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Cuartos</title>
@@ -415,7 +416,7 @@ function pasarSesion(){try{if(token)sessionStorage.setItem("alas-paso",JSON.stri
 function sesionGuardada(){try{const p=JSON.parse(sessionStorage.getItem("alas-paso")||"null");sessionStorage.removeItem("alas-paso");sessionStorage.removeItem("alas-sesion");
   if(p&&p.token&&Date.now()-p.t<60000)return p;return JSON.parse(localStorage.getItem("alas-token")||"null")}catch(x){return null}}
 function borrarSesion(){try{localStorage.removeItem("alas-cache");localStorage.removeItem("alas-cache-cuartos");localStorage.removeItem("alas-cache-med");localStorage.removeItem("alas-token");localStorage.removeItem("internos-pw");sessionStorage.removeItem("alas-sesion");sessionStorage.removeItem("alas-paso")}catch(x){}}
-function cerrarSesion(){const uid=FSC.uid;fsSalir();if(token)api({action:"logout",uid}).catch(()=>{});borrarSesion();token="";pass=""}
+function cerrarSesion(){const uid=FSC.uid;fsSalir();if(token)api({action:"logout",uid}).catch(()=>{});borrarSesion();token="";pass="";try{AlasBloqueo.olvidar()}catch(x){}}
 document.addEventListener("click",e=>{if(e.target.closest('a[href="../"]'))pasarSesion()});
 
 /* ===== Comunicación con la hoja (mismo script que Internos) ===== */
@@ -894,7 +895,7 @@ if("serviceWorker" in navigator&&location.protocol.startsWith("http"))window.add
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261118102659";
+const APP_VER="20261118105535";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}

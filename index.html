@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <script>try{var tm=localStorage.getItem("alas-tema");if(tm)document.documentElement.dataset.tema=tm}catch(e){}</script>
+<script src="bloqueo.js?v=1"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Internos</title>
@@ -515,6 +516,7 @@ html.cargando #login{display:none!important}
       <button type="button" class="mi" data-go="U" id="miU" hidden style="--c:#f7a823"><b class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M11 12l8-8M16 7l3 3M14 9l2 2"/></svg></b><span>Usuarios<small>Agregar, quitar y códigos</small></span><i>›</i></button>
       <button type="button" class="mi" id="miAvisos" hidden style="--c:#f7a823"><b class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20a2 2 0 0 0 4 0"/></svg></b><span>Avisos en este celular<small id="avisost">Salidas y vueltas, todos los días a las 8</small></span><i>›</i></button>
       <button type="button" class="mi" id="tema" style="--c:#8db4ff"><b class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></b><span>Apariencia<small id="temat">Automática (como el celular)</small></span><i>›</i></button>
+      <button type="button" class="mi" id="miSeg" style="--c:#9fd78a"><b class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></b><span>Seguridad<small id="segt">PIN y huella para abrir la app</small></span><i>›</i></button>
       <button type="button" class="mi" id="imprimir" style="--c:var(--mut)"><b class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V4h10v5M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2M7 14h10v6H7z"/></svg></b><span>Imprimir lista<small>Desde la computadora</small></span><i>›</i></button>
     </div>
   </section>
@@ -754,7 +756,7 @@ function cerrarSesion(){fotosChicas={};fotosGrandes={};fotosPedidas=new Set();
   const uidFs=FS.uid;fsSalir();
   const c=credenciales(),fin=()=>{if(c.token)postGoogle(API,Object.assign({},c,{action:"logout",uid:uidFs})).catch(()=>{})};
   if(c.token&&av&&av.token)postGoogle(API,Object.assign({},c,{action:"quitarAviso",tokenAviso:av.token})).catch(()=>{}).finally(fin);else fin();
-  borrarSesion();token="";pass=""}
+  borrarSesion();token="";pass="";try{AlasBloqueo.olvidar()}catch(x){}}
 document.addEventListener("click",e=>{if(e.target.closest('a[href="cuartos/"],a[href^="ficha/"]'))pasarSesion()});
 
 /* ===== Comunicación con Google Sheets (Apps Script) ===== */
@@ -835,6 +837,7 @@ async function load(){
   arr=Array.isArray(res)?res:(res.data||res.internos||res.records||[]);
   cu=Object.keys(camas).map(id=>({id,cuarto:camas[id].cuarto,sector:camas[id].fuera?"Fuera":camas[id].sector}));
   if(!role){const c=await api({action:ACT.check});role=parseRole(c)}}
+  setTimeout(()=>{try{AlasBloqueo.despuesDeEntrar()}catch(x){}},1500);
   guardarCache(arr,cu);FSD.raw=arr;FSD.ult.internos=JSON.stringify(arr);FSD.ult.hoja_Cuartos=JSON.stringify(cu);setTimeout(fsDatos,0);
   scriptViejo=arr.length>0&&!arr.some(o=>Object.keys(o).some(k=>norm(k)==="id"));
   items=arr.map(toItem);
@@ -1037,6 +1040,11 @@ $("lf").addEventListener("submit",async e=>{
 });
 $("em").addEventListener("input",()=>{if(!$("setup").hidden)modoSetup(false)});
 $("retry").onclick=()=>{email="";pass="";role="";$("em").value="";modoSetup(false);show("login")};
+/* Bloqueo con PIN (bloqueo.js): Más → Seguridad */
+try{AlasBloqueo.logueado=()=>!!token;AlasBloqueo.salir=()=>$("out").click()}catch(x){}
+function pintarSeg(){try{$("segt").textContent=AlasBloqueo.activo()?"PIN activado · tocá para cambiar":"PIN y huella para abrir la app"}catch(x){}}
+$("miSeg").onclick=()=>{try{AlasBloqueo.configurar()}catch(x){}};
+document.addEventListener("click",()=>setTimeout(pintarSeg,300));pintarSeg();
 $("out").onclick=()=>{cerrarSesion();usuarios=[];$("ulist").replaceChildren();$("ucode").hidden=true;$("ucode").replaceChildren();email="";role="";items=[];$("pw").value="";$("lmsg").textContent="";modoSetup(false);verTab("I");regCargado=false;egrCargado=false;detCargado=false;dets=[];show("login")};
 $("chpw").onclick=async()=>{
   const actual=prompt("Contraseña actual:"); if(actual==null)return;
@@ -2015,7 +2023,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261118102659";
+const APP_VER="20261118105535";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
