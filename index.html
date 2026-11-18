@@ -1514,7 +1514,15 @@ async function mandarCola(){if(mandarCola.p||!token||soloCopia)return;mandarCola
     const p=pendM[it.key];if(p&&p.t===it.t){if(r&&r.ok===true){p.ok=true;p.t=Date.now()}else delete pendM[it.key]}}}
   finally{mandarCola.p=0}
   if(algo&&leerCola().some(x=>x.email===email))setTimeout(mandarCola,500)}
-setInterval(mandarCola,30000);window.addEventListener("online",()=>setTimeout(mandarCola,1000));
+setInterval(mandarCola,30000);
+/* Las marcas que hacen otros (desde su celular) aparecen solas: mientras Medicación u Hoy están a la vista,
+   se vuelven a pedir cada 45 segundos, y también al volver a la app */
+function refrescarMarcas(){if(!token||soloCopia||document.visibilityState!=="visible"||(vista!=="M"&&vista!=="H"))return;
+  // no interrumpir: si está mirando otro día, escribiendo un motivo o con una ventana abierta, espera a la próxima
+  if(($("mfecha").value&&$("mfecha").value!==iso(hoy))||abiertoNo||abiertoMas||document.querySelector("dialog[open]")||(document.activeElement&&document.activeElement.id&&document.activeElement.id.startsWith("mot-")))return;
+  if(refrescarMarcas.p)return;refrescarMarcas.p=1;loadMed().catch(()=>{}).finally(()=>{refrescarMarcas.p=0;if(vista==="H")renderHoy()})}
+setInterval(refrescarMarcas,45000);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")setTimeout(refrescarMarcas,1200)});window.addEventListener("online",()=>setTimeout(mandarCola,1000));
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")setTimeout(mandarCola,1500)});
 function aplicarPendientes(f){const ahora=Date.now();
   Object.keys(pendM).forEach(k=>{const p=pendM[k];if(p.f!==f)return;
@@ -1897,7 +1905,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261117141625";
+const APP_VER="20261117213314";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
