@@ -1256,7 +1256,7 @@ $("cuq").oninput=()=>renderCua(false);
 
 // Actualizar deslizando hacia abajo (o tocando la línea de arriba)
 async function actualizarVista(){$("ptrb").textContent="Actualizando…";
-  try{if(vista==="H"){await reload();await loadMed();renderHoy()}else if(vista==="I")await reload();else if(vista==="M")await loadMed();else if(vista==="E")await loadEgr();else if(vista==="R")await loadReg();else if(vista==="U")await loadUsu();else if(vista==="C"){await load();renderCua(false)}else if(vista==="D"){await loadDet()}else await reload()}catch(e){}
+  try{if(vista==="H"){await reload();const ok=await loadMed();renderHoy();if(!ok){$("ptrb").textContent="Google no contestó con las marcas de medicación. Deslizá de nuevo para reintentar.";return}}else if(vista==="I")await reload();else if(vista==="M")await loadMed();else if(vista==="E")await loadEgr();else if(vista==="R")await loadReg();else if(vista==="U")await loadUsu();else if(vista==="C"){await load();renderCua(false)}else if(vista==="D"){await loadDet()}else await reload()}catch(e){}
   $("ptrb").textContent="↓ Deslizá hacia abajo para actualizar · al día "+new Date().toTimeString().slice(0,5)}
 $("ptrb").onclick=actualizarVista;
 {let y0=null;
@@ -1542,7 +1542,8 @@ async function loadMed(){
     if(fechaMed()!==f0)return;
     marcas={};(r.data||[]).forEach(m=>marcas[m.toma+"|"+m.id]=m);aplicarPendientes(f0);
     llevar=((r2&&r2.data)||[]).filter(m=>m.toma==="Salida");marcasDe=f0;guardarCacheMed();$("mmsg").textContent="";renderMed();
-  }catch(e){$("mmsg").textContent=hay?"Google no contesta: se ven las marcas que había. Deslizá hacia abajo para reintentar.":"No se pudo cargar: "+e.message}
+    loadMed.ok=Date.now();return true;
+  }catch(e){loadMed.ok=0;$("mmsg").textContent=hay?"Google no contesta: se ven las marcas que había. Deslizá hacia abajo para reintentar.":"No se pudo cargar: "+e.message}
 }
 function fueraEl(i,f){const c=calc(i);return c.evs.some(e=>afueraEl(e,f))}
 function renderMed(){
@@ -1905,7 +1906,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261117213314";
+const APP_VER="20261117213747";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
