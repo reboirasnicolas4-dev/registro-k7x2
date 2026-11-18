@@ -845,6 +845,13 @@ async function load(){
 const DAY=864e5;
 const parse=s=>{const[y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
 const hoy=(()=>{const n=new Date();return new Date(n.getFullYear(),n.getMonth(),n.getDate())})();
+/* Si la app quedó abierta de un día para el otro (por ejemplo de noche a la mañana), se recarga sola al cambiar el día:
+   así nunca se marca la medicación con la fecha de ayer. Lo que esté sin mandar queda guardado en el celular. */
+function cambioDeDia(){const n=new Date();if(n.getDate()===hoy.getDate()&&n.getMonth()===hoy.getMonth()&&n.getFullYear()===hoy.getFullYear())return;
+  if(document.querySelector("dialog[open]")&&document.visibilityState==="visible")return;   // espera a que cierre la ventana
+  location.reload()}
+setInterval(cambioDeDia,30000);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")cambioDeDia()});
 const days=(a,b)=>Math.round((b-a)/DAY);
 function addM(d,n){const t=new Date(d.getFullYear(),d.getMonth()+n,1);const last=new Date(t.getFullYear(),t.getMonth()+1,0).getDate();return new Date(t.getFullYear(),t.getMonth(),Math.min(d.getDate(),last))}
 function fullM(a,b){let m=(b.getFullYear()-a.getFullYear())*12+b.getMonth()-a.getMonth();if(addM(a,m)>b)m--;return m}
@@ -2008,7 +2015,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261117225557";
+const APP_VER="20261118101746";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
