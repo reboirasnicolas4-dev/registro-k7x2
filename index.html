@@ -1520,8 +1520,15 @@ setInterval(mandarCola,30000);
 function refrescarMarcas(){if(!token||soloCopia||document.visibilityState!=="visible"||(vista!=="M"&&vista!=="H"))return;
   // no interrumpir: si está mirando otro día, escribiendo un motivo o con una ventana abierta, espera a la próxima
   if(($("mfecha").value&&$("mfecha").value!==iso(hoy))||abiertoNo||abiertoMas||document.querySelector("dialog[open]")||(document.activeElement&&document.activeElement.id&&document.activeElement.id.startsWith("mot-")))return;
-  if(refrescarMarcas.p)return;refrescarMarcas.p=1;loadMed().catch(()=>{}).finally(()=>{refrescarMarcas.p=0;if(vista==="H")renderHoy()})}
-setInterval(refrescarMarcas,45000);
+  if(refrescarMarcas.p)return;refrescarMarcas.p=1;const f0=iso(hoy);
+  // pedido liviano: solo las marcas de hoy
+  api({action:"getEntregas",fecha:f0}).then(r=>{if(!r||r.ok!==true||fechaMed()!==f0||abiertoNo||abiertoMas)return;
+    const n={};(r.data||[]).forEach(m=>n[m.toma+"|"+m.id]=m);
+    const antes=JSON.stringify(Object.keys(marcas).sort().map(k=>k+marcas[k].estado));
+    marcas=n;aplicarPendientes(f0);marcasDe=f0;guardarCacheMed();loadMed.ok=Date.now();
+    if(JSON.stringify(Object.keys(marcas).sort().map(k=>k+marcas[k].estado))!==antes){if(vista==="M")renderMed();else if(vista==="H")renderHoy()}
+  }).catch(()=>{}).finally(()=>{refrescarMarcas.p=0})}
+setInterval(refrescarMarcas,15000);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")setTimeout(refrescarMarcas,1200)});window.addEventListener("online",()=>setTimeout(mandarCola,1000));
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")setTimeout(mandarCola,1500)});
 function aplicarPendientes(f){const ahora=Date.now();
@@ -1906,11 +1913,16 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261117213747";
+const APP_VER="20261117214132";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
     const u=new URL(location.href);u.searchParams.set("v",v);location.replace(u.toString())}}catch(e){}})();
+/* también al volver a la app (si quedó abierta de fondo) */
+document.addEventListener("visibilitychange",async()=>{if(document.visibilityState!=="visible"||!location.protocol.startsWith("http"))return;try{
+  const base=location.pathname.replace(/cuartos\/?.*$/,"");const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
+  if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v&&!document.querySelector("dialog[open]")){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
+    const u=new URL(location.href);u.searchParams.set("v",v);location.replace(u.toString())}}catch(e){}});
 </script>
 </body>
 </html>
