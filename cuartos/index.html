@@ -415,7 +415,7 @@ function pasarSesion(){try{if(token)sessionStorage.setItem("alas-paso",JSON.stri
 function sesionGuardada(){try{const p=JSON.parse(sessionStorage.getItem("alas-paso")||"null");sessionStorage.removeItem("alas-paso");sessionStorage.removeItem("alas-sesion");
   if(p&&p.token&&Date.now()-p.t<60000)return p;return JSON.parse(localStorage.getItem("alas-token")||"null")}catch(x){return null}}
 function borrarSesion(){try{localStorage.removeItem("alas-cache");localStorage.removeItem("alas-cache-cuartos");localStorage.removeItem("alas-cache-med");localStorage.removeItem("alas-token");localStorage.removeItem("internos-pw");sessionStorage.removeItem("alas-sesion");sessionStorage.removeItem("alas-paso")}catch(x){}}
-function cerrarSesion(){if(token)api({action:"logout"}).catch(()=>{});borrarSesion();token="";pass=""}
+function cerrarSesion(){const uid=FSC.uid;fsSalir();if(token)api({action:"logout",uid}).catch(()=>{});borrarSesion();token="";pass=""}
 document.addEventListener("click",e=>{if(e.target.closest('a[href="../"]'))pasarSesion()});
 
 /* ===== Comunicación con la hoja (mismo script que Internos) ===== */
@@ -447,13 +447,15 @@ async function cargar(){
   let int,cu,rot,nj;
   // Un solo pedido con todo; si el script es viejo, como antes
   const r=await api({action:"inicio",hojas:[HOJA_CUARTOS,HOJA_ROT,HOJA_NJ]});
-  if(r&&Array.isArray(r.internos)){if(r.role)role=String(r.role);const h=r.hojas||{};int=r.internos;cu={data:h[HOJA_CUARTOS]||[]};rot={data:h[HOJA_ROT]||[]};nj={data:h[HOJA_NJ]||[]}}
+  if(r&&Array.isArray(r.internos)){if(r.role)role=String(r.role);const h=r.hojas||{};int=r.internos;cu={data:h[HOJA_CUARTOS]||[]};rot={data:h[HOJA_ROT]||[]};nj={data:h[HOJA_NJ]||[]};FSC.tCarga=Number(r.tServidor)||0}
   else if(r&&r.allowed===false){sesionVencida(r.error);throw new Error(r.error||"sesión vencida")}
   else [int,cu,rot,nj]=await Promise.all([api({action:"getInternos"}),api({action:"getSheet",sheet:HOJA_CUARTOS}),api({action:"getSheet",sheet:HOJA_ROT}),api({action:"getSheet",sheet:HOJA_NJ})]);
   if(!Array.isArray(int))throw new Error((int&&int.error)||"no se pudo leer Internos");
   soloCopia=false;
   try{if(token&&localStorage.getItem("alas-token"))localStorage.setItem("alas-cache-cuartos",JSON.stringify({email,role,t:Date.now(),d:[int,cu,rot,nj]}))}catch(x){}
   armar(int,cu,rot,nj);
+  FSC.datos={internos:int,hoja_Cuartos:(cu&&cu.data)||[],hoja_Rotaciones:(rot&&rot.data)||[],hoja_NoJuntar:(nj&&nj.data)||[]};
+  Object.keys(FSC.datos).forEach(k=>FSC.ult[k]=JSON.stringify(FSC.datos[k]));setTimeout(fsEscuchar,0);
 }
 function armar(int,cu,rot,nj){
   const guardado={};((cu&&cu.data)||[]).forEach(o=>{if(o.id)guardado[String(o.id)]=o});
@@ -481,6 +483,46 @@ async function guardarYa(){
     estado("Guardado ✔"); setTimeout(()=>{if($("estado").textContent==="Guardado ✔")estado("")},2000);
   }catch(e){estado("No se pudo guardar ("+e.message+"). Revisá la conexión y tocá Actualizar.",true)}
 }
+
+/* ===== Base en tiempo real (Firebase Firestore) =====
+   Si otro celular mueve a alguien de cuarto, cambia "No juntar" o guarda una rotación, se ve acá solo.
+   No se interrumpe a quien está moviendo gente: si hay algo elegido, una ventana abierta o se está guardando, espera. */
+const FB_CONF={apiKey:"AIzaSyC3mDOcJqIa4HfMOCsCQod2tbi30zkmUUs",authDomain:"alas-de-libertad.firebaseapp.com",projectId:"alas-de-libertad",storageBucket:"alas-de-libertad.firebasestorage.app",messagingSenderId:"39658390390",appId:"1:39658390390:web:4cfb1fdc7a29b26b0eb057"};
+const FB_JS="https://www.gstatic.com/firebasejs/10.12.2/";
+const _js={};function cargarJS(u){return _js[u]||(_js[u]=new Promise((ok,no)=>{const s=document.createElement("script");s.src=u;s.onload=ok;s.onerror=()=>{delete _js[u];no(new Error("no se pudo cargar Firebase"))};document.head.append(s)}))}
+const FSC={db:null,uid:"",listo:null,unsubs:[],ult:{},datos:null,tCarga:0,pend:false};
+function fsIniciar(){if(FSC.listo)return FSC.listo;
+  FSC.listo=(async()=>{await cargarJS(FB_JS+"firebase-app-compat.js");await cargarJS(FB_JS+"firebase-auth-compat.js");await cargarJS(FB_JS+"firebase-firestore-compat.js");
+    if(!firebase.apps.length)firebase.initializeApp(FB_CONF);const db=firebase.firestore();
+    if(localStorage.getItem("alas-token")){try{await db.enablePersistence({synchronizeTabs:true})}catch(x){}}
+    const au=firebase.auth();await new Promise(r=>{const u=au.onAuthStateChanged(()=>{u();r()})});if(!au.currentUser)await au.signInAnonymously();
+    FSC.uid=au.currentUser.uid;FSC.db=db;return db})().catch(e=>{FSC.listo=null;throw e});return FSC.listo}
+async function fsAcceso(forzar){const k="alas-fs-acc",marca=email+"|"+FSC.uid;let v="";try{v=localStorage.getItem(k)||sessionStorage.getItem(k)||""}catch(x){}
+  if(!forzar&&v.startsWith(marca+"|")&&Date.now()-Number(v.split("|")[2])<864e5)return;
+  const r=await api({action:"fbAcceso",uid:FSC.uid});if(!r||r.ok!==true)throw new Error((r&&r.error)||"sin acceso a la base");
+  try{(localStorage.getItem("alas-token")?localStorage:sessionStorage).setItem(k,marca+"|"+Date.now())}catch(x){}}
+const filasCuartos=rows=>(rows||[]).map(o=>[o.id,o.sector||"",o.sector?"":String(o.cuarto??""),o.antes||""].map(String).join("|")).sort().join(";");
+function repartoLocal(){return filasCuartos([...gente.map(p=>({id:p.id,sector:p.sector,cuarto:p.cuarto,antes:p.antes})),...fuera.map(p=>({id:p.id,sector:FUERA,cuarto:"",antes:""}))])}
+const ocupado=()=>sel||document.querySelector("dialog[open]")||/Guardando/.test($("estado").textContent);
+function fsAplicar(){if(!FSC.datos)return;if(ocupado()){FSC.pend=true;return}FSC.pend=false;const d=FSC.datos;
+  armar(d.internos,{data:d.hoja_Cuartos},{data:d.hoja_Rotaciones},{data:d.hoja_NoJuntar});toast("Se actualizó con un cambio de otro celular")}
+setInterval(()=>{if(FSC.pend)fsAplicar();if(document.visibilityState==="visible")fsEscuchar()},2000);
+async function fsEscuchar(){
+  if(!token||!FSC.datos||FSC.unsubs.length||fsEscuchar.p)return;fsEscuchar.p=1;
+  try{await fsIniciar();await fsAcceso(false)}catch(e){fsEscuchar.p=0;return}
+  ["internos","hoja_Cuartos","hoja_Rotaciones","hoja_NoJuntar"].forEach(id=>{let reintento=false;
+    const c=()=>{const u=FSC.db.doc("datos/"+id).onSnapshot(s=>{const o=s.data();if(!o||!Array.isArray(o.d)||!token||!FSC.datos)return;
+        const t=o.t&&o.t.toMillis?o.t.toMillis():0;if(t&&t<FSC.tCarga)return;
+        const j=JSON.stringify(o.d);if(FSC.ult[id]===j)return;FSC.ult[id]=j;FSC.datos[id]=o.d;
+        // lo que guardó este mismo celular vuelve igual: no hace falta rearmar (y así no se pierde el Deshacer)
+        if(id==="hoja_Cuartos"&&filasCuartos(o.d)===repartoLocal())return;
+        fsAplicar()},
+      async e=>{FSC.unsubs=FSC.unsubs.filter(x=>x!==u);if(!reintento&&e&&e.code==="permission-denied"){reintento=true;try{await fsAcceso(true);c()}catch(x){}}});
+      FSC.unsubs.push(u)};c()});
+  fsEscuchar.p=0}
+function fsSalir(){try{FSC.unsubs.forEach(u=>u())}catch(x){}FSC.unsubs=[];FSC.ult={};FSC.datos=null;
+  try{localStorage.removeItem("alas-fs-acc");sessionStorage.removeItem("alas-fs-acc")}catch(x){}
+  try{const db=FSC.db;if(db){db.terminate().then(()=>db.clearPersistence()).catch(()=>{})}}catch(x){}FSC.db=null;FSC.listo=null}
 
 /* ===== Deshacer ===== */
 function foto(){return gente.map(p=>[p.id,p.sector,p.cuarto,p.antes])}
@@ -852,7 +894,7 @@ if("serviceWorker" in navigator&&location.protocol.startsWith("http"))window.add
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261117221934";
+const APP_VER="20261117223753";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}

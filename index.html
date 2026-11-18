@@ -819,11 +819,12 @@ function textoCama(id){const c=camas[id];if(c&&c.fuera)return["No entra en cuart
 function guardarCache(arr,cu){try{if(!token||!localStorage.getItem("alas-token"))return;
   localStorage.setItem("alas-cache",JSON.stringify({email,role,t:Date.now(),internos:arr,cuartos:cu}))}catch(x){}}
 function leerCache(em){try{const c=JSON.parse(localStorage.getItem("alas-cache")||"null");return c&&c.email===em&&Array.isArray(c.internos)?c:null}catch(x){return null}}
+const FSD={unsubs:[],tCarga:0,ult:{},pend:false,raw:null};   // base en tiempo real (etapa 2), ver fsDatos
 async function load(){
   let arr=null,cu=null;
   // Un solo pedido con todo (usuario, internos y cuartos); si el script es viejo, como antes
   if(token){const r=await api({action:"inicio",hojas:["Cuartos"]});
-    if(r&&Array.isArray(r.internos)){const rr=parseRole(r);if(rr)role=rr;arr=r.internos;cu=(r.hojas&&r.hojas.Cuartos)||[];aplicarCamas(cu)}
+    if(r&&Array.isArray(r.internos)){const rr=parseRole(r);if(rr)role=rr;arr=r.internos;cu=(r.hojas&&r.hojas.Cuartos)||[];aplicarCamas(cu);FSD.tCarga=Number(r.tServidor)||0}
     else if(r&&r.allowed===false){sesionVencida(r.error);throw new Error(r.error||"sesión vencida")}}
   if(!arr){
   const pc=cargarCamas();
@@ -834,7 +835,7 @@ async function load(){
   arr=Array.isArray(res)?res:(res.data||res.internos||res.records||[]);
   cu=Object.keys(camas).map(id=>({id,cuarto:camas[id].cuarto,sector:camas[id].fuera?"Fuera":camas[id].sector}));
   if(!role){const c=await api({action:ACT.check});role=parseRole(c)}}
-  guardarCache(arr,cu);
+  guardarCache(arr,cu);FSD.raw=arr;FSD.ult.internos=JSON.stringify(arr);FSD.ult.hoja_Cuartos=JSON.stringify(cu);setTimeout(fsDatos,0);
   scriptViejo=arr.length>0&&!arr.some(o=>Object.keys(o).some(k=>norm(k)==="id"));
   items=arr.map(toItem);
   setTimeout(cargarFotos,0);
@@ -1090,14 +1091,15 @@ $("add").onclick=()=>openDlg(null);
 /* ===== Egresados ===== */
 const MOTIVOS=["Terminó tratamiento","Se fue antes","Derivado","Otro"];
 let egr=[], egrCargado=false;
+const egrDe=data=>(data||[]).map(o=>({nombre:String(o.nombre||""),cedula:String(o.cedula||""),ingreso:toISO(o.fechadeingreso),egreso:toISO(o.fechadeegreso),
+      motivo:String(o.motivo||""),tipo:String(o.tipo||""),nota:String(o.nota||"")})).filter(o=>o.nombre.trim());
 const fdi=s=>s?fd(parse(s)):"";
 async function loadEgr(){
   $("emsg").textContent="Cargando…";
   try{
     const r=await api({action:"getSheet",sheet:"Egresados"});
     if(!r||r.ok!==true) throw new Error((r&&r.error)||"respuesta inesperada");
-    egr=(r.data||[]).map(o=>({nombre:String(o.nombre||""),cedula:String(o.cedula||""),ingreso:toISO(o.fechadeingreso),egreso:toISO(o.fechadeegreso),
-      motivo:String(o.motivo||""),tipo:String(o.tipo||""),nota:String(o.nota||"")})).filter(o=>o.nombre.trim());
+    egr=egrDe(r.data);
     egrCargado=true; $("emsg").textContent=""; renderEgr();
   }catch(e){$("emsg").textContent="No se pudo cargar Egresados: "+e.message}
 }
@@ -1276,9 +1278,10 @@ function abrirEgreso(it,motivo,fecha){
 $("egr").onclick=()=>abrirEgreso(cur);
 /* ===== Destallo (pestaña "Destallo" de la planilla) ===== */
 let dets=[], detCargado=false, detArm="", detCur=null;
+const detDe=data=>(data||[]).map(o=>({fila:o._fila,nombre:String(o.nombre||"").trim(),cedula:String(o.cedula||""),fecha:toISO(o.fecha),nota:String(o.nota||""),fin:toISO(o.terminoel),mot:String(o.motivodesalida||""),nsal:String(o.notadesalida||"")})).filter(d=>d.nombre);
 async function loadDet(){if(detCargado){renderDet();return}$("dmsg").textContent="Cargando…";
   try{const r=await api({action:"getSheet",sheet:"Destallo"});if(!r||r.ok!==true)throw new Error((r&&r.error)||"respuesta inesperada");
-    dets=(r.data||[]).map(o=>({fila:o._fila,nombre:String(o.nombre||"").trim(),cedula:String(o.cedula||""),fecha:toISO(o.fecha),nota:String(o.nota||""),fin:toISO(o.terminoel),mot:String(o.motivodesalida||""),nsal:String(o.notadesalida||"")})).filter(d=>d.nombre);
+    dets=detDe(r.data);
     detCargado=true;$("dmsg").textContent="";renderDet()}catch(e){$("dmsg").textContent="No se pudo cargar: "+e.message}}
 function renderDet(){const q=nq($("dq").value.trim()),L=$("dlist"),out=[];
   const ok=d=>!q||nq(d.nombre+" "+d.cedula).includes(q);
@@ -1620,7 +1623,8 @@ function fsIniciar(){
     if(!au.currentUser)await au.signInAnonymously();
     FS.uid=au.currentUser.uid;FS.db=db;return db})().catch(e=>{FS.listo=null;throw e});
   return FS.listo}
-async function fsAcceso(forzar){
+function fsAcceso(forzar){if(!forzar&&fsAcceso.p)return fsAcceso.p;const pr=fsAcceso0(forzar).finally(()=>{if(fsAcceso.p===pr)fsAcceso.p=null});if(!forzar)fsAcceso.p=pr;return pr}
+async function fsAcceso0(forzar){
   const k="alas-fs-acc",marca=email+"|"+FS.uid;let v="";try{v=localStorage.getItem(k)||sessionStorage.getItem(k)||""}catch(x){}
   if(!forzar&&v.startsWith(marca+"|")&&Date.now()-Number(v.split("|")[2])<864e5)return;
   const r=await api({action:"fbAcceso",uid:FS.uid});if(!r||r.ok!==true)throw new Error((r&&r.error)||"sin acceso a la base");
@@ -1650,10 +1654,37 @@ function fsMarcar(it){
     const v=it.m?{toma:it.toma,id:String(it.id),interno:it.nombre||"",estado:it.m.estado,motivo:it.m.motivo||"",medicacion:it.medicacion||"",usuario:email,hora:it.m.hora||""}:firebase.firestore.FieldValue.delete();
     FS.db.doc("med/"+it.fecha).set({m:{[it.key]:v}},{merge:true}).catch(()=>{})}catch(x){}}
 async function fsSalir(){const uid=FS.uid;
+  try{FSD.unsubs.forEach(u=>u())}catch(x){}FSD.unsubs=[];FSD.ult={};FSD.raw=null;FSD.tCarga=0;
   try{if(FS.unsub)FS.unsub()}catch(x){}FS.unsub=null;FS.vivo="";FS.dia="";
   try{localStorage.removeItem("alas-fs-acc");sessionStorage.removeItem("alas-fs-acc")}catch(x){}
   try{if(FS.db){await FS.db.terminate();await FS.db.clearPersistence()}}catch(x){}
   FS.db=null;FS.listo=null;return uid}
+/* ===== Base en tiempo real, etapa 2: internos, cuartos, egresados y Destallo =====
+   El script copia la planilla a la base después de cada cambio; acá se escucha y se actualiza la pantalla sola.
+   Si hay una ventana abierta (por ejemplo editando un interno), se espera a que se cierre. */
+const camasLista=()=>Object.keys(camas).map(id=>({id,cuarto:camas[id].cuarto,sector:camas[id].fuera?"Fuera":camas[id].sector}));
+function fsRepintar(){
+  if(document.querySelector("dialog[open]")||fsOcupado()){FSD.pend=true;return}
+  FSD.pend=false;try{render();if(vista==="H")renderHoy();else if(vista==="M")renderMed();else if(vista==="C")renderCua(false);else if(vista==="E")renderEgr();else if(vista==="D")renderDet()}catch(x){}}
+document.addEventListener("close",()=>{if(FSD.pend)setTimeout(fsRepintar,50)},true);
+async function fsDatos(){
+  if(!token||FSD.unsubs.length||fsDatos.p)return;fsDatos.p=1;
+  try{await fsIniciar();await fsAcceso(false)}catch(e){fsDatos.p=0;return}
+  const oir=(id,fn)=>{let reintento=false;
+    const c=()=>{const u=FS.db.doc("datos/"+id).onSnapshot(s=>{
+        const o=s.data();if(!o||!Array.isArray(o.d)||!token)return;
+        const t=o.t&&o.t.toMillis?o.t.toMillis():0;if(t&&t<FSD.tCarga)return;   // más viejo que lo que ya se leyó de la planilla
+        const j=JSON.stringify(o.d);if(FSD.ult[id]===j)return;FSD.ult[id]=j;fn(o.d)},
+      async e=>{FSD.unsubs=FSD.unsubs.filter(x=>x!==u);
+        if(!reintento&&e&&e.code==="permission-denied"){reintento=true;try{await fsAcceso(true);c()}catch(x){}}});
+      FSD.unsubs.push(u)};
+    c()};
+  oir("internos",d=>{FSD.raw=d;items=d.map(toItem);guardarCache(d,camasLista());setTimeout(cargarFotos,0);fsRepintar()});
+  oir("hoja_Cuartos",d=>{aplicarCamas(d);if(FSD.raw)guardarCache(FSD.raw,d);fsRepintar()});
+  oir("hoja_Egresados",d=>{egr=egrDe(d);egrCargado=true;if(vista==="E")fsRepintar()});
+  oir("hoja_Destallo",d=>{dets=detDe(d);detCargado=true;if(vista==="D")fsRepintar()});
+  fsDatos.p=0}
+setInterval(()=>{if(document.visibilityState==="visible")fsDatos()},20000);
 async function marcar(i,estado,motivo,toma){
   if(!isAdmin())return;toma=toma||tomaSel;
   const key=toma+"|"+i.id,antes=marcas[key];abiertoNo=null;abiertoMas=null;
@@ -1969,7 +2000,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261117221934";
+const APP_VER="20261117223753";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
