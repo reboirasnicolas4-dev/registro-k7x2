@@ -263,8 +263,9 @@ function guardar(){
     b.D=D; b.paso=paso; b.upd=Date.now();
     localStorage.setItem(CLAVE_B, JSON.stringify(borradores));
   }catch(e){}
+  try{ fsSubir(); }catch(e){}
 }
-function guardarLista(){ try{ localStorage.setItem(CLAVE_B, JSON.stringify(borradores)); }catch(e){} }
+function guardarLista(){ try{ localStorage.setItem(CLAVE_B, JSON.stringify(borradores)); }catch(e){} try{ fsSubir(); }catch(e){} }
 function cargar(){
   try{ borradores = JSON.parse(localStorage.getItem(CLAVE_B)||"[]"); if(!Array.isArray(borradores)) borradores=[]; }catch(e){ borradores=[]; }
   borradores = borradores.filter(b=>b&&b.id&&!vacia(b.D));
@@ -741,6 +742,47 @@ $("#panel").addEventListener("click", e=>{ if(e.target.id==="panel") $("#panel")
 $("#btnVer").addEventListener("click", ()=>{ modo = modo==="preguntas"?"ficha":"preguntas"; guardar(); render(); });
 $("#btnInicio").addEventListener("click", irInicio);
 $("#btnMas").addEventListener("click", ()=>nuevaFicha());
+
+/* ---------- Fichas sin terminar compartidas entre celulares (base en tiempo real) ----------
+   Cada ficha a medias se guarda también en la base: se puede seguir desde otro celular.
+   Cuando se guarda o se descarta, se avisa a la base para que desaparezca en todos. */
+const FB_CONF={apiKey:"AIzaSyC3mDOcJqIa4HfMOCsCQod2tbi30zkmUUs",authDomain:"alas-de-libertad.firebaseapp.com",projectId:"alas-de-libertad",storageBucket:"alas-de-libertad.firebasestorage.app",messagingSenderId:"39658390390",appId:"1:39658390390:web:4cfb1fdc7a29b26b0eb057"};
+const FB_JS="https://www.gstatic.com/firebasejs/10.12.2/";
+const _js={};function cargarJS(u){return _js[u]||(_js[u]=new Promise((ok,no)=>{const sc=document.createElement("script");sc.src=u;sc.onload=ok;sc.onerror=()=>{delete _js[u];no(new Error("no se pudo cargar Firebase"))};document.head.append(sc)}))}
+const FSB={db:null,uid:"",listo:null,unsub:null,subido:{},t:null,oido:false};
+function fsIniciar(){if(FSB.listo)return FSB.listo;
+  FSB.listo=(async()=>{await cargarJS(FB_JS+"firebase-app-compat.js");await cargarJS(FB_JS+"firebase-auth-compat.js");await cargarJS(FB_JS+"firebase-firestore-compat.js");
+    if(!firebase.apps.length)firebase.initializeApp(FB_CONF);const db=firebase.firestore();
+    if(localStorage.getItem("alas-token")){try{await db.enablePersistence({synchronizeTabs:true})}catch(x){}}
+    const au=firebase.auth();await new Promise(r=>{const u=au.onAuthStateChanged(()=>{u();r()})});if(!au.currentUser)await au.signInAnonymously();
+    FSB.uid=au.currentUser.uid;FSB.db=db;return db})().catch(e=>{FSB.listo=null;throw e});return FSB.listo}
+async function fsAcceso(forzar){const se=sesion()||{},k="alas-fs-acc",marca=se.email+"|"+FSB.uid;let v="";try{v=localStorage.getItem(k)||sessionStorage.getItem(k)||""}catch(x){}
+  if(!forzar&&v.startsWith(marca+"|")&&Date.now()-Number(v.split("|")[2])<864e5)return;
+  const r=await api({action:"fbAcceso",uid:FSB.uid});if(!r||r.ok!==true)throw new Error((r&&r.error)||"sin acceso a la base");
+  try{(localStorage.getItem("alas-token")?localStorage:sessionStorage).setItem(k,marca+"|"+Date.now())}catch(x){}}
+function fsSubir(){clearTimeout(FSB.t);FSB.t=setTimeout(fsSubirYa,1500)}
+function fsSubirYa(){if(!FSB.db||!FSB.oido)return;const se=sesion()||{},col=FSB.db.collection("borradores"),vivos=new Set();
+  borradores.forEach(b=>{if(vacia(b.D))return;vivos.add(b.id);if(FSB.subido[b.id]===b.upd)return;FSB.subido[b.id]=b.upd;
+    col.doc(b.id).set({D:JSON.stringify(b.D||{}),paso:b.paso||0,upd:b.upd||Date.now(),por:se.email||""}).catch(()=>{delete FSB.subido[b.id]})});
+  Object.keys(FSB.subido).forEach(id=>{if(!vivos.has(id)&&FSB.subido[id]!=="x"){FSB.subido[id]="x";col.doc(id).set({borrado:true,upd:Date.now()}).catch(()=>{})}})}
+async function fsEscuchar(){const se=sesion();if(FSB.unsub||fsEscuchar.p||!se||!se.token)return;fsEscuchar.p=1;
+  try{await fsIniciar();await fsAcceso(false)}catch(e){fsEscuchar.p=0;return}
+  let reintento=false;
+  const c=()=>{FSB.unsub=FSB.db.collection("borradores").onSnapshot(q=>{let cambio=false;
+      q.docs.forEach(d=>{const o=d.data()||{},id=d.id,loc=borradores.find(b=>b.id===id),editando=actual&&actual.tipo==="bor"&&actual.id===id;
+        if(o.borrado){FSB.subido[id]="x";if(loc&&!editando&&(loc.upd||0)<=(o.upd||0)){borradores=borradores.filter(b=>b!==loc);cambio=true}return}
+        if(editando)return;
+        if(!loc||(loc.upd||0)<(o.upd||0)){let D2={};try{D2=JSON.parse(o.D||"{}")}catch(e){}
+          if(vacia(D2))return;
+          if(loc){loc.D=D2;loc.paso=o.paso||0;loc.upd=o.upd}else borradores.push({id,D:D2,paso:o.paso||0,upd:o.upd});cambio=true}
+        if(!loc||(loc.upd||0)<=(o.upd||0))FSB.subido[id]=o.upd});
+      FSB.oido=true;
+      if(cambio){try{localStorage.setItem(CLAVE_B,JSON.stringify(borradores))}catch(e){}if(modo==="inicio")render()}
+      fsSubir()},
+    async e=>{FSB.unsub=null;if(!reintento&&e&&e.code==="permission-denied"){reintento=true;try{await fsAcceso(true);c()}catch(x){}}})};
+  c();fsEscuchar.p=0}
+setInterval(()=>{if(document.visibilityState==="visible")fsEscuchar()},20000);
+setTimeout(fsEscuchar,500);
 cargar();
 { let A=null; try{ A=JSON.parse(sessionStorage.getItem("ficha-abrir")||"null"); sessionStorage.removeItem("ficha-abrir"); }catch(e){}
   if(A&&(A.ced||A.nom)) abrirPorCedula(A.ced||"",A.nom||""); else render(); }

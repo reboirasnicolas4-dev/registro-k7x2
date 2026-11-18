@@ -819,7 +819,7 @@ function textoCama(id){const c=camas[id];if(c&&c.fuera)return["No entra en cuart
 function guardarCache(arr,cu){try{if(!token||!localStorage.getItem("alas-token"))return;
   localStorage.setItem("alas-cache",JSON.stringify({email,role,t:Date.now(),internos:arr,cuartos:cu}))}catch(x){}}
 function leerCache(em){try{const c=JSON.parse(localStorage.getItem("alas-cache")||"null");return c&&c.email===em&&Array.isArray(c.internos)?c:null}catch(x){return null}}
-const FSD={unsubs:[],tCarga:0,ult:{},pend:false,raw:null};   // base en tiempo real (etapa 2), ver fsDatos
+const FSD={unsubs:[],tCarga:0,ult:{},pend:false,raw:null,borr:[]};   // base en tiempo real (etapa 2), ver fsDatos
 async function load(){
   let arr=null,cu=null;
   // Un solo pedido con todo (usuario, internos y cuartos); si el script es viejo, como antes
@@ -1227,8 +1227,11 @@ function renderHoy(){
       mini(cl.libres,"camas libres"+(cl.sin.length?" · "+cl.sin.length+" sin cama":""),()=>verTab("C"),cl.sin.length>0))}
   // 4) Para hacer: fichas de ingreso que quedaron a la mitad (en este celular)
   {const P=$("hhacer"),L=[];let bs=[];try{bs=JSON.parse(localStorage.getItem("alas_fichas_sin_terminar")||"[]")||[]}catch(x){}
-    bs.filter(b=>b&&b.D).forEach(b=>{const r=el("a","hrow");r.href="ficha/";r.onclick=()=>pasarSesion&&pasarSesion();const t=el("div","tx");
-      t.append(el("b","","Terminar la ficha de "+(b.D.nombre||"un ingreso nuevo")),el("span","","Quedó a la mitad en este celular"));r.append(el("span","hchk","📝"),t,el("i","","›"));L.push(r)});
+    bs=bs.filter(b=>b&&b.D);const loc=new Set(bs.map(b=>b.id));
+    // y las que quedaron a medias en otros celulares (desde la base)
+    (FSD.borr||[]).forEach(b=>{if(!loc.has(b.id))bs.push(Object.assign({otro:true},b))});
+    bs.forEach(b=>{const r=el("a","hrow");r.href="ficha/";r.onclick=()=>pasarSesion&&pasarSesion();const t=el("div","tx");
+      t.append(el("b","","Terminar la ficha de "+(b.D.nombre||"un ingreso nuevo")),el("span","",b.otro?"Quedó a la mitad"+(b.por?" ("+String(b.por).split("@")[0]+")":""):"Quedó a la mitad en este celular"));r.append(el("span","hchk","📝"),t,el("i","","›"));L.push(r)});
     P.hidden=!L.length;if(L.length)P.replaceChildren(el("h4","","Para hacer"),...L)}
 }
 let cuAb=new Set(),cuSel=null;
@@ -1654,7 +1657,7 @@ function fsMarcar(it){
     const v=it.m?{toma:it.toma,id:String(it.id),interno:it.nombre||"",estado:it.m.estado,motivo:it.m.motivo||"",medicacion:it.medicacion||"",usuario:email,hora:it.m.hora||""}:firebase.firestore.FieldValue.delete();
     FS.db.doc("med/"+it.fecha).set({m:{[it.key]:v}},{merge:true}).catch(()=>{})}catch(x){}}
 async function fsSalir(){const uid=FS.uid;
-  try{FSD.unsubs.forEach(u=>u())}catch(x){}FSD.unsubs=[];FSD.ult={};FSD.raw=null;FSD.tCarga=0;
+  try{FSD.unsubs.forEach(u=>u())}catch(x){}FSD.unsubs=[];FSD.ult={};FSD.raw=null;FSD.tCarga=0;FSD.borr=[];
   try{if(FS.unsub)FS.unsub()}catch(x){}FS.unsub=null;FS.vivo="";FS.dia="";
   try{localStorage.removeItem("alas-fs-acc");sessionStorage.removeItem("alas-fs-acc")}catch(x){}
   try{if(FS.db){await FS.db.terminate();await FS.db.clearPersistence()}}catch(x){}
@@ -1683,6 +1686,11 @@ async function fsDatos(){
   oir("hoja_Cuartos",d=>{aplicarCamas(d);if(FSD.raw)guardarCache(FSD.raw,d);fsRepintar()});
   oir("hoja_Egresados",d=>{egr=egrDe(d);egrCargado=true;if(vista==="E")fsRepintar()});
   oir("hoja_Destallo",d=>{dets=detDe(d);detCargado=true;if(vista==="D")fsRepintar()});
+  // fichas de ingreso a medias (de todos los celulares)
+  {let reintento=false;const c=()=>{const u=FS.db.collection("borradores").onSnapshot(q=>{
+      FSD.borr=q.docs.map(d=>{const o=d.data()||{};if(o.borrado)return null;let D={};try{D=JSON.parse(o.D||"{}")}catch(x){}return{id:d.id,D,por:o.por||"",upd:o.upd||0}}).filter(Boolean);
+      if(vista==="H")fsRepintar()},
+    async e=>{FSD.unsubs=FSD.unsubs.filter(x=>x!==u);if(!reintento&&e&&e.code==="permission-denied"){reintento=true;try{await fsAcceso(true);c()}catch(x){}}});FSD.unsubs.push(u)};c()}
   fsDatos.p=0}
 setInterval(()=>{if(document.visibilityState==="visible")fsDatos()},20000);
 async function marcar(i,estado,motivo,toma){
@@ -2000,7 +2008,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261117223753";
+const APP_VER="20261117225557";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
