@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<html lang="es"><head><meta charset="utf-8">
+<script src="../bloqueo.js?v=2"></script><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Despensa · Alas de Libertad</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#16120e">
@@ -115,7 +116,18 @@ body.instalada #instbar,body.instalada .linst{display:none!important}
  <div id="lerr" class="lerr"></div><button class="b p" id="lbtn" style="width:100%">Ingresar</button>
  <button type="button" class="b linst" data-act="instalar">📲 Instalar la app en este aparato</button>
  <p class="lnota">Es el <b>mismo usuario y contraseña de la app de Internos</b>. ¿Te olvidaste la contraseña? Pedile un código nuevo a Nicolás.</p>
- <a class="lnkp" href="../">¿No tenés usuario? Pedilo en la app de Internos</a></form>
+ <button type="button" class="lnkp" id="pedirU" style="background:none;border:0;cursor:pointer;width:100%">¿No tenés usuario? Pedilo acá</button></form>
+ <div id="pedirbox" hidden style="text-align:left">
+  <div id="pform"><h2 style="font:700 22px Fraunces,serif;margin:0 0 4px">Pedir usuario</h2>
+  <p style="color:var(--mut);margin:0 0 14px;font-size:14px">Completá tus datos. Nicolás tiene que aprobarte antes de que puedas entrar. Te sirve para Despensa, Internos y Médicos.</p>
+  <label class="f"><span>Nombre y apellido</span><input id="pnom" autocomplete="name" maxlength="60" placeholder="Ej: Juan Pérez"></label>
+  <label class="f"><span>Correo electrónico (va a ser tu usuario)</span><input id="pcor" type="email" autocomplete="username" placeholder="nombre@correo.com"></label>
+  <label class="f"><span>Elegí tu contraseña (mínimo 6 caracteres)</span><input id="pp1" type="password" autocomplete="new-password"></label>
+  <label class="f"><span>Repetila</span><input id="pp2" type="password" autocomplete="new-password"></label>
+  <div id="pmsg" class="lerr"></div><button type="button" class="b p" id="penv" style="width:100%">Enviar solicitud</button></div>
+  <div id="pok" hidden style="background:#1d2a20;border:1px solid var(--ok);color:var(--ok);border-radius:14px;padding:14px;text-align:center"><div style="font-size:30px">✅</div><b>¡Solicitud enviada!</b><br>Cuando Nicolás te apruebe, vas a poder entrar con tu correo y la contraseña que elegiste.</div>
+  <button type="button" class="b" id="pvolver" style="width:100%;margin-top:10px">‹ Volver a Ingresar</button>
+ </div>
 </div>
 
 <div class="app" id="app" hidden>
@@ -224,14 +236,14 @@ async function api(accion,extra){
  return r}
 function pantallaLogin(on){$("login").hidden=!on;$("app").hidden=on;$("nav").hidden=on}
 function salir(vencida){const c=cred;cred=null;borrarSesion();S.prods=[];S.movs=[];if(!vencida)ls.del("desp_cache");
- if(c&&c.token&&!vencida)postInt({email:c.correo,token:c.token,action:"logout"}).catch(()=>{});
+ if(c&&c.token&&!vencida){postInt({email:c.correo,token:c.token,action:"logout"}).catch(()=>{});try{AlasBloqueo.olvidar()}catch(x){}}
  $("lclave").value="";modoSetup(false);pantallaLogin(true)}
 function modoSetup(on,codigo){$("lsetup").hidden=!on;$("pwrow").hidden=on;$("coderow").hidden=!(on&&codigo);if(!on)$("ncode").value="";
  $("ltxt").textContent=on?(codigo?"Escribí el código que te pasaron y elegí tu contraseña nueva.":"Es tu primera vez: elegí una contraseña para tu usuario."):"Ingresá con el mismo correo y contraseña de la app de Internos.";
  $("lbtn").textContent=on?"Crear contraseña e ingresar":"Ingresar"}
 async function entrarCon(correo,token,rec){cred={correo,token};const r=await api("login");
  if(!r.ok){cred=null;return r.error||"No se pudo ingresar."}
- guardarSesion(rec);S.rol=r.rol;pantallaLogin(false);usarCopia();cargar();return ""}
+ guardarSesion(rec);S.rol=r.rol;pantallaLogin(false);usarCopia();cargar();setTimeout(()=>{try{AlasBloqueo.despuesDeEntrar()}catch(x){}},1500);return ""}
 $("lcorreo").addEventListener("input",()=>{if(!$("lsetup").hidden)modoSetup(false)});
 $("lform").addEventListener("submit",async ev=>{ev.preventDefault();
  const correo=$("lcorreo").value.trim().toLowerCase(),setup=!$("lsetup").hidden,rec=$("rec").checked;$("lerr").textContent="";
@@ -419,8 +431,9 @@ document.addEventListener("click",async ev=>{
  const a=el.dataset.act,id=el.dataset.id||"";
  if(a==="cerrar")cerrar();
  else if(a==="actualizar"){nota("");toast("Actualizando…");cargar()}
- else if(a==="menu")abrir(`<h2>Opciones</h2><p class="sub">${esc(cred?cred.correo:"")} · ${esc(S.rol)}</p><div class="btns"><a class="b" href="../">Ir a Internos</a><button class="b" data-act="instalar">📲 Instalar</button><button class="b full red" data-act="salir">Cerrar sesión</button><button class="b full" data-act="cerrar">Cerrar</button></div>`)
+ else if(a==="menu")abrir(`<h2>Opciones</h2><p class="sub">${esc(cred?cred.correo:"")} · ${esc(S.rol)}</p><div class="btns"><a class="b" href="../">Ir a Internos</a><button class="b" data-act="instalar">📲 Instalar</button><button class="b full" data-act="seguridad">🔒 ${seguridadTxt()}</button><button class="b full red" data-act="salir">Cerrar sesión</button><button class="b full" data-act="cerrar">Cerrar</button></div>`)
  else if(a==="salir"){cerrar();salir(false)}
+ else if(a==="seguridad"){cerrar();try{AlasBloqueo.configurar()}catch(x){toast("No se pudo abrir la seguridad")}}
  else if(a==="instalar")instalar();
  else if(a==="nuevoProd")abrirEditar("");
  else if(a==="editar")abrirEditar(id);
@@ -455,6 +468,27 @@ document.addEventListener("click",async ev=>{
  else if(a==="copiar")copiar();
  else if(a==="imprimir")imprimir();
 });
+
+/* ===== PIN y huella (el mismo de Internos, Cuartos y Ficha) ===== */
+function seguridadTxt(){try{return AlasBloqueo.activo()?"PIN activado · cambiar":"Activar PIN y huella"}catch(x){return "PIN y huella"}}
+try{AlasBloqueo.logueado=()=>!!cred;AlasBloqueo.salir=()=>salir(false);AlasBloqueo.alDesbloquear=()=>{if(cred)cargar(true)}}catch(x){}
+
+// Al ir a Internos se pasa la sesión, así no hay que volver a poner la contraseña
+function pasarSesion(){try{if(cred&&cred.token)sessionStorage.setItem("alas-paso",JSON.stringify({email:cred.correo,token:cred.token,t:Date.now()}))}catch(x){}}
+document.addEventListener("click",e=>{if(e.target.closest('a[href="../"]'))pasarSesion()},true);
+
+/* ===== Pedir usuario (queda en la app de Internos y lo aprueba Nicolás) ===== */
+function verPedir(on){$("pedirbox").hidden=!on;$("lform").hidden=on;document.querySelectorAll("#login>h1,#login>p,#login>.logo").forEach(e=>e.hidden=on);
+ if(on){$("pform").hidden=false;$("pok").hidden=true;$("pmsg").textContent="";$("pcor").value=$("lcorreo").value.trim();$("pp1").value=$("pp2").value=""}}
+$("pedirU").onclick=()=>verPedir(true);
+$("pvolver").onclick=()=>{verPedir(false);$("lerr").textContent=""};
+$("penv").onclick=async()=>{const n=$("pnom").value.trim(),c=$("pcor").value.trim().toLowerCase(),a=$("pp1").value,b=$("pp2").value,m=$("pmsg");
+ m.textContent=n.length<2?"Poné tu nombre y apellido.":!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c)?"Poné un correo válido.":a.length<6?"La contraseña tiene que tener al menos 6 caracteres.":a!==b?"Las dos contraseñas no coinciden.":"";
+ if(m.textContent)return;const bt=$("penv");bt.disabled=true;bt.textContent="Enviando…";
+ try{const r=await postInt({action:"pedirUsuario",email:c,nombre:n,newPassword:a});
+  if(!r||r.ok!==true){m.textContent=(r&&r.error)||"No se pudo enviar.";return}
+  $("pp1").value=$("pp2").value="";$("lcorreo").value=c;$("pform").hidden=true;$("pok").hidden=false}
+ catch(e){m.textContent="No se pudo conectar. Probá de nuevo."}finally{bt.disabled=false;bt.textContent="Enviar solicitud"}};
 
 /* ===== Instalar la app ===== */
 let pedidoInstalar=null;
