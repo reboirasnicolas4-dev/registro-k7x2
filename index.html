@@ -751,7 +751,8 @@ function borrarSesion(){try{marcasDe="";marcas={};llevar=[];localStorage.removeI
 function cerrarSesion(){fotosChicas={};fotosGrandes={};fotosPedidas=new Set();
   // Al salir, este celular deja de recibir los avisos; después se cierra la sesión
   let av=null;try{av=JSON.parse(localStorage.getItem("alas-aviso")||"null");localStorage.removeItem("alas-aviso")}catch(x){}
-  const c=credenciales(),fin=()=>{if(c.token)postGoogle(API,Object.assign({},c,{action:"logout"})).catch(()=>{})};
+  const uidFs=FS.uid;fsSalir();
+  const c=credenciales(),fin=()=>{if(c.token)postGoogle(API,Object.assign({},c,{action:"logout",uid:uidFs})).catch(()=>{})};
   if(c.token&&av&&av.token)postGoogle(API,Object.assign({},c,{action:"quitarAviso",tokenAviso:av.token})).catch(()=>{}).finally(fin);else fin();
   borrarSesion();token="";pass=""}
 document.addEventListener("click",e=>{if(e.target.closest('a[href="cuartos/"],a[href^="ficha/"]'))pasarSesion()});
@@ -1128,7 +1129,7 @@ const FB_JS="https://www.gstatic.com/firebasejs/10.12.2/";
 const avisosPosibles=()=>"Notification" in window&&"serviceWorker" in navigator&&"PushManager" in window&&location.protocol==="https:";
 const esAdminRol=()=>role==="Admin";
 function leerAv(){try{return JSON.parse(localStorage.getItem("alas-aviso")||"null")}catch(x){return null}}
-function cargarJS(u){return new Promise((ok,no)=>{if(document.querySelector('script[src="'+u+'"]'))return ok();const s=document.createElement("script");s.src=u;s.onload=ok;s.onerror=()=>no(new Error("no se pudo cargar Firebase"));document.head.append(s)})}
+const _js={};function cargarJS(u){return _js[u]||(_js[u]=new Promise((ok,no)=>{const s=document.createElement("script");s.src=u;s.onload=ok;s.onerror=()=>{delete _js[u];no(new Error("no se pudo cargar Firebase"))};document.head.append(s)}))}
 async function fbMensajes(){await cargarJS(FB_JS+"firebase-app-compat.js");await cargarJS(FB_JS+"firebase-messaging-compat.js");if(!firebase.apps.length)firebase.initializeApp(FB_CONF);return firebase.messaging()}
 async function tokenAviso(){const reg=await navigator.serviceWorker.register("sw.js");await navigator.serviceWorker.ready;const m=await fbMensajes();return m.getToken({vapidKey:FB_VAPID,serviceWorkerRegistration:reg})}
 function dispositivo(){const u=navigator.userAgent;return(/Android/.test(u)?"Android":/iPhone|iPad/.test(u)?"iPhone":/Windows/.test(u)?"Windows":/Mac/.test(u)?"Mac":"Otro")+(window.matchMedia("(display-mode: standalone)").matches?" · app":" · navegador")}
@@ -1520,6 +1521,7 @@ setInterval(mandarCola,30000);
 function refrescarMarcas(){if(!token||soloCopia||document.visibilityState!=="visible"||(vista!=="M"&&vista!=="H"))return;
   // no interrumpir: si está mirando otro día, escribiendo un motivo o con una ventana abierta, espera a la próxima
   if(($("mfecha").value&&$("mfecha").value!==iso(hoy))||abiertoNo||abiertoMas||document.querySelector("dialog[open]")||(document.activeElement&&document.activeElement.id&&document.activeElement.id.startsWith("mot-")))return;
+  fsEscuchar();if(FS.vivo===iso(hoy)&&FS.unsub)return;
   if(refrescarMarcas.p)return;refrescarMarcas.p=1;const f0=iso(hoy);
   // pedido liviano: solo las marcas de hoy
   api({action:"getEntregas",fecha:f0}).then(r=>{if(!r||r.ok!==true||fechaMed()!==f0||abiertoNo||abiertoMas)return;
@@ -1539,6 +1541,7 @@ function aplicarPendientes(f){const ahora=Date.now();
 async function loadMed(){
   $("mfecha").value=iso(hoy); if(!tomaAMano)tomaSel=tomaHora();
   // Al instante con lo que ya hay (en memoria o la copia guardada) y se actualiza por detrás
+  fsEscuchar();
   const f0=fechaMed();let hay=marcasDe===f0;
   if(!hay){const c=leerCacheMed(f0);if(c){marcas=c.marcas||{};llevar=c.llevar||[];marcasDe=f0;hay=true}}
   if(hay)aplicarPendientes(f0);setTimeout(mandarCola,800);
@@ -1547,7 +1550,9 @@ async function loadMed(){
     const [r,r2]=await Promise.all([api({action:"getEntregas",fecha:fechaMed()}),api({action:"getEntregas",desde:iso(d0),hasta:iso(hoy)})]);
     if(!r||r.ok!==true)throw new Error((r&&r.error)||"respuesta inesperada");
     if(fechaMed()!==f0)return;
-    marcas={};(r.data||[]).forEach(m=>marcas[m.toma+"|"+m.id]=m);aplicarPendientes(f0);
+    if(FS.vivo!==f0)marcas={};
+    // con la base viva, lo de la planilla solo completa lo que falte (por si algún celular viejo marcó sin pasar por la base)
+    (r.data||[]).forEach(m=>{const k=m.toma+"|"+m.id;if(FS.vivo!==f0||!marcas[k])marcas[k]=m});aplicarPendientes(f0);
     llevar=((r2&&r2.data)||[]).filter(m=>m.toma==="Salida");marcasDe=f0;guardarCacheMed();$("mmsg").textContent="";renderMed();
     loadMed.ok=Date.now();return true;
   }catch(e){loadMed.ok=0;$("mmsg").textContent=hay?"Google no contesta: se ven las marcas que había. Deslizá hacia abajo para reintentar.":"No se pudo cargar: "+e.message}
@@ -1598,12 +1603,63 @@ function renderMed(){
     if(isAdmin()&&salidaHoy(i)){const v=el("button","","Ya volvió");v.type="button";v.onclick=()=>yaVolvio(i);bt.append(v)}
     r.append(bt);return r}));
 }
+/* ===== Base en tiempo real (Firebase Firestore): las marcas de medicación de hoy se ven al instante en todos los celulares =====
+   La app sigue mandando cada marca a la planilla (como siempre); además la escribe en la base y escucha los cambios de los demás.
+   Si la base no anda, todo sigue funcionando con la planilla (se revisa cada 15 segundos). */
+const FS={db:null,uid:"",vivo:"",unsub:null,listo:null};
+function fsIniciar(){
+  if(FS.listo)return FS.listo;
+  FS.listo=(async()=>{
+    await cargarJS(FB_JS+"firebase-app-compat.js");await cargarJS(FB_JS+"firebase-auth-compat.js");await cargarJS(FB_JS+"firebase-firestore-compat.js");
+    if(!firebase.apps.length)firebase.initializeApp(FB_CONF);
+    const db=firebase.firestore();
+    // copia en el celular solo con "Recordarme" (igual que el resto); se borra al tocar Salir
+    if(localStorage.getItem("alas-token")){try{await db.enablePersistence({synchronizeTabs:true})}catch(x){}}
+    const au=firebase.auth();
+    await new Promise(r=>{const u=au.onAuthStateChanged(()=>{u();r()})});
+    if(!au.currentUser)await au.signInAnonymously();
+    FS.uid=au.currentUser.uid;FS.db=db;return db})().catch(e=>{FS.listo=null;throw e});
+  return FS.listo}
+async function fsAcceso(forzar){
+  const k="alas-fs-acc",marca=email+"|"+FS.uid;let v="";try{v=localStorage.getItem(k)||sessionStorage.getItem(k)||""}catch(x){}
+  if(!forzar&&v.startsWith(marca+"|")&&Date.now()-Number(v.split("|")[2])<864e5)return;
+  const r=await api({action:"fbAcceso",uid:FS.uid});if(!r||r.ok!==true)throw new Error((r&&r.error)||"sin acceso a la base");
+  try{(localStorage.getItem("alas-token")?localStorage:sessionStorage).setItem(k,marca+"|"+Date.now())}catch(x){}}
+function fsOcupado(){return abiertoNo||abiertoMas||(document.activeElement&&document.activeElement.id&&document.activeElement.id.startsWith("mot-"))}
+async function fsEscuchar(){
+  if(!token||soloCopia)return;const f=iso(hoy);
+  if(FS.unsub&&FS.dia===f)return;
+  if(fsEscuchar.p)return;fsEscuchar.p=1;
+  try{await fsIniciar();await fsAcceso(false)}catch(e){fsEscuchar.p=0;return}
+  if(FS.unsub){FS.unsub();FS.unsub=null}FS.vivo="";FS.dia=f;
+  let reintento=false;
+  const conectar=()=>{FS.unsub=FS.db.doc("med/"+f).onSnapshot({includeMetadataChanges:false},s=>{
+      if(!token||FS.dia!==f)return;
+      const m=(s.data()||{}).m||{},n={};
+      Object.keys(m).forEach(k=>{const o=m[k];if(o&&o.estado)n[k]=Object.assign({fecha:f},o)});
+      FS.vivo=f;FS.ult=Date.now();
+      if(fechaMed()!==f)return;
+      marcas=n;aplicarPendientes(f);marcasDe=f;guardarCacheMed();
+      if(fsOcupado())return;   // no cortar a quien está escribiendo un motivo: se ve al cerrar
+      if(vista==="M")renderMed();else if(vista==="H")renderHoy()},
+    async e=>{FS.vivo="";FS.unsub=null;
+      if(!reintento&&e&&e.code==="permission-denied"){reintento=true;try{await fsAcceso(true);conectar()}catch(x){}}})};
+  conectar();fsEscuchar.p=0}
+function fsMarcar(it){
+  try{if(!FS.db||it.fecha!==FS.dia)return;
+    const v=it.m?{toma:it.toma,id:String(it.id),interno:it.nombre||"",estado:it.m.estado,motivo:it.m.motivo||"",medicacion:it.medicacion||"",usuario:email,hora:it.m.hora||""}:firebase.firestore.FieldValue.delete();
+    FS.db.doc("med/"+it.fecha).set({m:{[it.key]:v}},{merge:true}).catch(()=>{})}catch(x){}}
+async function fsSalir(){const uid=FS.uid;
+  try{if(FS.unsub)FS.unsub()}catch(x){}FS.unsub=null;FS.vivo="";FS.dia="";
+  try{localStorage.removeItem("alas-fs-acc");sessionStorage.removeItem("alas-fs-acc")}catch(x){}
+  try{if(FS.db){await FS.db.terminate();await FS.db.clearPersistence()}}catch(x){}
+  FS.db=null;FS.listo=null;return uid}
 async function marcar(i,estado,motivo,toma){
   if(!isAdmin())return;toma=toma||tomaSel;
   const key=toma+"|"+i.id,antes=marcas[key];abiertoNo=null;abiertoMas=null;
   if(estado)marcas[key]={toma,id:i.id,estado:estado==="dada"?"Dada":"No la tomó",motivo:motivo||"",hora:new Date().toTimeString().slice(0,5),usuario:email};else delete marcas[key];
   const it0={email,key,fecha:fechaMed(),toma,id:i.id,nombre:i.nombre.trim(),estado,motivo:motivo||"",medicacion:String(i[toma.toLowerCase()]||""),m:marcas[key]||null,t:Date.now()};
-  pendM[key]={m:it0.m,t:it0.t,f:it0.fecha};encolar(it0);guardarCacheMed();
+  pendM[key]={m:it0.m,t:it0.t,f:it0.fecha};encolar(it0);guardarCacheMed();fsMarcar(it0);
   if(estado){$("mq").value="";aviso((estado==="dada"?"✓ Dada a ":"✗ No la tomó: ")+i.nombre.trim().split(/\s+/).slice(0,2).join(" "),()=>marcar(i,"","",toma))}
   renderMed(); if(vista==="H")renderHoy(); else if(estado&&vista==="M")$("mq").focus({preventScroll:true});
   mandarCola();
@@ -1913,7 +1969,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261117214132";
+const APP_VER="20261117221934";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
