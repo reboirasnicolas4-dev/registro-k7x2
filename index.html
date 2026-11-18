@@ -1358,7 +1358,7 @@ function abrirPlanilla(id){
   const s=$("pmes");s.replaceChildren();
   for(let k=0;k<4;k++){const d=new Date(hoy.getFullYear(),hoy.getMonth()-k,1);const o=el("option","",MESES[d.getMonth()][0].toUpperCase()+MESES[d.getMonth()].slice(1)+" "+d.getFullYear());o.value=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");s.append(o)}
   const q=$("pquien");q.replaceChildren(el("option","","Todos los que toman medicación"));q.firstChild.value="";
-  items.filter(i=>i.nombre&&i.ingreso).sort((a,b)=>a.nombre.localeCompare(b.nombre,"es")).forEach(i=>{const o=el("option","",i.nombre.trim());o.value=i.id;q.append(o)});
+  items.filter(i=>i.nombre&&i.ingreso).sort((a,b)=>parse(a.ingreso)-parse(b.ingreso)||a.nombre.localeCompare(b.nombre,"es")).forEach(i=>{const o=el("option","",i.nombre.trim());o.value=i.id;q.append(o)});
   q.value=id||"";planPDF=null;$("pinfo").hidden=true;$("pmsg").textContent="";$("pdesc").hidden=$("pshare").hidden=true;$("parmar").hidden=false;
   if($("dlg").open)$("dlg").close();$("pdlg").showModal();loadLibs().catch(()=>{})}
 $("pabrir").onclick=()=>abrirPlanilla("");
@@ -1387,7 +1387,7 @@ $("parmar").onclick=async()=>{
     const sel=$("pquien").value;if(sel)gente=gente.filter(g=>String(g.i.id)===String(sel));
     const TOM=[["DESAYUNO","Desayuno","desayuno",6],["ALMUERZO","Almuerzo","almuerzo",5],["MERIENDA","Merienda","merienda",6],["CENA","Cena","cena",8]];
     const hojas=[];
-    gente.sort((a,b)=>a.i.nombre.localeCompare(b.i.nombre,"es")).forEach(({i,egreso})=>{
+    gente.sort((a,b)=>parse(a.i.ingreso)-parse(b.i.ingreso)||a.i.nombre.localeCompare(b.i.nombre,"es")).forEach(({i,egreso})=>{
       const mios=mes.filter(m=>String(m.id)===String(i.id));
       const medsT=TOM.map(([,T,k])=>{const vistos=new Map();[String(i[k]||""),...mios.filter(m=>m.toma===T).map(m=>m.medicacion)].forEach(t=>partirMeds(t).forEach(x=>{const kk=nq(x);if(!vistos.has(kk))vistos.set(kk,x)}));return [...vistos.values()].map(medDosis)});
       if(!medsT.some(x=>x.length))return;
@@ -1588,7 +1588,7 @@ function renderMed(){
   const qm=nq($("mq").value.trim()); $("mqx").hidden=!qm;
   const coincide=i=>{if(!qm)return true;const n=nq(i.nombre.trim());return n.split(/\s+/).some(p=>p.startsWith(qm))||n.includes(qm)};
   const f=parse(fechaMed()),k=tomaSel.toLowerCase();
-  const con=items.filter(i=>i.nombre&&i.ingreso&&String(i[k]||"").trim()&&parse(i.ingreso)<=f).sort((a,b)=>a.nombre.localeCompare(b.nombre,"es"));
+  const con=items.filter(i=>i.nombre&&i.ingreso&&String(i[k]||"").trim()&&parse(i.ingreso)<=f).sort((a,b)=>parse(a.ingreso)-parse(b.ingreso)||a.nombre.localeCompare(b.nombre,"es"));
   const fuera=con.filter(i=>fueraEl(i,f)),aca=con.filter(i=>!fueraEl(i,f));
   const hechas=aca.filter(i=>marcas[tomaSel+"|"+i.id]).length;
   $("mcnt").textContent=(aca.length?(hechas+" de "+aca.length+" marcadas · "+(aca.length-hechas===0?"¡completo! ✔":"faltan "+(aca.length-hechas))):"Nadie toma medicación en el "+tomaSel.toLowerCase()+".")+(isAdmin()?"":soloCopia?" · Esperando a Google para poder marcar…":" · Solo los Admin pueden marcar.");
@@ -2025,7 +2025,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261118110344";
+const APP_VER="20261118163000";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}

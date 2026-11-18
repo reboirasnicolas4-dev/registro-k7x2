@@ -464,7 +464,7 @@ function armar(int,cu,rot,nj){
     return{id:String(o.id),nombre:String(o.nombre).trim(),cedula:String(o.cedula||""),ingreso:parse(toISO(o.ingreso)),
       sector:GRUPOS.includes(g.sector)?g.sector:"",cuarto:CUARTOS.some(c=>c.id===String(g.cuarto))?String(g.cuarto):"",antes:String(g.antes||""),
       salio:toISO(o.salioel),vuelve:toISO(o.vuelveel),nosalio:toISO(o.nosalioel),fuera:g.sector===FUERA}})
-    .sort((a,b)=>a.nombre.localeCompare(b.nombre,"es"));
+    .sort((a,b)=>a.ingreso-b.ingreso||a.nombre.localeCompare(b.nombre,"es"));
   fuera=gente.filter(p=>p.fuera);gente=gente.filter(p=>!p.fuera);
   historial=((rot&&rot.data)||[]).slice().reverse();
   gente.forEach(p=>{p.afuera=salidaHoy(p)});
@@ -585,7 +585,7 @@ function planRot(){
 }
 let planActual=null;
 function verPlan(){planActual=planRot();const {lista,nuevo}=planActual,nc=id=>id?"Cuarto "+id:"sin cama";
-  const filas=lista.slice().sort((a,b)=>a.nombre.localeCompare(b.nombre,"es")).map(p=>{const r=el("div","rr");r.append(el("b","",p.nombre));
+  const filas=lista.slice().sort((a,b)=>a.ingreso-b.ingreso||a.nombre.localeCompare(b.nombre,"es")).map(p=>{const r=el("div","rr");r.append(el("b","",p.nombre));
     const sp=el("span","",nc(p.cuarto)+" → ");sp.append(el("em",nuevo[p.id]?"":"mal",nc(nuevo[p.id])));r.append(sp);return r});
   const sin=lista.filter(p=>!nuevo[p.id]).length;
   $("rlist").replaceChildren(...filas);$("rnota").textContent=(sin?"⚠ "+sin+" queda"+(sin===1?"":"n")+" sin cama: después ubicalo"+(sin===1?"":"s")+" a mano. ":"")+"El cuarto 3 y Tropilla no se tocan.";
@@ -773,7 +773,7 @@ $("mfuera").onclick=()=>{const p=menuP;$("menu").close();
   gente=gente.filter(x=>x.id!==p.id);fuera.push(p);const np=parejas.length;parejas=parejas.filter(x=>!x.includes(p.id));sel=null;render();guardarPronto();if(parejas.length!==np)guardarParejas("Quitó «no juntar» de "+p.nombre);
   toast(nom1(p)+" ya no cuenta en Cuartos (lo volvés a sumar en Sectores)")};
 function volverACuartos(p){ultimoLog=p.nombre+" vuelve a cuartos";p.fuera=false;fuera=fuera.filter(x=>x.id!==p.id);
-  gente.push(p);gente.sort((a,b)=>a.nombre.localeCompare(b.nombre,"es"));render();guardarPronto();toast(nom1(p)+" vuelve a contar en Cuartos (quedó sin cama)")}
+  gente.push(p);gente.sort((a,b)=>a.ingreso-b.ingreso||a.nombre.localeCompare(b.nombre,"es"));render();guardarPronto();toast(nom1(p)+" vuelve a contar en Cuartos (quedó sin cama)")}
 $("msacar").onclick=()=>{const p=menuP;$("menu").close();
   if(p.sector){antesDeCambiar(p.nombre+" salió de Tropilla ("+secNom(p.sector)+")");p.sector="";p.cuarto="";p.antes="";render();guardarPronto();toast(nom1(p)+" salió de Tropilla y quedó sin cama");return}
   antesDeCambiar(p.nombre+" quedó sin cama");p.cuarto="";render();guardarPronto();toast(nom1(p)+" quedó sin cama")};
@@ -895,7 +895,7 @@ if("serviceWorker" in navigator&&location.protocol.startsWith("http"))window.add
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261118110344";
+const APP_VER="20261118163000";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
