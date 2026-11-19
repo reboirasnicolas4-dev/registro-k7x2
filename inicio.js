@@ -111,11 +111,18 @@
   function app(id) { for (var i = 0; i < APPS.length; i++) if (APPS[i].id === id) return APPS[i]; return null; }
   function pasar() { try { if (typeof pasarSesion === "function") pasarSesion(); else if (typeof irInicio === "function") irInicio(); } catch (e) {} }
 
+  // Pasar a otra app reemplazando la actual en el historial: con Atrás no se vuelve a la app anterior, se sale.
+  // Si Inicio se abrió con el logo (dejó una marca en el historial), primero se saca esa marca.
+  var destino = "";
+  function irA(url) {
+    try { if (history.state && history.state.alasInicio) { destino = url; history.back(); setTimeout(function () { if (destino) { var d = destino; destino = ""; location.replace(d); } }, 400); return; } } catch (e) {}
+    location.replace(url);
+  }
   function abrir(a) {
     if (a.id === ACTUAL) { cerrar(); return; }
     // Ir a Internos desde otra app: entra directo a Internos (sin volver a mostrar Inicio allá)
     ssSet(KOK, a.id === "internos" ? "1" : null); pasar();
-    location.href = a.url;
+    irA(a.url);
   }
   async function instalar(a) {
     if (a.id === "internos" && EN_INT) {
@@ -131,7 +138,7 @@
       location.href = "intent://" + u.host + u.pathname + u.search + "#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=" + encodeURIComponent(dest) + ";end";
       return;
     }
-    location.href = dest;
+    irA(dest);
   }
   function alTocar(e) {
     var b = e.target.closest ? e.target.closest("[data-ai]") : null; if (!b) return;
@@ -166,7 +173,7 @@
     if (document.body) temprano(); else document.addEventListener("DOMContentLoaded", temprano);
   }
 
-  window.addEventListener("popstate", function () { if (raiz && !raiz.hidden) { if (EN_INT) ssSet(KOK, "1"); ocultar(); } });
+  window.addEventListener("popstate", function () { if (destino) { var d = destino; destino = ""; location.replace(d); return; } if (raiz && !raiz.hidden) { if (EN_INT) ssSet(KOK, "1"); ocultar(); } });
   window.AlasInicio = {
     // lo llama la app cada vez que cambia de pantalla (entrar, salir, etc.)
     alMostrar: function (cual) {
