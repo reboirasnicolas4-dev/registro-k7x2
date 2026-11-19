@@ -209,10 +209,24 @@
       irA(a.url);
     }, espera);
   }
+  // Pasos para instalar a mano, según el aparato y el navegador (cuando Chrome no ofrece el botón directo)
+  function pasosInstalar() {
+    var ua = navigator.userAgent, ios = /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+    var dentro = /FBAN|FBAV|Instagram|WhatsApp|Line\/|; wv\)/i.test(ua), edge = /Edg\//.test(ua), pc = !android && !ios;
+    var link = URL_ALAS, t = "<h2>Instalar Alas de Libertad</h2>";
+    var copiar = "<button type='button' class='ai-big' data-ai='copiarlink' style='margin-bottom:8px'>Copiar el link</button>";
+    if (dentro) return t + "<p>Este link se abrió adentro de otra app (como WhatsApp) y desde ahí no se puede instalar.</p><ol><li>Tocá los <b>tres puntitos ⋮</b> arriba a la derecha.</li><li>Elegí <b>Abrir en Chrome</b>" + (ios ? " (o en Safari)" : "") + ".</li><li>Ahí tocá <b>Instalar</b>.</li></ol>" +
+      (android ? "<button type='button' class='ai-big' data-ai='abrirchrome' style='margin-bottom:8px'>Abrir en Chrome</button>" : copiar) + "<button type='button' class='ai-big' data-ai='cerrarhoja' style='background:#2b241d;color:#f0e8da'>Cerrar</button>";
+    if (ios) return t + "<p>En iPhone se instala desde <b>Safari</b>:</p><ol><li>Tocá <b>Compartir</b> (el cuadrado con la flechita hacia arriba).</li><li>Bajá y elegí <b>Agregar a inicio</b>.</li><li>Tocá <b>Agregar</b>.</li></ol><button type='button' class='ai-big' data-ai='cerrarhoja'>Entendido</button>";
+    if (pc && edge) return t + "<p>En la computadora, con <b>Edge</b>:</p><ol><li>Arriba a la derecha tocá los <b>tres puntitos …</b></li><li>Entrá a <b>Aplicaciones</b>.</li><li>Elegí <b>Instalar este sitio como aplicación</b> y tocá <b>Instalar</b>.</li></ol><button type='button' class='ai-big' data-ai='cerrarhoja'>Entendido</button>";
+    if (pc) return t + "<p>En la computadora, con <b>Chrome</b>:</p><ol><li>Mirá a la derecha de la barra donde está la dirección: si hay un ícono de una <b>pantallita con una flecha</b>, tocalo y después <b>Instalar</b>.</li><li>Si no está: tocá los <b>tres puntitos ⋮</b> arriba a la derecha → <b>Transmitir, guardar y compartir</b> → <b>Instalar página como aplicación</b> (o <b>Instalar Alas de Libertad</b>).</li><li>Tocá <b>Instalar</b>. Queda en el escritorio y en el menú Inicio de Windows.</li></ol>" +
+      "<p style='font-size:13px;color:#b3a99b'>Si ya tenés instalada la app Internos o alguna de las otras en esta computadora, primero desinstalala (abrila, tocá los tres puntitos de su ventana → <b>Desinstalar</b>) y después instalá esta.</p><button type='button' class='ai-big' data-ai='cerrarhoja'>Entendido</button>";
+    return t + "<ol><li>Tocá los <b>tres puntitos ⋮</b> de Chrome, arriba a la derecha.</li><li>Elegí <b>Instalar app</b> o <b>Agregar a pantalla principal</b>.</li><li>Tocá <b>Instalar</b>.</li></ol><button type='button' class='ai-big' data-ai='cerrarhoja'>Entendido</button>";
+  }
   async function instalarAlas() {
     if (EN_ALAS) {
       if (pedido) { pedido.prompt(); try { await pedido.userChoice; } catch (e) {} pedido = null; return; }
-      hoja("<h2>Instalar Alas de Libertad</h2><ol><li>Tocá los <b>tres puntitos ⋮</b> de Chrome, arriba a la derecha.</li><li>Elegí <b>Instalar app</b> o <b>Agregar a pantalla principal</b>.</li><li>Tocá <b>Instalar</b>.</li></ol><button type='button' class='ai-big' data-ai='cerrarhoja'>Entendido</button>");
+      hoja(pasosInstalar());
       return;
     }
     pasar();
@@ -229,6 +243,8 @@
     var b = e.target.closest ? e.target.closest("[data-ai]") : null; if (!b) return;
     var q = b.getAttribute("data-ai");
     if (q === "instalarAlas") { e.stopPropagation(); instalarAlas(); return; }
+    if (q === "copiarlink") { e.stopPropagation(); try { navigator.clipboard.writeText(URL_ALAS); aviso("Link copiado: pegalo en Chrome"); } catch (x) { aviso(URL_ALAS); } return; }
+    if (q === "abrirchrome") { e.stopPropagation(); var u = new URL(URL_ALAS); location.href = "intent://" + u.host + u.pathname + "#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=" + encodeURIComponent(URL_ALAS) + ";end"; return; }
     if (q === "abrir") { if (raiz.querySelector(".ai-carga")) return; abrir(app(b.getAttribute("data-id")), b); return; }
     if (q === "cuenta") { var m = document.getElementById("me"); if (m) m.click(); }
     if (q === "volver") cerrar();
