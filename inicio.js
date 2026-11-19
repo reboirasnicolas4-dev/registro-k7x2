@@ -97,7 +97,7 @@
   function pintar() {
     if (!raiz || raiz.hidden) return;
     var h = "<div class='ai'><div class='ai-top'><img src='" + RAIZ_INT + "logo.png' alt=''><div><h1>Alas de Libertad</h1><small>Elegí la app que querés usar</small></div>" +
-      (EN_INT ? "<button type='button' class='ai-me' data-ai='cuenta' aria-label='Tu cuenta'>" + esc(inicial()) + "</button>" : EN_ALAS ? "" : "<button type='button' class='ai-me' data-ai='volver' aria-label='Volver a la app'>✕</button>") + "</div>";
+      (EN_INT ? "<button type='button' class='ai-me' data-ai='cuenta' aria-label='Tu cuenta'>" + esc(inicial()) + "</button>" : "") + "</div>";
     var cartel = "";
     if (EN_ALAS && !comoApp()) cartel = "Instalá esta app en este aparato";
     else if (!EN_ALAS && !enAlas() && !alasInstalada()) cartel = "Instalá la app Alas de Libertad";
