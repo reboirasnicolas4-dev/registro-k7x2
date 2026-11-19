@@ -14,7 +14,7 @@
 :root{--bg:#16120e;--card:#211b15;--ink:#f0e8da;--mut:#b3a99b;--line:#3a3027;--acc:#f7a823;--accx:#281a08;color-scheme:dark}
 html,body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.45 "Hanken Grotesk",system-ui,sans-serif}
 </style>
-<script src="../inicio.js?v=12" data-app="alas"></script>
+<script src="../inicio.js?v=13" data-app="alas"></script>
 </head>
 <body>
 <noscript>Para usar Alas de Libertad hay que activar JavaScript.</noscript>
@@ -22,6 +22,15 @@ html,body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.45 "Han
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
   window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
 }
+</script>
+<script>
+/* Actualización automática: si hay una versión nueva publicada, se recarga sola */
+const APP_VER="20261119213905";
+async function buscarVersion(){if(!location.protocol.startsWith("http")||document.visibilityState!=="visible")return;
+  try{const v=(await fetch("../version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
+    if(v&&v!==APP_VER&&sessionStorage.getItem("alas-app-recarga")!==v){sessionStorage.setItem("alas-app-recarga",v);
+      const u=new URL(location.href);u.searchParams.set("v",v);location.replace(u.toString())}}catch(e){}}
+buscarVersion();document.addEventListener("visibilitychange",buscarVersion);setInterval(buscarVersion,600000);
 </script>
 </body>
 </html>
