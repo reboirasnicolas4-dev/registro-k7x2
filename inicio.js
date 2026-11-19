@@ -81,7 +81,7 @@
     "@keyframes aiAro{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}@keyframes aiAroSe{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.35)}}" +
     "#alasInicio.ai-intro .ai-ave{animation:aiDesdeSplash 1.1s cubic-bezier(.5,0,.2,1) both,aiFlota 4s ease-in-out 2.4s infinite}" +
     // arranca igual que la pantalla que pone Android (pajarito quieto en el medio) y sube a su lugar
-    "@keyframes aiDesdeSplash{0%,45%{transform:translateY(var(--sy,130px)) scale(var(--ss,1.6));clip-path:circle(33.3% at 50% 50%);box-shadow:none}100%{transform:none;clip-path:circle(50% at 50% 50%);box-shadow:0 16px 50px rgba(247,168,35,.3)}}" +
+    "@keyframes aiDesdeSplash{0%{opacity:0;transform:translateY(var(--sy,130px)) scale(var(--ss,1.76));box-shadow:none}12%,45%{opacity:1;transform:translateY(var(--sy,130px)) scale(var(--ss,1.76));box-shadow:none}100%{opacity:1;transform:none;box-shadow:0 16px 50px rgba(247,168,35,.3)}}" +
     "@keyframes aiAveSale{0%{opacity:0;transform:scale(.8) rotate(-8deg)}70%{opacity:1;transform:scale(1.05) rotate(2deg)}100%{opacity:1;transform:none}}" +
     "#alasInicio.ai-intro .ai-hero h1{background-position:100% 0;animation:aiCorte .8s cubic-bezier(.2,.8,.2,1) 1.7s both,aiDestello 1.1s ease 2.5s forwards}" +
     "@keyframes aiCorte{from{clip-path:inset(0 100% 0 0);transform:translateY(6px)}to{clip-path:inset(0 0 0 0);transform:none}}@keyframes aiDestello{from{background-position:100% 0}to{background-position:0 0}}" +
@@ -291,12 +291,13 @@
     if (conEntrada === true && !introHecha && !quieto) {
       introHecha = true; raiz.classList.remove("ai-abre"); pintar();
       // el pájaro arranca en el medio de la pantalla (donde lo dibuja Android) y del tamaño de ese pajarito
-      // Android (12 o más nuevo) dibuja el ícono de 240 de ancho recortado en un círculo de 160, en el medio de TODA la pantalla
+      // Medido en una grabación del celular: Android muestra el ícono entero (con su aro negro) centrado en TODA la pantalla,
+      // con el disco naranja de unos 191 px de ancho (el logo entero, unos 264 px). Debajo de la barra de arriba (~33 px).
       try { var av = raiz.querySelector(".ai-ave"), r = av.getBoundingClientRect();
-        var dif = Math.max(0, screen.height - window.innerHeight), arriba = (android && comoApp()) ? (dif <= 50 ? dif : Math.max(0, dif - 48)) : 0;
-        var medio = android && comoApp() ? screen.height / 2 - arriba : window.innerHeight / 2;
+        var dif = Math.max(0, screen.height - window.innerHeight), barra = (dif <= 50 ? dif : Math.max(0, dif - 48)) + 33;
+        var medio = android && comoApp() ? screen.height / 2 - barra : window.innerHeight / 2;
         raiz.style.setProperty("--sy", Math.round(medio - (r.top + r.height / 2)) + "px");
-        raiz.style.setProperty("--ss", (240 / r.width).toFixed(3)); } catch (e) {}
+        raiz.style.setProperty("--ss", (Math.min(264, window.innerWidth * 0.64) / r.width).toFixed(3)); } catch (e) {}
       raiz.classList.add("ai-intro");
       clearTimeout(raiz._i); raiz._i = setTimeout(function () { raiz.classList.remove("ai-intro"); }, 4100);
     } else { raiz.classList.add("ai-abre"); pintar(); }
