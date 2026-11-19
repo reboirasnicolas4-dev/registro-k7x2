@@ -71,7 +71,7 @@
     "#alasInicio .ai-hero h1{font:700 34px/1.1 Fraunces,Georgia,serif;margin:0;background:linear-gradient(100deg,#f0e8da 0%,#f0e8da 42%,#ffd38a 50%,#f0e8da 58%,#f0e8da 100%);background-size:300% 100%;background-position:0 0;-webkit-background-clip:text;background-clip:text;color:transparent}" +
     // Entrada "Amanecer": brillo que sube, chispitas, aro que se dibuja, pájaro, título con destello y panel que sube
     "#alasInicio .ai-amanecer{position:absolute;inset:0;background:radial-gradient(70% 55% at 50% 45%,#5a3410 0%,#2a1a0c 45%,#16120e 80%)}" +
-    "#alasInicio .ai-hero>*:not(.ai-amanecer):not(.ai-chispa){position:relative}" +
+    "#alasInicio .ai-hero>*:not(.ai-amanecer):not(.ai-chispa):not(.ai-me){position:relative}#alasInicio .ai-hero>.ai-me{position:absolute;z-index:2}" +
     "#alasInicio .ai-logo{width:170px;height:170px;display:flex;align-items:center;justify-content:center}" +
     "#alasInicio .ai-aro{position:absolute;inset:0;opacity:0}" +
     "#alasInicio .ai-chispa{position:absolute;bottom:-8px;width:4px;height:4px;border-radius:50%;background:#ffb43a;box-shadow:0 0 8px 2px rgba(247,168,35,.6);opacity:0;animation:aiChispa 3.6s linear infinite}" +
