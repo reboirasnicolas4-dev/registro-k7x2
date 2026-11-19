@@ -36,6 +36,7 @@
     "#alasInicio{position:fixed;inset:0;z-index:2147482000;background:var(--bg,#16120e);color:var(--ink,#f0e8da);overflow-y:auto;font:400 15px/1.45 'Hanken Grotesk',system-ui,sans-serif}" +
     "#alasInicio[hidden]{display:none}" +
     "html.alas-inicio body{overflow:hidden}" +
+    "html.alas-inicio #splash,html.alas-inicio #app{visibility:hidden!important}" +
     "#alasInicio .ai{max-width:560px;margin:0 auto;padding:calc(env(safe-area-inset-top,0px) + 26px) 16px 28px;display:flex;flex-direction:column;gap:14px;min-height:100%;box-sizing:border-box}" +
     "#alasInicio .ai-top{display:flex;align-items:center;gap:12px}" +
     "#alasInicio .ai-top img{width:46px;height:46px;border-radius:50%}" +
@@ -68,7 +69,13 @@
     document.body.appendChild(raiz);
     return raiz;
   }
-  function inicial() { var m = document.getElementById("me"); return (m && m.textContent) || "?"; }
+  function haySesion() {
+    try { var t = JSON.parse(lsGet("alas-token") || "null"); if (t && t.token) return String(t.email || "?");
+      var p = JSON.parse(ssGet("alas-paso") || "null"); if (p && p.token && Date.now() - p.t < 60000) return String(p.email || "?"); } catch (e) {}
+    return "";
+  }
+  var correoIni = haySesion();
+  function inicial() { try { if (typeof email === "string" && email) return email[0].toUpperCase(); } catch (e) {} return correoIni ? correoIni[0].toUpperCase() : "?"; }
 
   function pintar() {
     if (!raiz || raiz.hidden) return;
@@ -138,10 +145,23 @@
   window.addEventListener("pageshow", function () { pintar(); });
   document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") pintar(); });
 
+  // Si hay sesión, Inicio aparece apenas abre la página (sin que se vea antes la pantalla de carga ni Internos).
+  // Si al final no se puede entrar (sesión vencida o sin internet), se saca para que se vea la pantalla de entrar.
+  function ocultar() { if (raiz) raiz.hidden = true; document.documentElement.classList.remove("alas-inicio"); }
+  function revisar() {
+    var ap = document.getElementById("app");
+    if (raiz && !raiz.hidden && ap && ap.hidden && !document.documentElement.classList.contains("cargando")) ocultar();
+  }
+  if (correoIni && ssGet(KOK) !== "1") {
+    document.documentElement.classList.add("alas-inicio");
+    var temprano = function () { mostrar(); setTimeout(revisar, 0); try { new MutationObserver(revisar).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] }); } catch (e) {} };
+    if (document.body) temprano(); else document.addEventListener("DOMContentLoaded", temprano);
+  }
+
   window.AlasInicio = {
     // lo llama la app cada vez que cambia de pantalla (entrar, salir, etc.)
     alMostrar: function (cual) {
-      if (cual !== "app") { if (raiz) raiz.hidden = true; document.documentElement.classList.remove("alas-inicio"); return; }
+      if (cual !== "app") { ocultar(); return; }
       if (ssGet(KOK) !== "1") mostrar();
     },
     abrir: mostrar,
