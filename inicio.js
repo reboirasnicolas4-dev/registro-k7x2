@@ -83,12 +83,26 @@
     "#alasInicio .ai-falta b{display:block;font-size:14px}#alasInicio .ai-falta span{font-size:12px;color:#b3a99b}" +
     "#alasInicio .ai-inst{flex:none;height:40px;padding:0 14px;border-radius:11px;border:0;background:#f7a823;color:#281a08;font:700 13.5px inherit;cursor:pointer}" +
     // Pantalla de carga al entrar a una app (oscura, con el ícono latiendo)
-    "#alasInicio .ai-carga{position:fixed;inset:0;background:#16120e;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;animation:aiSube .38s cubic-bezier(.2,.8,.2,1) both}@keyframes aiSube{from{transform:translateY(40px);opacity:0}}" +
+    "#alasInicio .ai-carga{position:fixed;inset:0;background:#16120e;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;opacity:0;transition:opacity .25s ease;z-index:2}#alasInicio .ai-carga.ai-llega{opacity:1}" +
     "#alasInicio .ai-carga .ai-anillo{position:relative;width:120px;height:120px;display:flex;align-items:center;justify-content:center}" +
     "#alasInicio .ai-carga .ai-anillo:before{content:'';position:absolute;inset:0;border-radius:50%;border:3px solid #f7a823;animation:aiOla 1.4s ease-out infinite}@keyframes aiOla{0%{transform:scale(.9);opacity:.9}100%{transform:scale(1.45);opacity:0}}" +
     "#alasInicio .ai-carga .ai-ic{width:104px;height:104px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;animation:aiLate 1.4s ease-in-out infinite}@keyframes aiLate{50%{transform:scale(1.05)}}" +
     "#alasInicio .ai-carga .ai-ic img{width:104px;height:104px;flex:none}#alasInicio .ai-carga .ai-ic img.z{width:146px;height:146px}" +
-    "#alasInicio .ai-carga b{font:700 22px Fraunces,Georgia,serif}#alasInicio .ai-carga span{font-size:13px;color:#b3a99b}" +
+    "#alasInicio .ai-carga:not(.ai-llega) .ai-anillo:before{animation:none;opacity:0}" +
+    "#alasInicio .ai-carga.ai-llega .ai-ic{animation:aiParpa .5s ease-in-out 2,aiLate 1.4s ease-in-out 1s infinite}@keyframes aiParpa{0%,100%{filter:brightness(1);transform:scale(1)}50%{filter:brightness(1.55);transform:scale(1.08)}}" +
+    "#alasInicio .ai-carga>b,#alasInicio .ai-carga>span{opacity:0}#alasInicio .ai-carga.ai-llega>b,#alasInicio .ai-carga.ai-llega>span{animation:aiTxt .4s ease .2s both}@keyframes aiTxt{from{opacity:0;transform:translateY(8px)}to{opacity:1}}" +
+    // Globito: el ícono tocado sube bamboleándose con un hilito hasta el medio
+    "#alasInicio.ai-volando .ai-hero,#alasInicio.ai-volando .ai-elegi{transition:opacity .9s ease,filter .9s ease;opacity:.18;filter:blur(1px)}" +
+    "#alasInicio.ai-volando .ai-app{transition:transform .5s ease,opacity .5s ease;transform:translateY(10px) scale(.92);opacity:.45}" +
+    "#alasInicio.ai-volando .ai-app.ai-vuela{opacity:0;transition:none}" +
+    "#alasInicio .ai-globo{position:fixed;width:66px;height:66px;z-index:3;pointer-events:none;animation:aiGlobo 1.15s cubic-bezier(.33,0,.25,1) forwards;will-change:transform}" +
+    "#alasInicio .ai-globo .ai-ic{position:absolute;inset:0;width:66px;height:66px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;animation:aiBrillo 1.15s ease forwards}" +
+    "#alasInicio .ai-globo .ai-ic img{width:66px;height:66px;flex:none}#alasInicio .ai-globo .ai-ic img.z{width:92px;height:92px}" +
+    "#alasInicio .ai-globo svg{position:absolute;left:18px;top:62px;transform-origin:15px 0;animation:aiHilo 1.15s ease forwards}" +
+    "@keyframes aiGlobo{0%{transform:translate(0,0) scale(1)}12%{transform:translate(0,8px) scale(1.08,.86)}30%{transform:translate(calc(var(--dx)*.25 + 12px),calc(var(--dy)*.3)) scale(calc(1 + (var(--sc) - 1)*.2)) rotate(-7deg)}55%{transform:translate(calc(var(--dx)*.65 - 10px),calc(var(--dy)*.7)) scale(calc(1 + (var(--sc) - 1)*.6)) rotate(6deg)}80%{transform:translate(calc(var(--dx) + 4px),calc(var(--dy) - 14px)) scale(calc(var(--sc) + .03)) rotate(-3deg)}100%{transform:translate(var(--dx),var(--dy)) scale(var(--sc)) rotate(0)}}" +
+    "@keyframes aiBrillo{0%{box-shadow:0 6px 16px rgba(0,0,0,.4)}60%{box-shadow:0 0 26px 6px rgba(247,168,35,.55)}100%{box-shadow:0 0 34px 10px rgba(247,168,35,.7)}}" +
+    "@keyframes aiHilo{0%{opacity:0;transform:scaleY(.3)}20%{opacity:.9}35%{transform:rotate(10deg)}60%{transform:rotate(-12deg)}85%{opacity:.7;transform:rotate(6deg)}100%{opacity:0;transform:rotate(0) scaleY(.6)}}" +
+    "#alasInicio .ai-carga>b{font:700 22px Fraunces,Georgia,serif}#alasInicio .ai-carga>span{font-size:13px;color:#b3a99b}" +
     "#alasInicio .ai-toast{position:fixed;left:50%;bottom:120px;transform:translateX(-50%);background:#f0e8da;color:#1b140d;padding:10px 16px;border-radius:12px;font-weight:600;max-width:90%;text-align:center}" +
     "#alasInicio .ai-hoja{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center}" +
     "#alasInicio .ai-hoja>div{background:#211b15;border-top:1px solid #3a3027;border-radius:22px 22px 0 0;width:100%;max-width:560px;padding:18px 16px 26px;box-sizing:border-box}" +
@@ -140,10 +154,24 @@
     raiz.innerHTML = h;
   }
   // Al tocar otra app: pantalla de carga oscura que sube, y recién ahí se cambia de app
-  function cargando(a) {
-    var d = document.createElement("div"); d.className = "ai-carga"; d.setAttribute("role", "status");
-    d.innerHTML = "<div class='ai-anillo'>" + icono(a) + "</div><b>" + esc(a.name) + "</b><span>Abriendo…</span>";
-    raiz.appendChild(d);
+  // Al tocar otra app: el ícono sube como un globito hasta el medio, brilla, parpadea y recién ahí se abre la app
+  // (en total unos 2,6 segundos, para que se vea bien la animación). Devuelve los milisegundos que tarda.
+  function cargando(a, boton) {
+    var c = document.createElement("div"); c.className = "ai-carga"; c.setAttribute("role", "status");
+    c.innerHTML = "<div class='ai-anillo'>" + icono(a) + "</div><b>" + esc(a.name) + "</b><span>Abriendo…</span>";
+    raiz.appendChild(c);
+    var quieto = false; try { quieto = window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
+    var origen = boton && boton.querySelector ? boton.querySelector(".ai-ic") : null;
+    if (quieto || !origen) { c.classList.add("ai-llega"); return 700; }
+    var r = origen.getBoundingClientRect(), dest = c.querySelector(".ai-ic").getBoundingClientRect();
+    var sx = r.left + r.width / 2, sy = r.top + r.height / 2, tx = dest.left + dest.width / 2, ty = dest.top + dest.height / 2;
+    var g = document.createElement("div"); g.className = "ai-globo";
+    g.style.left = (sx - 33) + "px"; g.style.top = (sy - 33) + "px";
+    g.style.setProperty("--dx", (tx - sx) + "px"); g.style.setProperty("--dy", (ty - sy) + "px"); g.style.setProperty("--sc", String(dest.width / 66));
+    g.innerHTML = "<svg width='30' height='70' viewBox='0 0 30 70' fill='none' aria-hidden='true'><path d='M15 0 C 4 18, 26 34, 12 52 S 18 66, 15 70' stroke='#f3d9a8' stroke-width='1.6' stroke-linecap='round'/></svg>" + icono(a);
+    boton.classList.add("ai-vuela"); raiz.classList.add("ai-volando"); raiz.appendChild(g);
+    setTimeout(function () { c.classList.add("ai-llega"); setTimeout(function () { g.remove(); }, 260); }, 1150);
+    return 2600;
   }
   function aviso(t) {
     if (!raiz) return; var d = document.createElement("div"); d.className = "ai-toast"; d.setAttribute("role", "status"); d.textContent = t;
@@ -163,15 +191,15 @@
       if (document.visibilityState === "hidden" || !document.hasFocus()) { if (raiz) raiz.hidden = true; try { window.close(); } catch (e) {} }
     }, 1500);
   }
-  function abrir(a) {
+  function abrir(a, boton) {
     if (a.id === ACTUAL) { cerrar(); return; }
     // Ir a Internos desde otra app: entra directo a Internos (sin volver a mostrar Inicio allá)
     ssSet(KOK, a.id === "internos" ? "1" : null); pasar();
-    cargando(a);
+    var espera = cargando(a, boton);
     setTimeout(function () {
       if (EN_ALAS) { location.href = a.url; return; } // desde Inicio de la app Alas: con Atrás se vuelve a Inicio
       irA(a.url);
-    }, 260);
+    }, espera);
   }
   async function instalarAlas() {
     if (EN_ALAS) {
@@ -193,13 +221,13 @@
     var b = e.target.closest ? e.target.closest("[data-ai]") : null; if (!b) return;
     var q = b.getAttribute("data-ai");
     if (q === "instalarAlas") { e.stopPropagation(); instalarAlas(); return; }
-    if (q === "abrir") { abrir(app(b.getAttribute("data-id"))); return; }
+    if (q === "abrir") { if (raiz.querySelector(".ai-carga")) return; abrir(app(b.getAttribute("data-id")), b); return; }
     if (q === "cuenta") { var m = document.getElementById("me"); if (m) m.click(); }
     if (q === "volver") cerrar();
   }
   document.addEventListener("keydown", function (e) {
     if (!raiz || raiz.hidden || (e.key !== "Enter" && e.key !== " ")) return;
-    var b = document.activeElement; if (b && b.getAttribute && b.getAttribute("data-ai") === "abrir") { e.preventDefault(); abrir(app(b.getAttribute("data-id"))); }
+    var b = document.activeElement; if (b && b.getAttribute && b.getAttribute("data-ai") === "abrir") { e.preventDefault(); abrir(app(b.getAttribute("data-id")), b); }
   });
 
   function mostrar() { nodo(); clearTimeout(raiz._t); raiz.classList.remove("ai-cierra"); raiz.hidden = false; raiz.classList.add("ai-abre"); document.documentElement.classList.add("alas-inicio"); pintar(); try { raiz.scrollTop = 0; } catch (e) {} }
@@ -212,7 +240,7 @@
   }
 
   // Al volver a esta pantalla desde otra app (botón atrás), se actualiza lo instalado
-  window.addEventListener("pageshow", function () { var c = raiz && raiz.querySelector(".ai-carga"); if (c) c.remove(); pintar(); });
+  window.addEventListener("pageshow", function () { if (raiz) { raiz.querySelectorAll(".ai-carga,.ai-globo").forEach(function (x) { x.remove(); }); raiz.classList.remove("ai-volando"); } pintar(); });
   document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") pintar(); });
 
   // Si hay sesión, Inicio aparece apenas abre la página (sin que se vea antes la pantalla de carga ni Internos).
