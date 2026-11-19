@@ -418,6 +418,24 @@ img.av{border-radius:30%}
 #vMed .tomas button{border:0;background:none;border-radius:12px;color:var(--mut);font-weight:700}
 #vMed .tomas button.on{background:var(--card);color:var(--ink);box-shadow:var(--sh)}
 #vMed .tomas button.on small{color:var(--acc)}
+/* medicación: más lugar para la lista */
+#vMed .mauto{display:none}
+#vMed .mtop{gap:7px;padding:4px 0 6px;margin-bottom:6px}
+#vMed .tomas button{padding:7px 0}
+.mfila{display:flex;gap:8px}.mfila .msb{flex:1;min-width:0}
+.mfila .msb input{padding-top:11px;padding-bottom:11px}
+.mdoc{flex:none;width:50px;padding:0;font-size:21px;border-radius:16px}
+.mprog{position:relative;height:22px;margin:0}
+.mprog i{position:absolute;left:0;top:0;bottom:0;border-radius:99px}
+.mprog span{position:relative;display:block;text-align:center;font-size:12.5px;font-weight:800;line-height:22px;color:var(--ink)}
+.mnota{color:var(--mut);font-size:12.5px}
+#vMed .mok:empty{display:none}
+.mrow{padding:9px 10px 9px 14px;gap:10px}
+.mrow .av{width:38px;height:38px}
+.mrow.falta .tx span{font-size:14px;line-height:1.3}
+.mrow .bt .dada1{min-width:54px;min-height:46px;font-size:22px;font-weight:900;padding:0 10px}
+.mrow .bt .mas{min-width:36px;padding:0 6px}
+.mlist{gap:7px}
 .msb input{border-radius:16px;border-width:1.5px}
 /* cuartos */
 .croom .h b{font:700 19px var(--serif)}
@@ -567,13 +585,13 @@ img.av{border-radius:30%}
     <div class="mtop">
       <div class="tomas" id="mtomas"></div>
       <small class="mauto" id="mauto"></small>
-      <button type="button" id="mlabrir" style="width:100%;margin:2px 0 8px">📄 Lista de medicación del día <small style="display:block;font-weight:400;color:var(--mut)">Descargar · Compartir · Imprimir</small></button>
-      <div class="msb"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+      <div class="mfila"><div class="msb"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
         <input id="mq" type="search" placeholder="¿Quién viene?" autocomplete="off" enterkeyhint="done" aria-label="Buscar al que viene a tomar la medicación">
         <button type="button" id="mqx" aria-label="Borrar búsqueda" hidden>×</button></div>
+        <button type="button" id="mlabrir" class="mdoc" title="Lista de medicación del día" aria-label="Lista de medicación del día: descargar, compartir o imprimir">📄</button></div>
       <input id="mfecha" type="date" hidden>
-      <p class="cnt" id="mcnt"></p>
-      <div class="prog"><i id="mbar" style="width:0"></i></div>
+      <div class="prog mprog"><i id="mbar" style="width:0"></i><span id="mcnt"></span></div>
+      <small class="mnota" id="mnota" hidden></small>
       <div class="mok" id="mok" role="status"></div>
     </div>
     <div class="msg" id="mmsg" role="alert"></div>
@@ -1730,7 +1748,8 @@ function renderMed(){
   const con=items.filter(i=>i.nombre&&i.ingreso&&String(i[k]||"").trim()&&parse(i.ingreso)<=f).sort((a,b)=>parse(a.ingreso)-parse(b.ingreso)||a.nombre.localeCompare(b.nombre,"es"));
   const fuera=con.filter(i=>fueraEl(i,f)),aca=con.filter(i=>!fueraEl(i,f));
   const hechas=aca.filter(i=>marcas[tomaSel+"|"+i.id]).length;
-  $("mcnt").textContent=(aca.length?(hechas+" de "+aca.length+" marcadas · "+(aca.length-hechas===0?"¡completo! ✔":"faltan "+(aca.length-hechas))):"Nadie toma medicación en el "+tomaSel.toLowerCase()+".")+(isAdmin()?"":soloCopia?" · Esperando a Google para poder marcar…":" · Solo los Admin pueden marcar.");
+  $("mcnt").textContent=aca.length?(hechas+" de "+aca.length+" · "+(aca.length-hechas===0?"¡completo! ✔":"faltan "+(aca.length-hechas))):"Nadie toma medicación en el "+tomaSel.toLowerCase();
+  {const nt=isAdmin()?"":soloCopia?"Esperando a Google para poder marcar…":"Solo los Admin pueden marcar.";$("mnota").textContent=nt;$("mnota").hidden=!nt}
   $("mbar").style.width=(aca.length?Math.round(hechas/aca.length*100):0)+"%";
   const fila=i=>{
     const m=marcas[tomaSel+"|"+i.id],r=el("div","mrow"+(m?(m.estado==="Dada"?" dada":""):" falta")),t=el("div","tx");
@@ -1747,7 +1766,7 @@ function renderMed(){
       const n=el("button","","✗ No la tomó");n.type="button";n.onclick=()=>{abiertoNo=i.id;abiertoMas=null;renderMed();setTimeout(()=>{const x=$("mot-"+i.id);if(x)x.focus()},0)};bt.append(n);
       if(salePend(i)){const y=el("button","","🚪 Ya salió");y.type="button";y.onclick=()=>{abiertoMas=null;yaSalio(i)};bt.append(y)}
       const c=el("button","","Cancelar");c.type="button";c.onclick=()=>{abiertoMas=null;renderMed()};bt.append(c)}
-    else{const d=el("button","p dada1","✓ Dada");d.type="button";d.onclick=()=>marcar(i,"dada");
+    else{const d=el("button","p dada1","✓");d.type="button";d.title="Dada";d.setAttribute("aria-label","Dada: "+i.nombre.trim());d.onclick=()=>marcar(i,"dada");
       const n=el("button","mas","⋯");n.type="button";n.setAttribute("aria-label","Otras opciones: no la tomó, ya salió");n.onclick=()=>{abiertoMas=i.id;abiertoNo=null;renderMed()};bt.append(d,n)}
     r.append(bt);return r};
   const faltan=aca.filter(i=>!marcas[tomaSel+"|"+i.id]&&coincide(i)),ya=aca.filter(i=>marcas[tomaSel+"|"+i.id]&&coincide(i)),L=[];
@@ -2164,7 +2183,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261118232501";
+const APP_VER="20261118235140";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
