@@ -18,6 +18,8 @@
   function lsSet(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
   function ssGet(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }
   function ssSet(k, v) { try { if (v == null) sessionStorage.removeItem(k); else sessionStorage.setItem(k, v); } catch (e) {} }
+  // Viene desde el logo de otra app (?inicio=1): mostrar Inicio aunque antes se haya elegido Internos
+  if (/[?&]inicio=1/.test(location.search)) { ssSet(KOK, null); try { var uu = new URL(location.href); uu.searchParams.delete("inicio"); history.replaceState(null, "", uu.toString()); } catch (e) {} }
   var comoApp = function () { return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true; };
   var android = /Android/i.test(navigator.userAgent);
 
