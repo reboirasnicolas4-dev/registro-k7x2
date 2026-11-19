@@ -66,9 +66,28 @@
     "html.alas-inicio body{overflow:hidden}" +
     "html.alas-inicio #splash,html.alas-inicio #app{visibility:hidden!important}" +
     "#alasInicio .ai{min-height:100%;display:flex;flex-direction:column;max-width:560px;margin:0 auto}" +
-    "#alasInicio .ai-hero{flex:1;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:calc(env(safe-area-inset-top,0px) + 34px) 20px 18px;background:radial-gradient(70% 55% at 50% 45%,#5a3410 0%,#2a1a0c 45%,#16120e 80%)}" +
+    "#alasInicio .ai-hero{flex:1;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:calc(env(safe-area-inset-top,0px) + 34px) 20px 18px;overflow:hidden}" +
     "#alasInicio .ai-ave{width:150px;height:150px;border-radius:50%;box-shadow:0 16px 50px rgba(247,168,35,.3);animation:aiFlota 4s ease-in-out infinite}@keyframes aiFlota{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}" +
-    "#alasInicio .ai-hero h1{font:700 34px/1 Fraunces,Georgia,serif;margin:0}" +
+    "#alasInicio .ai-hero h1{font:700 34px/1.1 Fraunces,Georgia,serif;margin:0;background:linear-gradient(100deg,#f0e8da 0%,#f0e8da 42%,#ffd38a 50%,#f0e8da 58%,#f0e8da 100%);background-size:300% 100%;background-position:0 0;-webkit-background-clip:text;background-clip:text;color:transparent}" +
+    // Entrada "Amanecer": brillo que sube, chispitas, aro que se dibuja, pájaro, título con destello y panel que sube
+    "#alasInicio .ai-amanecer{position:absolute;inset:0;background:radial-gradient(70% 55% at 50% 45%,#5a3410 0%,#2a1a0c 45%,#16120e 80%)}" +
+    "#alasInicio .ai-hero>*:not(.ai-amanecer):not(.ai-chispa){position:relative}" +
+    "#alasInicio .ai-logo{width:170px;height:170px;display:flex;align-items:center;justify-content:center}" +
+    "#alasInicio .ai-aro{position:absolute;inset:0;opacity:0}" +
+    "#alasInicio .ai-chispa{position:absolute;bottom:-8px;width:4px;height:4px;border-radius:50%;background:#ffb43a;box-shadow:0 0 8px 2px rgba(247,168,35,.6);opacity:0;animation:aiChispa 3.6s linear infinite}" +
+    "@keyframes aiChispa{0%{opacity:0;transform:translate(0,0)}15%{opacity:.9}100%{opacity:0;transform:translate(var(--dx),-520px)}}" +
+    "#alasInicio.ai-intro .ai-amanecer{animation:aiAmanece 1.4s ease both}@keyframes aiAmanece{from{opacity:0;transform:translateY(25%) scale(.8)}to{opacity:1;transform:none}}" +
+    "#alasInicio.ai-intro .ai-aro{opacity:1;animation:aiAroSe .9s ease 1.15s both}#alasInicio.ai-intro .ai-aro circle{animation:aiAro .9s cubic-bezier(.6,0,.2,1) .25s both}" +
+    "@keyframes aiAro{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}@keyframes aiAroSe{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.35)}}" +
+    "#alasInicio.ai-intro .ai-ave{animation:aiAveSale .7s cubic-bezier(.2,.8,.2,1) .7s both,aiFlota 4s ease-in-out 1.6s infinite}" +
+    "@keyframes aiAveSale{0%{opacity:0;transform:scale(.8) rotate(-8deg)}70%{opacity:1;transform:scale(1.05) rotate(2deg)}100%{opacity:1;transform:none}}" +
+    "#alasInicio.ai-intro .ai-hero h1{background-position:100% 0;animation:aiCorte .8s cubic-bezier(.2,.8,.2,1) 1.25s both,aiDestello 1.1s ease 2.05s forwards}" +
+    "@keyframes aiCorte{from{clip-path:inset(0 100% 0 0);transform:translateY(6px)}to{clip-path:inset(0 0 0 0);transform:none}}@keyframes aiDestello{from{background-position:100% 0}to{background-position:0 0}}" +
+    "#alasInicio.ai-intro .ai-sub,#alasInicio.ai-intro .ai-falta{animation:aiSubIn .6s ease 1.9s both}@keyframes aiSubIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}" +
+    "#alasInicio.ai-intro .ai-me{animation:aiSubIn .6s ease 2.35s both}" +
+    "#alasInicio.ai-intro .ai-panel{animation:aiPanelIn .6s cubic-bezier(.2,.8,.2,1) 2.35s both}@keyframes aiPanelIn{from{transform:translateY(110%)}to{transform:none}}" +
+    "#alasInicio.ai-intro .ai-app{animation:aiPop .5s cubic-bezier(.3,1.6,.5,1) both}@keyframes aiPop{from{opacity:0;transform:translateY(40px) scale(.6)}to{opacity:1;transform:none}}" +
+    "#alasInicio.ai-intro .ai-app:nth-child(1){animation-delay:2.7s}#alasInicio.ai-intro .ai-app:nth-child(2){animation-delay:2.8s}#alasInicio.ai-intro .ai-app:nth-child(3){animation-delay:2.9s}#alasInicio.ai-intro .ai-app:nth-child(4){animation-delay:3s}" +
     "#alasInicio .ai-sub{font-size:11.5px;letter-spacing:3px;text-transform:uppercase;color:#d9b98a}" +
     "#alasInicio .ai-me{position:absolute;top:calc(env(safe-area-inset-top,0px) + 16px);right:16px;width:44px;height:44px;border-radius:50%;border:1px solid #f7a823;background:#3a2a12;color:#f7a823;font:700 17px inherit;cursor:pointer}" +
     "#alasInicio .ai-panel{background:#211b15;border-top:1px solid #3a3027;border-radius:28px 28px 0 0;padding:20px 14px calc(env(safe-area-inset-bottom,0px) + 28px);display:flex;flex-direction:column;gap:16px;animation:aiPanel .45s cubic-bezier(.2,.8,.2,1) both}@keyframes aiPanel{from{transform:translateY(30px);opacity:0}}" +
@@ -140,13 +159,18 @@
     return "<span class='ai-ic'><img src='" + esc(/^https?:/.test(a.icon) ? a.icon : RAIZ_INT + a.icon) + "' alt=''" + (a.id === "internos" ? "" : " class='z'") + "></span>";
   }
   function pintar() {
-    if (!raiz || raiz.hidden || raiz.querySelector(".ai-carga")) return;
+    if (!raiz || raiz.hidden || raiz.querySelector(".ai-carga") || raiz.classList.contains("ai-intro")) return;
     var cartel = "";
     if (EN_ALAS && !comoApp()) cartel = "Instalá esta app en este aparato";
     else if (!EN_ALAS && !enAlas() && !alasInstalada()) cartel = "Instalá la app Alas de Libertad";
-    var h = "<div class='ai'><div class='ai-hero'>" +
+    var chispas = "";
+    [8, 18, 30, 41, 52, 60, 71, 80, 88, 95].forEach(function (x, i) {
+      chispas += "<span class='ai-chispa' aria-hidden='true' style='left:" + x + "%;--dx:" + ((i % 2 ? 1 : -1) * (10 + (i * 7) % 25)) + "px;animation-delay:" + (0.4 + (i * 0.37) % 3.2).toFixed(2) + "s'></span>";
+    });
+    var h = "<div class='ai'><div class='ai-hero'><div class='ai-amanecer' aria-hidden='true'></div>" + chispas +
       (EN_INT ? "<button type='button' class='ai-me' data-ai='cuenta' aria-label='Tu cuenta'>" + esc(inicial()) + "</button>" : "") +
-      "<img class='ai-ave' src='" + RAIZ_INT + "logo.png' alt='Logo de Alas de Libertad'>" +
+      "<div class='ai-logo'><svg class='ai-aro' width='170' height='170' viewBox='0 0 170 170' aria-hidden='true'><circle cx='85' cy='85' r='80' fill='none' stroke='#f7a823' stroke-width='2.5' stroke-linecap='round' pathLength='100' stroke-dasharray='100' transform='rotate(-90 85 85)'/></svg>" +
+      "<img class='ai-ave' src='" + RAIZ_INT + "logo.png' alt='Logo de Alas de Libertad'></div>" +
       "<h1>Alas de Libertad</h1><div class='ai-sub'>Comunidad Terapéutica · San José</div>";
     if (cartel) h += "<div class='ai-falta'><div style='flex:1'><b>" + cartel + "</b><span>Las 4 apps en una sola, con su ícono</span></div><button type='button' class='ai-inst' data-ai='instalarAlas'>Instalar</button></div>";
     h += "</div><div class='ai-panel'><div class='ai-elegi'>Elegí la app</div><div class='ai-fila'>";
@@ -254,7 +278,19 @@
     var b = document.activeElement; if (b && b.getAttribute && b.getAttribute("data-ai") === "abrir") { e.preventDefault(); abrir(app(b.getAttribute("data-id")), b); }
   });
 
-  function mostrar() { nodo(); clearTimeout(raiz._t); limpiar(); raiz.classList.remove("ai-cierra"); raiz.hidden = false; raiz.classList.add("ai-abre"); document.documentElement.classList.add("alas-inicio"); pintar(); try { raiz.scrollTop = 0; } catch (e) {} }
+  var introHecha = false;
+  function mostrar(conEntrada) {
+    nodo();
+    if (!raiz.hidden && !raiz.classList.contains("ai-cierra")) return; // ya está a la vista: no reiniciar nada
+    clearTimeout(raiz._t); limpiar(); raiz.classList.remove("ai-cierra", "ai-intro"); raiz.hidden = false;
+    document.documentElement.classList.add("alas-inicio");
+    var quieto = false; try { quieto = window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
+    if (conEntrada === true && !introHecha && !quieto) {
+      introHecha = true; raiz.classList.remove("ai-abre"); pintar(); raiz.classList.add("ai-intro");
+      clearTimeout(raiz._i); raiz._i = setTimeout(function () { raiz.classList.remove("ai-intro"); }, 3700);
+    } else { raiz.classList.add("ai-abre"); pintar(); }
+    try { raiz.scrollTop = 0; } catch (e) {}
+  }
   function cerrar() {
     if (EN_INT) ssSet(KOK, "1");
     document.documentElement.classList.remove("alas-inicio"); try { window.scrollTo(0, 0); } catch (e) {}
@@ -277,7 +313,7 @@
   }
   if (EN_INT && correoIni && ssGet(KOK) !== "1") {
     document.documentElement.classList.add("alas-inicio");
-    var temprano = function () { mostrar(); setTimeout(revisar, 0); try { new MutationObserver(revisar).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] }); } catch (e) {} };
+    var temprano = function () { mostrar(true); setTimeout(revisar, 0); try { new MutationObserver(revisar).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] }); } catch (e) {} };
     if (document.body) temprano(); else document.addEventListener("DOMContentLoaded", temprano);
   }
 
@@ -297,17 +333,17 @@
   if (!EN_ALAS) { if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", ponerAtras); else ponerAtras(); }
 
   // En la app Alas, Inicio es la pantalla principal: se muestra siempre
-  if (EN_ALAS) { if (document.body) mostrar(); else document.addEventListener("DOMContentLoaded", mostrar); }
+  if (EN_ALAS) { if (document.body) mostrar(true); else document.addEventListener("DOMContentLoaded", function () { mostrar(true); }); }
 
   window.AlasInicio = {
     // lo llama la app cada vez que cambia de pantalla (entrar, salir, etc.)
     alMostrar: function (cual) {
       if (!EN_INT) return;
       if (cual !== "app") { ocultar(); return; }
-      if (ssGet(KOK) !== "1") mostrar();
+      if (ssGet(KOK) !== "1") mostrar(true);
     },
     // tocar el logo: abre Inicio
-    abrir: mostrar,
+    abrir: function () { mostrar(); },
     cerrar: cerrar
   };
 })();
