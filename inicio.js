@@ -111,12 +111,14 @@
   function app(id) { for (var i = 0; i < APPS.length; i++) if (APPS[i].id === id) return APPS[i]; return null; }
   function pasar() { try { if (typeof pasarSesion === "function") pasarSesion(); else if (typeof irInicio === "function") irInicio(); } catch (e) {} }
 
-  // Pasar a otra app reemplazando la actual en el historial: con Atrás no se vuelve a la app anterior, se sale.
-  // Si Inicio se abrió con el logo (dejó una marca en el historial), primero se saca esa marca.
-  var destino = "";
+  // Pasar a otra app reemplazando la actual (con Atrás no se vuelve a la anterior).
+  // Si la otra app instalada se abre en su propia ventana (el celular o la PC la "capturan"), esta ventana
+  // queda atrás sin uso: en ese caso se cierra sola para que quede abierta solo la app con la que se trabaja.
   function irA(url) {
-    try { if (history.state && history.state.alasInicio) { destino = url; history.back(); setTimeout(function () { if (destino) { var d = destino; destino = ""; location.replace(d); } }, 400); return; } } catch (e) {}
     location.replace(url);
+    setTimeout(function () {
+      if (document.visibilityState === "hidden" || !document.hasFocus()) { if (raiz) raiz.hidden = true; try { window.close(); } catch (e) {} }
+    }, 1500);
   }
   function abrir(a) {
     if (a.id === ACTUAL) { cerrar(); return; }
@@ -154,7 +156,7 @@
   });
 
   function mostrar() { nodo(); raiz.hidden = false; document.documentElement.classList.add("alas-inicio"); pintar(); try { raiz.scrollTop = 0; } catch (e) {} }
-  function cerrar() { try { if (history.state && history.state.alasInicio) history.back(); } catch (e) {} if (EN_INT) ssSet(KOK, "1"); if (raiz) raiz.hidden = true; document.documentElement.classList.remove("alas-inicio"); try { window.scrollTo(0, 0); } catch (e) {} }
+  function cerrar() { if (EN_INT) ssSet(KOK, "1"); if (raiz) raiz.hidden = true; document.documentElement.classList.remove("alas-inicio"); try { window.scrollTo(0, 0); } catch (e) {} }
 
   // Al volver a esta pantalla desde otra app (botón atrás), se actualiza lo instalado
   window.addEventListener("pageshow", function () { pintar(); });
@@ -173,7 +175,6 @@
     if (document.body) temprano(); else document.addEventListener("DOMContentLoaded", temprano);
   }
 
-  window.addEventListener("popstate", function () { if (destino) { var d = destino; destino = ""; location.replace(d); return; } if (raiz && !raiz.hidden) { if (EN_INT) ssSet(KOK, "1"); ocultar(); } });
   window.AlasInicio = {
     // lo llama la app cada vez que cambia de pantalla (entrar, salir, etc.)
     alMostrar: function (cual) {
@@ -181,8 +182,8 @@
       if (cual !== "app") { ocultar(); return; }
       if (ssGet(KOK) !== "1") mostrar();
     },
-    // tocar el logo: abre Inicio; el botón Atrás del celular lo vuelve a cerrar
-    abrir: function () { mostrar(); try { if (!(history.state && history.state.alasInicio)) history.pushState({ alasInicio: 1 }, ""); } catch (e) {} },
+    // tocar el logo: abre Inicio
+    abrir: mostrar,
     cerrar: cerrar
   };
 })();
