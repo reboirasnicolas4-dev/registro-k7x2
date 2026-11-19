@@ -3,6 +3,7 @@
 <head>
 <script>try{var tm=localStorage.getItem("alas-tema");if(tm)document.documentElement.dataset.tema=tm}catch(e){}</script>
 <script src="bloqueo.js?v=2"></script>
+<script src="inicio.js?v=2"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Internos</title>
@@ -550,7 +551,7 @@ img.av{border-radius:30%}
 
 <main id="app" hidden>
   <header class="appbar">
-    <img src="logo.png" alt="" class="alogo"><h1 id="ttl">Hoy</h1>
+    <img src="logo.png" alt="Volver al inicio" class="alogo" role="button" tabindex="0" style="cursor:pointer" onclick="try{AlasInicio.abrir()}catch(x){}"><h1 id="ttl">Hoy</h1>
     <button type="button" class="me" id="me" aria-label="Tu cuenta">N</button>
   </header>
   <p class="sub" id="hoy" hidden></p>
@@ -1069,7 +1070,7 @@ async function subirFoto(file){
   }catch(e){$("fmsg").textContent="No se pudo subir: "+e.message}
 }
 function cell(tr,txt,cls,hl){const td=el("td",cls);if(hl)td.append(el("span","y",txt));else td.textContent=txt;tr.append(td)}
-function show(which){["login","denied","app","pedir"].forEach(k=>$(k).hidden=k!==which)}
+function show(which){["login","denied","app","pedir"].forEach(k=>$(k).hidden=k!==which);try{AlasInicio.alMostrar(which)}catch(x){}}
 function render(){
   $("hoy").textContent="Hoy es "+fd(hoy)+". Tratamiento de "+DUR+" meses; primera salida a los "+PRIMERA+" meses.";
   $("amsg").textContent=scriptViejo?"Atención: tu Apps Script de Google sigue con el código viejo, así que agregar, editar y eliminar no van a funcionar. Pegá el código nuevo, guardalo y publicá una Nueva versión (Implementar > Administrar implementaciones > lápiz > Nueva versión).":"";
@@ -2213,7 +2214,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261119012757";
+const APP_VER="20261119202315";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
