@@ -1758,7 +1758,7 @@ async function loadMed(){
   if(hay)aplicarPendientes(f0);setTimeout(mandarCola,800);
   if(hay){$("mmsg").textContent="";renderMed()}else $("mmsg").textContent="Cargando…";
   try{const d0=new Date(hoy.getFullYear(),hoy.getMonth(),hoy.getDate()-12);
-    const [r,r2]=await Promise.all([api({action:"getEntregas",fecha:fechaMed()}),api({action:"getEntregas",desde:iso(d0),hasta:iso(hoy)})]);
+    const [r,r2]=await Promise.all([api({action:"getEntregas",fecha:fechaMed()}),api({action:"getEntregas",desde:iso(d0),hasta:iso(hoy)}).catch(()=>null)]);
     if(!r||r.ok!==true)throw new Error((r&&r.error)||"respuesta inesperada");
     if(fechaMed()!==f0)return;
     if(FS.vivo!==f0)marcas={};
@@ -1766,7 +1766,11 @@ async function loadMed(){
     (r.data||[]).forEach(m=>{const k=m.toma+"|"+m.id;if(FS.vivo!==f0||!marcas[k])marcas[k]=m});aplicarPendientes(f0);
     llevar=((r2&&r2.data)||[]).filter(m=>m.toma==="Salida");marcasDe=f0;guardarCacheMed();$("mmsg").textContent="";renderMed();
     loadMed.ok=Date.now();return true;
-  }catch(e){loadMed.ok=0;$("mmsg").textContent=hay?"Google no contesta: se ven las marcas que había. Deslizá hacia abajo para reintentar.":"No se pudo cargar: "+e.message}
+  }catch(e){loadMed.ok=0;
+    // Si la base en vivo está conectada, lo que marca cualquiera llega al instante igual: no hace falta asustar
+    if(FS.vivo===f0&&hay){$("mmsg").textContent=""}
+    else $("mmsg").textContent=hay?"Google tarda en contestar: se ven las marcas que había. Se vuelve a intentar solo.":"No se pudo cargar: "+e.message;
+    clearTimeout(loadMed.re);loadMed.re=setTimeout(()=>{if(vista==="M"&&!loadMed.ok&&document.visibilityState==="visible")loadMed()},20000)}
 }
 function fueraEl(i,f){const c=calc(i);return c.evs.some(e=>afueraEl(e,f))}
 function renderMed(){
@@ -1851,6 +1855,7 @@ async function fsEscuchar(){
       const m=(s.data()||{}).m||{},n={};
       Object.keys(m).forEach(k=>{const o=m[k];if(o&&o.estado)n[k]=Object.assign({fecha:f},o)});
       FS.vivo=f;FS.ult=Date.now();
+      try{const mm=$("mmsg");if(mm&&/^Google (no contesta|tarda)/.test(mm.textContent))mm.textContent=""}catch(x){}
       if(fechaMed()!==f)return;
       marcas=n;aplicarPendientes(f);marcasDe=f;guardarCacheMed();
       if(fsOcupado())return;   // no cortar a quien está escribiendo un motivo: se ve al cerrar
@@ -2214,7 +2219,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261119215404";
+const APP_VER="20261119220402";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
