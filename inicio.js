@@ -192,7 +192,12 @@
     }, 1500);
   }
   function abrir(a, boton) {
-    if (a.id === ACTUAL) { cerrar(); return; }
+    if (a.id === ACTUAL) {
+      // La misma app en la que estás (por ejemplo Internos): también sube el globito y después se muestra la app
+      var t = cargando(a, boton);
+      setTimeout(function () { cerrar(); setTimeout(limpiar, 300); }, t);
+      return;
+    }
     // Ir a Internos desde otra app: entra directo a Internos (sin volver a mostrar Inicio allá)
     ssSet(KOK, a.id === "internos" ? "1" : null); pasar();
     var espera = cargando(a, boton);
@@ -230,7 +235,7 @@
     var b = document.activeElement; if (b && b.getAttribute && b.getAttribute("data-ai") === "abrir") { e.preventDefault(); abrir(app(b.getAttribute("data-id")), b); }
   });
 
-  function mostrar() { nodo(); clearTimeout(raiz._t); raiz.classList.remove("ai-cierra"); raiz.hidden = false; raiz.classList.add("ai-abre"); document.documentElement.classList.add("alas-inicio"); pintar(); try { raiz.scrollTop = 0; } catch (e) {} }
+  function mostrar() { nodo(); clearTimeout(raiz._t); limpiar(); raiz.classList.remove("ai-cierra"); raiz.hidden = false; raiz.classList.add("ai-abre"); document.documentElement.classList.add("alas-inicio"); pintar(); try { raiz.scrollTop = 0; } catch (e) {} }
   function cerrar() {
     if (EN_INT) ssSet(KOK, "1");
     document.documentElement.classList.remove("alas-inicio"); try { window.scrollTo(0, 0); } catch (e) {}
@@ -240,7 +245,8 @@
   }
 
   // Al volver a esta pantalla desde otra app (botón atrás), se actualiza lo instalado
-  window.addEventListener("pageshow", function () { if (raiz) { raiz.querySelectorAll(".ai-carga,.ai-globo").forEach(function (x) { x.remove(); }); raiz.classList.remove("ai-volando"); } pintar(); });
+  function limpiar() { if (raiz) { raiz.querySelectorAll(".ai-carga,.ai-globo").forEach(function (x) { x.remove(); }); raiz.classList.remove("ai-volando"); } }
+  window.addEventListener("pageshow", function () { limpiar(); pintar(); });
   document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") pintar(); });
 
   // Si hay sesión, Inicio aparece apenas abre la página (sin que se vea antes la pantalla de carga ni Internos).
