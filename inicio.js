@@ -50,30 +50,55 @@
 
   var css = document.createElement("style");
   css.textContent =
-    "#alasInicio{position:fixed;inset:0;z-index:2147482000;background:var(--bg,#16120e);color:var(--ink,#f0e8da);overflow-y:auto;font:400 15px/1.45 'Hanken Grotesk',system-ui,sans-serif}" +
+    // Transición entre apps (Chrome): la app nueva sube suave; con Atrás, la anterior baja. Nunca una pantalla blanca en el medio.
+    "@view-transition{navigation:auto}" +
+    "::view-transition-old(root){animation:.28s ease both aiVtFuera}" +
+    "::view-transition-new(root){animation:.4s cubic-bezier(.2,.8,.2,1) both aiVtSube}" +
+    "html:active-view-transition-type(atras)::view-transition-old(root){animation:.32s ease-in both aiVtBaja;z-index:2}" +
+    "html:active-view-transition-type(atras)::view-transition-new(root){animation:.32s ease both aiVtAparece}" +
+    "@keyframes aiVtSube{from{transform:translateY(40px);opacity:0}}@keyframes aiVtFuera{to{opacity:0}}" +
+    "@keyframes aiVtBaja{to{transform:translateY(40px);opacity:0}}@keyframes aiVtAparece{from{opacity:0}}" +
+    // Inicio · Portada (siempre oscuro, igual en todas las apps)
+    "#alasInicio{position:fixed;inset:0;z-index:2147482000;background:#16120e;color:#f0e8da;overflow-y:auto;font:400 15px/1.45 'Hanken Grotesk',system-ui,sans-serif;color-scheme:dark}" +
     "#alasInicio[hidden]{display:none}" +
+    "#alasInicio.ai-abre{animation:aiAbre .34s ease both}@keyframes aiAbre{from{opacity:0}}" +
+    "#alasInicio.ai-cierra{animation:aiCierra .26s ease-in both}@keyframes aiCierra{to{opacity:0}}" +
     "html.alas-inicio body{overflow:hidden}" +
     "html.alas-inicio #splash,html.alas-inicio #app{visibility:hidden!important}" +
-    "#alasInicio .ai{max-width:560px;margin:0 auto;padding:calc(env(safe-area-inset-top,0px) + 26px) 16px 28px;display:flex;flex-direction:column;gap:14px;min-height:100%;box-sizing:border-box}" +
-    "#alasInicio .ai-top{display:flex;align-items:center;gap:12px}" +
-    "#alasInicio .ai-top img{width:46px;height:46px;border-radius:50%}" +
-    "#alasInicio .ai-top h1{font:700 26px/1 Fraunces,Georgia,serif;margin:0}" +
-    "#alasInicio .ai-top small{display:block;color:var(--mut,#b3a99b);font-size:12.5px;margin-top:4px}" +
-    "#alasInicio .ai-me{margin-left:auto;width:44px;height:44px;border-radius:50%;border:1px solid var(--acc,#f7a823);background:color-mix(in srgb,var(--acc,#f7a823) 18%,var(--card,#211b15));color:var(--acc,#f7a823);font:700 17px inherit;cursor:pointer;flex:none}" +
-    "#alasInicio .ai-falta{display:flex;align-items:center;gap:10px;border:1px solid var(--acc,#f7a823);border-radius:16px;padding:10px 12px;background:color-mix(in srgb,var(--acc,#f7a823) 12%,var(--card,#211b15))}" +
-    "#alasInicio .ai-falta b{display:block;font-size:14.5px}#alasInicio .ai-falta span{font-size:12.5px;color:var(--mut,#b3a99b)}" +
-    "#alasInicio .ai-lista{display:flex;flex-direction:column;gap:10px}" +
-    "#alasInicio .ai-barra{display:flex;align-items:center;gap:12px;background:var(--card,#211b15);border:1px solid var(--line,#3a3027);border-radius:18px;padding:12px;min-height:78px;box-sizing:border-box;width:100%;text-align:left;color:inherit;font:inherit;cursor:pointer;transition:transform .12s}" +
-    "#alasInicio .ai-barra:active{transform:scale(.98)}" +
-    "#alasInicio .ai-ic{width:54px;height:54px;border-radius:50%;overflow:hidden;flex:none;display:flex;align-items:center;justify-content:center}#alasInicio .ai-ic img{width:54px;height:54px;flex:none}#alasInicio .ai-ic img.z{width:76px;height:76px}" +
-    "#alasInicio .ai-tx{flex:1;min-width:0}#alasInicio .ai-tx b{display:block;font:700 18.5px Fraunces,Georgia,serif}#alasInicio .ai-tx span{font-size:13px;color:var(--mut,#b3a99b)}" +
-    "#alasInicio .ai-inst{flex:none;height:40px;padding:0 14px;border-radius:11px;border:0;background:var(--acc,#f7a823);color:var(--accx,#281a08);font:700 13.5px inherit;cursor:pointer}" +
-    "#alasInicio .ai-flecha{flex:none;width:22px;height:22px;color:var(--mut,#b3a99b)}" +
+    "#alasInicio .ai{min-height:100%;display:flex;flex-direction:column;max-width:560px;margin:0 auto}" +
+    "#alasInicio .ai-hero{flex:1;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:calc(env(safe-area-inset-top,0px) + 34px) 20px 18px;background:radial-gradient(70% 55% at 50% 45%,#5a3410 0%,#2a1a0c 45%,#16120e 80%)}" +
+    "#alasInicio .ai-ave{width:150px;height:150px;border-radius:50%;box-shadow:0 16px 50px rgba(247,168,35,.3);animation:aiFlota 4s ease-in-out infinite}@keyframes aiFlota{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}" +
+    "#alasInicio .ai-hero h1{font:700 34px/1 Fraunces,Georgia,serif;margin:0}" +
+    "#alasInicio .ai-sub{font-size:11.5px;letter-spacing:3px;text-transform:uppercase;color:#d9b98a}" +
+    "#alasInicio .ai-me{position:absolute;top:calc(env(safe-area-inset-top,0px) + 16px);right:16px;width:44px;height:44px;border-radius:50%;border:1px solid #f7a823;background:#3a2a12;color:#f7a823;font:700 17px inherit;cursor:pointer}" +
+    "#alasInicio .ai-panel{background:#211b15;border-top:1px solid #3a3027;border-radius:28px 28px 0 0;padding:20px 14px calc(env(safe-area-inset-bottom,0px) + 28px);display:flex;flex-direction:column;gap:16px;animation:aiPanel .45s cubic-bezier(.2,.8,.2,1) both}@keyframes aiPanel{from{transform:translateY(30px);opacity:0}}" +
+    "#alasInicio .ai-elegi{font-size:13px;color:#b3a99b;text-align:center}" +
+    "#alasInicio .ai-fila{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}" +
+    "#alasInicio .ai-app{appearance:none;border:0;background:none;color:#f0e8da;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;padding:4px 0;font:600 13.5px inherit;transition:transform .12s}" +
+    "#alasInicio .ai-app:active{transform:scale(.93)}" +
+    "#alasInicio .ai-app .ai-ic{width:66px;height:66px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(0,0,0,.4)}" +
+    "#alasInicio .ai-app .ai-ic img{width:66px;height:66px;flex:none}#alasInicio .ai-app .ai-ic img.z{width:92px;height:92px}" +
+    "#alasInicio .ai-app.ai-aca .ai-ic{outline:2px solid #f7a823;outline-offset:3px}" +
+    "#alasInicio .ai-falta{display:flex;align-items:center;gap:10px;border:1px solid #f7a823;border-radius:16px;padding:10px 12px;background:#2a1d0e;text-align:left;width:100%;box-sizing:border-box;max-width:420px}" +
+    "#alasInicio .ai-falta b{display:block;font-size:14px}#alasInicio .ai-falta span{font-size:12px;color:#b3a99b}" +
+    "#alasInicio .ai-inst{flex:none;height:40px;padding:0 14px;border-radius:11px;border:0;background:#f7a823;color:#281a08;font:700 13.5px inherit;cursor:pointer}" +
+    // Pantalla de carga al entrar a una app (oscura, con el ícono latiendo)
+    "#alasInicio .ai-carga{position:fixed;inset:0;background:#16120e;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;animation:aiSube .38s cubic-bezier(.2,.8,.2,1) both}@keyframes aiSube{from{transform:translateY(40px);opacity:0}}" +
+    "#alasInicio .ai-carga .ai-anillo{position:relative;width:120px;height:120px;display:flex;align-items:center;justify-content:center}" +
+    "#alasInicio .ai-carga .ai-anillo:before{content:'';position:absolute;inset:0;border-radius:50%;border:3px solid #f7a823;animation:aiOla 1.4s ease-out infinite}@keyframes aiOla{0%{transform:scale(.9);opacity:.9}100%{transform:scale(1.45);opacity:0}}" +
+    "#alasInicio .ai-carga .ai-ic{width:104px;height:104px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;animation:aiLate 1.4s ease-in-out infinite}@keyframes aiLate{50%{transform:scale(1.05)}}" +
+    "#alasInicio .ai-carga .ai-ic img{width:104px;height:104px;flex:none}#alasInicio .ai-carga .ai-ic img.z{width:146px;height:146px}" +
+    "#alasInicio .ai-carga b{font:700 22px Fraunces,Georgia,serif}#alasInicio .ai-carga span{font-size:13px;color:#b3a99b}" +
     "#alasInicio .ai-toast{position:fixed;left:50%;bottom:120px;transform:translateX(-50%);background:#f0e8da;color:#1b140d;padding:10px 16px;border-radius:12px;font-weight:600;max-width:90%;text-align:center}" +
     "#alasInicio .ai-hoja{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center}" +
-    "#alasInicio .ai-hoja>div{background:var(--card,#211b15);border-top:1px solid var(--line,#3a3027);border-radius:22px 22px 0 0;width:100%;max-width:560px;padding:18px 16px 26px;box-sizing:border-box}" +
+    "#alasInicio .ai-hoja>div{background:#211b15;border-top:1px solid #3a3027;border-radius:22px 22px 0 0;width:100%;max-width:560px;padding:18px 16px 26px;box-sizing:border-box}" +
     "#alasInicio .ai-hoja h2{margin:0 0 8px;font:700 20px Fraunces,Georgia,serif}#alasInicio .ai-hoja ol{margin:0 0 14px;padding-left:20px;line-height:1.6}" +
-    "#alasInicio .ai-big{width:100%;height:50px;border:0;border-radius:14px;background:var(--acc,#f7a823);color:var(--accx,#281a08);font:700 16px inherit;cursor:pointer}";
+    "#alasInicio .ai-big{width:100%;height:50px;border:0;border-radius:14px;background:#f7a823;color:#281a08;font:700 16px inherit;cursor:pointer}" +
+    "@media (prefers-reduced-motion:reduce){#alasInicio *,#alasInicio{animation:none!important}::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important}}";
+  // Atrás del celular entre apps: la transición va "para abajo"
+  window.addEventListener("pagereveal", function (e) {
+    try { if (e.viewTransition && window.navigation && navigation.activation && navigation.activation.navigationType === "traverse") e.viewTransition.types.add("atras"); } catch (x) {}
+  });
   document.head.appendChild(css);
 
   var raiz = null;
@@ -94,23 +119,31 @@
   var correoIni = haySesion();
   function inicial() { try { if (typeof email === "string" && email) return email[0].toUpperCase(); } catch (e) {} return correoIni ? correoIni[0].toUpperCase() : "?"; }
 
+  function icono(a, clase) {
+    return "<span class='ai-ic'><img src='" + esc(/^https?:/.test(a.icon) ? a.icon : RAIZ_INT + a.icon) + "' alt=''" + (a.id === "internos" ? "" : " class='z'") + "></span>";
+  }
   function pintar() {
-    if (!raiz || raiz.hidden) return;
-    var h = "<div class='ai'><div class='ai-top'><img src='" + RAIZ_INT + "logo.png' alt=''><div><h1>Alas de Libertad</h1><small>Elegí la app que querés usar</small></div>" +
-      (EN_INT ? "<button type='button' class='ai-me' data-ai='cuenta' aria-label='Tu cuenta'>" + esc(inicial()) + "</button>" : "") + "</div>";
+    if (!raiz || raiz.hidden || raiz.querySelector(".ai-carga")) return;
     var cartel = "";
     if (EN_ALAS && !comoApp()) cartel = "Instalá esta app en este aparato";
     else if (!EN_ALAS && !enAlas() && !alasInstalada()) cartel = "Instalá la app Alas de Libertad";
-    if (cartel) h += "<div class='ai-falta'><svg width='26' height='26' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='color:var(--acc,#f7a823);flex:none' aria-hidden='true'><path d='M12 3v12'/><path d='M7 10l5 5 5-5'/><path d='M5 21h14'/></svg><div style='flex:1'><b>" + cartel +
-      "</b><span>Las 4 apps en una sola, con su ícono, como WhatsApp</span></div><button type='button' class='ai-inst' data-ai='instalarAlas'>Instalar</button></div>";
-    h += "<div class='ai-lista'>";
+    var h = "<div class='ai'><div class='ai-hero'>" +
+      (EN_INT ? "<button type='button' class='ai-me' data-ai='cuenta' aria-label='Tu cuenta'>" + esc(inicial()) + "</button>" : "") +
+      "<img class='ai-ave' src='" + RAIZ_INT + "logo.png' alt='Logo de Alas de Libertad'>" +
+      "<h1>Alas de Libertad</h1><div class='ai-sub'>Comunidad Terapéutica · San José</div>";
+    if (cartel) h += "<div class='ai-falta'><div style='flex:1'><b>" + cartel + "</b><span>Las 4 apps en una sola, con su ícono</span></div><button type='button' class='ai-inst' data-ai='instalarAlas'>Instalar</button></div>";
+    h += "</div><div class='ai-panel'><div class='ai-elegi'>Elegí la app</div><div class='ai-fila'>";
     APPS.forEach(function (a) {
-      h += "<div class='ai-barra' role='button' tabindex='0' data-ai='abrir' data-id='" + a.id + "'><span class='ai-ic'><img src='" + esc(/^https?:/.test(a.icon) ? a.icon : RAIZ_INT + a.icon) + "' alt=''" + (a.id === "internos" ? "" : " class='z'") + "></span>" +
-        "<div class='ai-tx'><b>" + esc(a.name) + "</b><span>" + esc(a.desc) + "</span></div>" +
-        "<svg class='ai-flecha' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M9 6l6 6-6 6'/></svg></div>";
+      h += "<button type='button' class='ai-app" + (a.id === ACTUAL ? " ai-aca" : "") + "' data-ai='abrir' data-id='" + a.id + "'" + (a.id === ACTUAL ? " aria-label='" + esc(a.name) + " (donde estás)'" : "") + ">" + icono(a) + "<span>" + esc(a.name) + "</span></button>";
     });
-    h += "</div></div>";
+    h += "</div></div></div>";
     raiz.innerHTML = h;
+  }
+  // Al tocar otra app: pantalla de carga oscura que sube, y recién ahí se cambia de app
+  function cargando(a) {
+    var d = document.createElement("div"); d.className = "ai-carga"; d.setAttribute("role", "status");
+    d.innerHTML = "<div class='ai-anillo'>" + icono(a) + "</div><b>" + esc(a.name) + "</b><span>Abriendo…</span>";
+    raiz.appendChild(d);
   }
   function aviso(t) {
     if (!raiz) return; var d = document.createElement("div"); d.className = "ai-toast"; d.setAttribute("role", "status"); d.textContent = t;
@@ -134,8 +167,11 @@
     if (a.id === ACTUAL) { cerrar(); return; }
     // Ir a Internos desde otra app: entra directo a Internos (sin volver a mostrar Inicio allá)
     ssSet(KOK, a.id === "internos" ? "1" : null); pasar();
-    if (EN_ALAS) { location.href = a.url; return; } // desde Inicio de la app Alas: con Atrás se vuelve a Inicio
-    irA(a.url);
+    cargando(a);
+    setTimeout(function () {
+      if (EN_ALAS) { location.href = a.url; return; } // desde Inicio de la app Alas: con Atrás se vuelve a Inicio
+      irA(a.url);
+    }, 260);
   }
   async function instalarAlas() {
     if (EN_ALAS) {
@@ -166,11 +202,17 @@
     var b = document.activeElement; if (b && b.getAttribute && b.getAttribute("data-ai") === "abrir") { e.preventDefault(); abrir(app(b.getAttribute("data-id"))); }
   });
 
-  function mostrar() { nodo(); raiz.hidden = false; document.documentElement.classList.add("alas-inicio"); pintar(); try { raiz.scrollTop = 0; } catch (e) {} }
-  function cerrar() { if (EN_INT) ssSet(KOK, "1"); if (raiz) raiz.hidden = true; document.documentElement.classList.remove("alas-inicio"); try { window.scrollTo(0, 0); } catch (e) {} }
+  function mostrar() { nodo(); clearTimeout(raiz._t); raiz.classList.remove("ai-cierra"); raiz.hidden = false; raiz.classList.add("ai-abre"); document.documentElement.classList.add("alas-inicio"); pintar(); try { raiz.scrollTop = 0; } catch (e) {} }
+  function cerrar() {
+    if (EN_INT) ssSet(KOK, "1");
+    document.documentElement.classList.remove("alas-inicio"); try { window.scrollTo(0, 0); } catch (e) {}
+    if (!raiz) return;
+    raiz.classList.remove("ai-abre"); raiz.classList.add("ai-cierra");
+    raiz._t = setTimeout(function () { raiz.hidden = true; raiz.classList.remove("ai-cierra"); }, 260);
+  }
 
   // Al volver a esta pantalla desde otra app (botón atrás), se actualiza lo instalado
-  window.addEventListener("pageshow", function () { pintar(); });
+  window.addEventListener("pageshow", function () { var c = raiz && raiz.querySelector(".ai-carga"); if (c) c.remove(); pintar(); });
   document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") pintar(); });
 
   // Si hay sesión, Inicio aparece apenas abre la página (sin que se vea antes la pantalla de carga ni Internos).
