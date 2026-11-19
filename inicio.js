@@ -7,9 +7,13 @@
 (function () {
   "use strict";
   var BASE = "https://reboirasnicolas4-dev.github.io/";
+  // En qué app está cargado este archivo (Internos por defecto; las otras lo cargan con data-app="bitacora" / "medicos" / "despensa")
+  var ACTUAL = (document.currentScript && document.currentScript.getAttribute("data-app")) || "internos";
+  var EN_INT = ACTUAL === "internos";
+  var RAIZ_INT = EN_INT ? "" : BASE + "registro-k7x2/";
   var KOK = "alas-inicio-ok"; // en esta sesión ya eligió Internos: no volver a tapar la app al recargar o al volver de la ficha
   var APPS = [
-    { id: "internos", name: "Internos", desc: "Ingresos, fichas y tiempos", icon: "logo.png", flag: "int_inst" },
+    { id: "internos", name: "Internos", desc: "Ingresos, fichas y tiempos", icon: "logo.png", flag: "int_inst", url: BASE + "registro-k7x2/" },
     { id: "bitacora", name: "Bitácora", desc: "Cómo le va a cada interno", icon: "icon-bitacora-192.png", flag: "bit_inst", url: BASE + "bitacora-m5w8/" },
     { id: "medicos", name: "Médicos", desc: "Turnos y viáticos", icon: BASE + "turnos-m4p8/icon-192.png", flag: "med_inst", url: BASE + "turnos-m4p8/" },
     { id: "despensa", name: "Despensa", desc: "Stock y pedido del sábado", icon: BASE + "despensa-q3n7/icon-192.png", flag: "desp_inst", url: BASE + "despensa-q3n7/" }
@@ -19,17 +23,19 @@
   function ssGet(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }
   function ssSet(k, v) { try { if (v == null) sessionStorage.removeItem(k); else sessionStorage.setItem(k, v); } catch (e) {} }
   // Viene desde el logo de otra app (?inicio=1): mostrar Inicio aunque antes se haya elegido Internos
-  if (/[?&]inicio=1/.test(location.search)) { ssSet(KOK, null); try { var uu = new URL(location.href); uu.searchParams.delete("inicio"); history.replaceState(null, "", uu.toString()); } catch (e) {} }
+  if (EN_INT && /[?&]inicio=1/.test(location.search)) { ssSet(KOK, null); try { var uu = new URL(location.href); uu.searchParams.delete("inicio"); history.replaceState(null, "", uu.toString()); } catch (e) {} }
   var comoApp = function () { return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true; };
   var android = /Android/i.test(navigator.userAgent);
 
   // Internos: si se abre como app instalada, queda marcada; si Chrome ofrece instalarla, es que no está
   var pedido = null;
-  if (comoApp()) lsSet("int_inst", "\"1\"");
-  window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); pedido = e; lsSet("int_inst", null); pintar(); });
-  window.addEventListener("appinstalled", function () { pedido = null; lsSet("int_inst", "\"1\""); pintar(); aviso("Listo, quedó instalada"); });
+  if (EN_INT) {
+    if (comoApp()) lsSet("int_inst", "\"1\"");
+    window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); pedido = e; lsSet("int_inst", null); pintar(); });
+    window.addEventListener("appinstalled", function () { pedido = null; lsSet("int_inst", "\"1\""); pintar(); aviso("Listo, quedó instalada"); });
+  }
 
-  function instalada(a) { var v = lsGet(a.flag); return v === "\"1\"" || v === "1" || (a.id === "internos" && comoApp()); }
+  function instalada(a) { var v = lsGet(a.flag); return v === "\"1\"" || v === "1" || (a.id === ACTUAL && comoApp()); }
 
   var css = document.createElement("style");
   css.textContent =
@@ -80,15 +86,15 @@
   function pintar() {
     if (!raiz || raiz.hidden) return;
     var faltan = APPS.filter(function (a) { return !instalada(a); }).length;
-    var h = "<div class='ai'><div class='ai-top'><img src='logo.png' alt=''><div><h1>Alas de Libertad</h1><small>Elegí la app que querés usar</small></div>" +
-      "<button type='button' class='ai-me' data-ai='cuenta' aria-label='Tu cuenta'>" + esc(inicial()) + "</button></div>";
+    var h = "<div class='ai'><div class='ai-top'><img src='" + RAIZ_INT + "logo.png' alt=''><div><h1>Alas de Libertad</h1><small>Elegí la app que querés usar</small></div>" +
+      (EN_INT ? "<button type='button' class='ai-me' data-ai='cuenta' aria-label='Tu cuenta'>" + esc(inicial()) + "</button>" : "<button type='button' class='ai-me' data-ai='volver' aria-label='Volver a la app'>✕</button>") + "</div>";
     if (faltan) h += "<div class='ai-falta'><svg width='26' height='26' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='color:var(--acc,#f7a823);flex:none' aria-hidden='true'><path d='M12 3v12'/><path d='M7 10l5 5 5-5'/><path d='M5 21h14'/></svg><div><b>" +
       (faltan === APPS.length ? "Todavía no tenés ninguna instalada" : faltan === 1 ? "Te falta instalar 1 app" : "Te faltan instalar " + faltan + " apps") +
       "</b><span>Tocá Instalar: quedan con su ícono, como WhatsApp</span></div></div>";
     h += "<div class='ai-lista'>";
     APPS.forEach(function (a) {
       var ok = instalada(a);
-      h += "<div class='ai-barra' role='button' tabindex='0' data-ai='abrir' data-id='" + a.id + "'><span class='ai-ic'><img src='" + esc(a.icon) + "' alt=''" + (a.id === "internos" ? "" : " class='z'") + "></span>" +
+      h += "<div class='ai-barra' role='button' tabindex='0' data-ai='abrir' data-id='" + a.id + "'><span class='ai-ic'><img src='" + esc(/^https?:/.test(a.icon) ? a.icon : RAIZ_INT + a.icon) + "' alt=''" + (a.id === "internos" ? "" : " class='z'") + "></span>" +
         "<div class='ai-tx'><b>" + esc(a.name) + "</b><span>" + esc(a.desc) + "</span></div>" +
         (ok ? "<svg class='ai-flecha' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M9 6l6 6-6 6'/></svg>"
             : "<button type='button' class='ai-inst' data-ai='instalar' data-id='" + a.id + "'>Instalar</button>") + "</div>";
@@ -103,15 +109,16 @@
   function hoja(html) { var d = document.createElement("div"); d.className = "ai-hoja"; d.innerHTML = "<div>" + html + "</div>"; raiz.appendChild(d);
     d.addEventListener("click", function (e) { if (e.target === d || (e.target.closest && e.target.closest("[data-ai=cerrarhoja]"))) d.remove(); }); }
   function app(id) { for (var i = 0; i < APPS.length; i++) if (APPS[i].id === id) return APPS[i]; return null; }
-  function pasar() { try { if (typeof pasarSesion === "function") pasarSesion(); } catch (e) {} }
+  function pasar() { try { if (typeof pasarSesion === "function") pasarSesion(); else if (typeof irInicio === "function") irInicio(); } catch (e) {} }
 
   function abrir(a) {
-    if (a.id === "internos") { cerrar(); return; }
-    ssSet(KOK, null); pasar();
+    if (a.id === ACTUAL) { cerrar(); return; }
+    // Ir a Internos desde otra app: entra directo a Internos (sin volver a mostrar Inicio allá)
+    ssSet(KOK, a.id === "internos" ? "1" : null); pasar();
     location.href = a.url;
   }
   async function instalar(a) {
-    if (a.id === "internos") {
+    if (a.id === "internos" && EN_INT) {
       if (pedido) { pedido.prompt(); try { await pedido.userChoice; } catch (e) {} pedido = null; return; }
       hoja("<h2>Instalar Internos</h2><ol><li>Tocá los <b>tres puntitos ⋮</b> de Chrome, arriba a la derecha.</li><li>Elegí <b>Instalar app</b> o <b>Agregar a pantalla principal</b>.</li><li>Tocá <b>Instalar</b>.</li></ol><button type='button' class='ai-big' data-ai='cerrarhoja'>Entendido</button>");
       return;
@@ -132,6 +139,7 @@
     if (q === "instalar") { e.stopPropagation(); instalar(app(b.getAttribute("data-id"))); return; }
     if (q === "abrir") { abrir(app(b.getAttribute("data-id"))); return; }
     if (q === "cuenta") { var m = document.getElementById("me"); if (m) m.click(); }
+    if (q === "volver") cerrar();
   }
   document.addEventListener("keydown", function (e) {
     if (!raiz || raiz.hidden || (e.key !== "Enter" && e.key !== " ")) return;
@@ -139,7 +147,7 @@
   });
 
   function mostrar() { nodo(); raiz.hidden = false; document.documentElement.classList.add("alas-inicio"); pintar(); try { raiz.scrollTop = 0; } catch (e) {} }
-  function cerrar() { ssSet(KOK, "1"); if (raiz) raiz.hidden = true; document.documentElement.classList.remove("alas-inicio"); try { window.scrollTo(0, 0); } catch (e) {} }
+  function cerrar() { try { if (history.state && history.state.alasInicio) history.back(); } catch (e) {} if (EN_INT) ssSet(KOK, "1"); if (raiz) raiz.hidden = true; document.documentElement.classList.remove("alas-inicio"); try { window.scrollTo(0, 0); } catch (e) {} }
 
   // Al volver a esta pantalla desde otra app (botón atrás), se actualiza lo instalado
   window.addEventListener("pageshow", function () { pintar(); });
@@ -152,19 +160,22 @@
     var ap = document.getElementById("app");
     if (raiz && !raiz.hidden && ap && ap.hidden && !document.documentElement.classList.contains("cargando")) ocultar();
   }
-  if (correoIni && ssGet(KOK) !== "1") {
+  if (EN_INT && correoIni && ssGet(KOK) !== "1") {
     document.documentElement.classList.add("alas-inicio");
     var temprano = function () { mostrar(); setTimeout(revisar, 0); try { new MutationObserver(revisar).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] }); } catch (e) {} };
     if (document.body) temprano(); else document.addEventListener("DOMContentLoaded", temprano);
   }
 
+  window.addEventListener("popstate", function () { if (raiz && !raiz.hidden) { if (EN_INT) ssSet(KOK, "1"); ocultar(); } });
   window.AlasInicio = {
     // lo llama la app cada vez que cambia de pantalla (entrar, salir, etc.)
     alMostrar: function (cual) {
+      if (!EN_INT) return;
       if (cual !== "app") { ocultar(); return; }
       if (ssGet(KOK) !== "1") mostrar();
     },
-    abrir: mostrar,
+    // tocar el logo: abre Inicio; el botón Atrás del celular lo vuelve a cerrar
+    abrir: function () { mostrar(); try { if (!(history.state && history.state.alasInicio)) history.pushState({ alasInicio: 1 }, ""); } catch (e) {} },
     cerrar: cerrar
   };
 })();
