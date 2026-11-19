@@ -1,5 +1,6 @@
-/* Pantalla de Inicio de Alas de Libertad: al abrir la app se ven las 4 apps (Internos, Bitácora, Médicos y Despensa)
-   en barras. Las que no están instaladas en este celular muestran "Instalar"; las instaladas solo se tocan y se abren.
+/* Pantalla de Inicio de Alas de Libertad: se ven las 4 apps (Internos, Bitácora, Médicos y Despensa) en barras.
+   - La app "Alas de Libertad" (carpeta alas/) es una sola app instalada que abre las 4 adentro de la misma ventana.
+   - Fuera de esa app (Internos u otra abierta aparte), Inicio ofrece instalar "Alas de Libertad".
    - Se muestra al abrir la app (después de entrar o del PIN). Al tocar Internos se sigue en esta misma app como siempre.
    - Tocar el logo de arriba en Internos vuelve a esta pantalla.
    - La sesión es la misma para las 4 apps (misma dirección), así que no hay que volver a entrar en cada una.
@@ -10,7 +11,9 @@
   // En qué app está cargado este archivo (Internos por defecto; las otras lo cargan con data-app="bitacora" / "medicos" / "despensa")
   var ACTUAL = (document.currentScript && document.currentScript.getAttribute("data-app")) || "internos";
   var EN_INT = ACTUAL === "internos";
+  var EN_ALAS = ACTUAL === "alas";
   var RAIZ_INT = EN_INT ? "" : BASE + "registro-k7x2/";
+  var URL_ALAS = BASE + "registro-k7x2/alas/";
   var KOK = "alas-inicio-ok"; // en esta sesión ya eligió Internos: no volver a tapar la app al recargar o al volver de la ficha
   var APPS = [
     { id: "internos", name: "Internos", desc: "Ingresos, fichas y tiempos", icon: "logo.png", flag: "int_inst", url: BASE + "registro-k7x2/" },
@@ -35,6 +38,14 @@
     window.addEventListener("appinstalled", function () { pedido = null; lsSet("int_inst", "\"1\""); pintar(); aviso("Listo, quedó instalada"); });
   }
 
+  // App "Alas de Libertad": si se abre instalada, esta ventana es la de Alas (se recuerda mientras esté abierta)
+  if (EN_ALAS) {
+    if (comoApp()) { ssSet("alas-shell", "1"); lsSet("alas_inst", "1"); }
+    window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); pedido = e; lsSet("alas_inst", null); pintar(); });
+    window.addEventListener("appinstalled", function () { pedido = null; lsSet("alas_inst", "1"); pintar(); aviso("Listo, quedó instalada"); });
+  }
+  function enAlas() { return ssGet("alas-shell") === "1" && comoApp(); }
+  function alasInstalada() { return lsGet("alas_inst") === "1"; }
   function instalada(a) { var v = lsGet(a.flag); return v === "\"1\"" || v === "1" || (a.id === ACTUAL && comoApp()); }
 
   var css = document.createElement("style");
@@ -85,19 +96,18 @@
 
   function pintar() {
     if (!raiz || raiz.hidden) return;
-    var faltan = APPS.filter(function (a) { return !instalada(a); }).length;
     var h = "<div class='ai'><div class='ai-top'><img src='" + RAIZ_INT + "logo.png' alt=''><div><h1>Alas de Libertad</h1><small>Elegí la app que querés usar</small></div>" +
-      (EN_INT ? "<button type='button' class='ai-me' data-ai='cuenta' aria-label='Tu cuenta'>" + esc(inicial()) + "</button>" : "<button type='button' class='ai-me' data-ai='volver' aria-label='Volver a la app'>✕</button>") + "</div>";
-    if (faltan) h += "<div class='ai-falta'><svg width='26' height='26' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='color:var(--acc,#f7a823);flex:none' aria-hidden='true'><path d='M12 3v12'/><path d='M7 10l5 5 5-5'/><path d='M5 21h14'/></svg><div><b>" +
-      (faltan === APPS.length ? "Todavía no tenés ninguna instalada" : faltan === 1 ? "Te falta instalar 1 app" : "Te faltan instalar " + faltan + " apps") +
-      "</b><span>Tocá Instalar: quedan con su ícono, como WhatsApp</span></div></div>";
+      (EN_INT ? "<button type='button' class='ai-me' data-ai='cuenta' aria-label='Tu cuenta'>" + esc(inicial()) + "</button>" : EN_ALAS ? "" : "<button type='button' class='ai-me' data-ai='volver' aria-label='Volver a la app'>✕</button>") + "</div>";
+    var cartel = "";
+    if (EN_ALAS && !comoApp()) cartel = "Instalá esta app en este aparato";
+    else if (!EN_ALAS && !enAlas() && !alasInstalada()) cartel = "Instalá la app Alas de Libertad";
+    if (cartel) h += "<div class='ai-falta'><svg width='26' height='26' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='color:var(--acc,#f7a823);flex:none' aria-hidden='true'><path d='M12 3v12'/><path d='M7 10l5 5 5-5'/><path d='M5 21h14'/></svg><div style='flex:1'><b>" + cartel +
+      "</b><span>Las 4 apps en una sola, con su ícono, como WhatsApp</span></div><button type='button' class='ai-inst' data-ai='instalarAlas'>Instalar</button></div>";
     h += "<div class='ai-lista'>";
     APPS.forEach(function (a) {
-      var ok = instalada(a);
       h += "<div class='ai-barra' role='button' tabindex='0' data-ai='abrir' data-id='" + a.id + "'><span class='ai-ic'><img src='" + esc(/^https?:/.test(a.icon) ? a.icon : RAIZ_INT + a.icon) + "' alt=''" + (a.id === "internos" ? "" : " class='z'") + "></span>" +
         "<div class='ai-tx'><b>" + esc(a.name) + "</b><span>" + esc(a.desc) + "</span></div>" +
-        (ok ? "<svg class='ai-flecha' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M9 6l6 6-6 6'/></svg>"
-            : "<button type='button' class='ai-inst' data-ai='instalar' data-id='" + a.id + "'>Instalar</button>") + "</div>";
+        "<svg class='ai-flecha' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M9 6l6 6-6 6'/></svg></div>";
     });
     h += "</div></div>";
     raiz.innerHTML = h;
@@ -124,28 +134,29 @@
     if (a.id === ACTUAL) { cerrar(); return; }
     // Ir a Internos desde otra app: entra directo a Internos (sin volver a mostrar Inicio allá)
     ssSet(KOK, a.id === "internos" ? "1" : null); pasar();
+    if (EN_ALAS) { location.href = a.url; return; } // desde Inicio de la app Alas: con Atrás se vuelve a Inicio
     irA(a.url);
   }
-  async function instalar(a) {
-    if (a.id === "internos" && EN_INT) {
+  async function instalarAlas() {
+    if (EN_ALAS) {
       if (pedido) { pedido.prompt(); try { await pedido.userChoice; } catch (e) {} pedido = null; return; }
-      hoja("<h2>Instalar Internos</h2><ol><li>Tocá los <b>tres puntitos ⋮</b> de Chrome, arriba a la derecha.</li><li>Elegí <b>Instalar app</b> o <b>Agregar a pantalla principal</b>.</li><li>Tocá <b>Instalar</b>.</li></ol><button type='button' class='ai-big' data-ai='cerrarhoja'>Entendido</button>");
+      hoja("<h2>Instalar Alas de Libertad</h2><ol><li>Tocá los <b>tres puntitos ⋮</b> de Chrome, arriba a la derecha.</li><li>Elegí <b>Instalar app</b> o <b>Agregar a pantalla principal</b>.</li><li>Tocá <b>Instalar</b>.</li></ol><button type='button' class='ai-big' data-ai='cerrarhoja'>Entendido</button>");
       return;
     }
-    ssSet(KOK, null); pasar();
-    var dest = a.url + "?instalar=1";
-    // Desde la app instalada, la instalación de otra app la hace Chrome: se abre ahí con el botón Instalar
+    pasar();
+    var dest = URL_ALAS + "?instalar=1";
+    // Desde una app instalada, la instalación la hace Chrome: se abre ahí la página de Alas con el botón Instalar
     if (android && comoApp()) {
       var u = new URL(dest);
       location.href = "intent://" + u.host + u.pathname + u.search + "#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=" + encodeURIComponent(dest) + ";end";
       return;
     }
-    irA(dest);
+    location.href = dest;
   }
   function alTocar(e) {
     var b = e.target.closest ? e.target.closest("[data-ai]") : null; if (!b) return;
     var q = b.getAttribute("data-ai");
-    if (q === "instalar") { e.stopPropagation(); instalar(app(b.getAttribute("data-id"))); return; }
+    if (q === "instalarAlas") { e.stopPropagation(); instalarAlas(); return; }
     if (q === "abrir") { abrir(app(b.getAttribute("data-id"))); return; }
     if (q === "cuenta") { var m = document.getElementById("me"); if (m) m.click(); }
     if (q === "volver") cerrar();
@@ -174,6 +185,9 @@
     var temprano = function () { mostrar(); setTimeout(revisar, 0); try { new MutationObserver(revisar).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] }); } catch (e) {} };
     if (document.body) temprano(); else document.addEventListener("DOMContentLoaded", temprano);
   }
+
+  // En la app Alas, Inicio es la pantalla principal: se muestra siempre
+  if (EN_ALAS) { if (document.body) mostrar(); else document.addEventListener("DOMContentLoaded", mostrar); }
 
   window.AlasInicio = {
     // lo llama la app cada vez que cambia de pantalla (entrar, salir, etc.)

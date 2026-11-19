@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Alas de Libertad</title>
+<meta name="theme-color" content="#16120e">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="../favicon-32.png">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700&family=Hanken+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#16120e;--card:#211b15;--ink:#f0e8da;--mut:#b3a99b;--line:#3a3027;--acc:#f7a823;--accx:#281a08;color-scheme:dark}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.45 "Hanken Grotesk",system-ui,sans-serif}
+</style>
+<script src="../inicio.js?v=8" data-app="alas"></script>
+</head>
+<body>
+<noscript>Para usar Alas de Libertad hay que activar JavaScript.</noscript>
+<script>
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}
+</script>
+</body>
+</html>
