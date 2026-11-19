@@ -418,6 +418,26 @@ img.av{border-radius:30%}
 #vMed .tomas button{border:0;background:none;border-radius:12px;color:var(--mut);font-weight:700}
 #vMed .tomas button.on{background:var(--card);color:var(--ink);box-shadow:var(--sh)}
 #vMed .tomas button.on small{color:var(--acc)}
+/* egresados: filas chicas que se abren */
+.efila{display:flex;gap:8px;margin-bottom:8px}.efila .msb{flex:1;min-width:0}
+.efila .msb input{padding-top:11px;padding-bottom:11px;border-width:1.5px}
+.efil{flex:none;width:50px;padding:0;border-radius:16px;position:relative;display:grid;place-items:center}
+.efil svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round}
+.efil.on{border-color:var(--acc);color:var(--acc)}.efil i{position:absolute;top:8px;right:9px;width:8px;height:8px;border-radius:50%;background:var(--acc)}
+.epanel{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}.epanel button{grid-column:1/-1}
+.elist{display:grid;gap:7px}
+.erow{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;position:relative;box-shadow:var(--sh)}
+.erow::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--mc,var(--line))}
+.ehd{display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;border-radius:0;padding:10px 12px 10px 14px;text-align:left;color:inherit;font:inherit;min-height:0;box-shadow:none}
+.ehd .av{width:38px;height:38px;border-radius:12px;flex:none}
+.ehd .tx{flex:1;min-width:0}.ehd .tx b{display:block;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ehd .tx span{font-size:13px;color:var(--mut)}
+.emot{flex:none;font-size:11.5px;font-weight:800;border-radius:99px;padding:3px 9px;color:var(--mc,var(--mut));background:color-mix(in srgb,var(--mc,var(--mut)) 16%,transparent);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.efl{flex:none;color:var(--mut);font-size:20px;transition:transform .2s}.erow.ab .efl{transform:rotate(90deg)}
+.erow.m-ok{--mc:var(--ok,#7bc98a)}.erow.m-az{--mc:#8db4ff}.erow.m-na{--mc:var(--acc)}.erow.m-ro{--mc:#f08a7a}
+.edet{padding:0 14px 12px 62px;font-size:14px}
+.edet .eg{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin-bottom:8px}
+.edet small{display:block;color:var(--mut);font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:700}
+.edet p{margin:2px 0 0;color:var(--mut);line-height:1.4;white-space:pre-line}
 /* medicación: más lugar para la lista */
 #vMed .mauto{display:none}
 #vMed .mtop{gap:7px;padding:4px 0 6px;margin-bottom:6px}
@@ -568,18 +588,19 @@ img.av{border-radius:30%}
   </section>
   <section id="vEgr" hidden>
     <button type="button" class="back" data-back>‹ Más</button>
-    <div class="bar">
-      <input id="eq" type="search" placeholder="Buscar por nombre o cédula…" aria-label="Buscar egresado">
+    <div class="efila">
+      <div class="msb"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+        <input id="eq" type="search" placeholder="Buscar por nombre…" autocomplete="off" enterkeyhint="search" aria-label="Buscar egresado por nombre o cédula"></div>
+      <button type="button" id="efil" class="efil" aria-expanded="false" aria-label="Filtrar por motivo o tipo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg><i hidden></i></button>
+    </div>
+    <div class="epanel" id="epanel" hidden>
       <select id="em2" aria-label="Motivo"><option value="">Todos los motivos</option></select>
       <select id="et" aria-label="Tipo"><option value="">Todos los tipos</option><option>Privado</option><option>MIDES</option></select>
-      <button id="erefresh">Actualizar</button>
+      <button type="button" id="erefresh">Actualizar</button>
     </div>
     <p class="cnt" id="ecnt"></p>
     <div class="msg" id="emsg" role="alert"></div>
-    <div class="wrap cards"><table>
-      <thead><tr><th>Nombre</th><th>Cédula</th><th>Ingreso</th><th>Egreso</th><th>Motivo</th><th>Tipo</th><th>Nota</th></tr></thead>
-      <tbody id="erows"></tbody>
-    </table><div class="empty" id="eempty" hidden>No hay egresados para mostrar.</div></div>
+    <div class="elist" id="erows"></div><div class="empty" id="eempty" hidden>No hay egresados para mostrar.</div>
   </section>
   <section id="vMed" hidden>
     <div class="mtop">
@@ -1266,10 +1287,19 @@ function renderEgr(){
   const list=egr.filter(o=>(!fm||o.motivo===fm)&&(!ft||o.tipo===ft)&&(!q||(o.nombre+" "+o.cedula).toLowerCase().includes(q)))
     .sort((a,b)=>(b.egreso||"").localeCompare(a.egreso||""));
   $("ecnt").textContent=list.length+(list.length===1?" egresado":" egresados")+(list.length!==egr.length?" (de "+egr.length+")":"");
-  const tb=$("erows"); tb.replaceChildren(); $("eempty").hidden=list.length>0;
-  list.forEach(o=>{const tr=el("tr");cell(tr,o.nombre.trim(),"n");cell(tr,o.cedula);cell(tr,fdi(o.ingreso));cell(tr,fdi(o.egreso));cell(tr,o.motivo);
-    const t=el("td");if(o.tipo)t.append(el("span","t",o.tipo));tr.append(t);cell(tr,o.nota);tb.append(tr)});
+  {const a=!!(fm||ft);$("efil").classList.toggle("on",a);$("efil").querySelector("i").hidden=!a}
+  const tb=$("erows"); $("eempty").hidden=list.length>0;
+  const colMot=m=>/termin|cumpli/i.test(m)?"ok":/deriv/i.test(m)?"az":/expuls/i.test(m)?"ro":m?"na":"";
+  tb.replaceChildren(...list.map(o=>{const k=(o.nombre+"|"+o.egreso),ab=egrAbierto===k,c=colMot(o.motivo);
+    const r=el("div","erow"+(ab?" ab":"")+(c?" m-"+c:"")),h=el("button","ehd");h.type="button";h.setAttribute("aria-expanded",String(ab));
+    const t=el("div","tx");t.append(el("b","",o.nombre.trim()),el("span","",[o.egreso?"Egresó "+fdi(o.egreso):"",o.tipo].filter(Boolean).join(" · ")));
+    h.append(avatar({nombre:o.nombre},"av"),t);if(o.motivo)h.append(el("span","emot",/termin|cumpli/i.test(o.motivo)?"Terminó":o.motivo));h.append(el("span","efl","›"));
+    h.onclick=()=>{egrAbierto=ab?"":k;renderEgr()};r.append(h);
+    if(ab){const d=el("div","edet"),g=el("div","eg");[["Cédula",o.cedula],["Ingreso",fdi(o.ingreso)],["Egreso",fdi(o.egreso)],["Motivo",o.motivo],["Tipo",o.tipo]].forEach(([a,b])=>{if(!b)return;const x=el("div");x.append(el("small","",a),el("span","",b));g.append(x)});
+      d.append(g);if(o.nota.trim()){d.append(el("small","","Nota"),el("p","",o.nota.trim()))}r.append(d)}
+    return r}));
 }
+let egrAbierto="";
 /* ===== Navegación: barra de abajo ===== */
 let vista="H";
 const VISTAS={H:["vHoy","Hoy","H"],D:["vDet","Destallo","X"],I:["vInt","Internos","I"],M:["vMed","Medicación","M"],C:["vCua","Cuartos","C"],X:["vMas","Más","X"],E:["vEgr","Egresados","X"],R:["vReg","Registro","X"],U:["vUsu","Usuarios","X"]};
@@ -1444,7 +1474,7 @@ $("ptrb").onclick=actualizarVista;
  addEventListener("touchmove",e=>{if(y0==null)return;const d=e.touches[0].clientY-y0;const p=$("ptr");p.style.height=Math.min(44,Math.max(0,d/3))+"px";p.textContent=d>150?"Soltá para actualizar":"↓ Seguí deslizando"},{passive:true});
  addEventListener("touchend",e=>{if(y0==null)return;const d=e.changedTouches[0].clientY-y0;y0=null;$("ptr").style.height="0";if(d>150)actualizarVista()});
  let ult=Date.now();document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&!$("app").hidden&&Date.now()-ult>120000){ult=Date.now();actualizarVista()}})}
-$("eq").oninput=renderEgr; $("em2").onchange=renderEgr; $("et").onchange=renderEgr; $("erefresh").onclick=loadEgr;
+$("eq").oninput=renderEgr; $("em2").onchange=renderEgr; $("et").onchange=renderEgr; $("erefresh").onclick=loadEgr; $("efil").onclick=()=>{const p=$("epanel");p.hidden=!p.hidden;$("efil").setAttribute("aria-expanded",String(!p.hidden))};
 const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 function abrirEgreso(it,motivo,fecha){
   if(!it) return; cur=it; const f=$("ef"); f.reset();
@@ -2183,7 +2213,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261118235140";
+const APP_VER="20261119012757";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
