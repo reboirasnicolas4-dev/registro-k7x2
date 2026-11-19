@@ -108,6 +108,9 @@
     "#alasInicio .ai-hoja>div{background:#211b15;border-top:1px solid #3a3027;border-radius:22px 22px 0 0;width:100%;max-width:560px;padding:18px 16px 26px;box-sizing:border-box}" +
     "#alasInicio .ai-hoja h2{margin:0 0 8px;font:700 20px Fraunces,Georgia,serif}#alasInicio .ai-hoja ol{margin:0 0 14px;padding-left:20px;line-height:1.6}" +
     "#alasInicio .ai-big{width:100%;height:50px;border:0;border-radius:14px;background:#f7a823;color:#281a08;font:700 16px inherit;cursor:pointer}" +
+    // Botoncito ‹ al lado del logo de cada app, para volver a Inicio (como en la Ficha de ingreso)
+    ".ai-atras{flex:none;display:inline-flex;align-items:center;justify-content:center;width:36px;height:44px;margin-right:0;border-radius:12px;border:1px solid var(--line,#3a3027);background:var(--card,#211b15);color:var(--ink,#f0e8da);cursor:pointer;padding:0;-webkit-tap-highlight-color:transparent;transition:transform .12s,background .15s}" +
+    ".ai-atras:active{transform:scale(.92)}.ai-atras svg{width:20px;height:20px}" +
     "@media (prefers-reduced-motion:reduce){#alasInicio *,#alasInicio{animation:none!important}::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important}}";
   // Atrás del celular entre apps: la transición va "para abajo"
   window.addEventListener("pagereveal", function (e) {
@@ -261,6 +264,21 @@
     var temprano = function () { mostrar(); setTimeout(revisar, 0); try { new MutationObserver(revisar).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] }); } catch (e) {} };
     if (document.body) temprano(); else document.addEventListener("DOMContentLoaded", temprano);
   }
+
+  // Botoncito ‹ al lado del logo en cada app (el logo sigue igual de grande y también vuelve a Inicio)
+  var LOGOS = { internos: ".appbar .alogo", bitacora: ".top a[data-pasa]", medicos: ".top a.logo", despensa: ".top a.logo" };
+  function ponerAtras() {
+    var sel = LOGOS[ACTUAL]; if (!sel) return;
+    document.querySelectorAll(sel).forEach(function (logo) {
+      if (logo.previousElementSibling && logo.previousElementSibling.classList.contains("ai-atras")) return;
+      var b = document.createElement("button"); b.type = "button"; b.className = "ai-atras";
+      b.setAttribute("aria-label", "Volver al inicio"); b.title = "Volver al inicio";
+      b.innerHTML = "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M15 6l-6 6 6 6'/></svg>";
+      b.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); mostrar(); });
+      logo.parentNode.insertBefore(b, logo);
+    });
+  }
+  if (!EN_ALAS) { if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", ponerAtras); else ponerAtras(); }
 
   // En la app Alas, Inicio es la pantalla principal: se muestra siempre
   if (EN_ALAS) { if (document.body) mostrar(); else document.addEventListener("DOMContentLoaded", mostrar); }
