@@ -107,6 +107,24 @@
     "#alasInicio .ai-dos>*{height:50px;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;font-weight:700;font-size:14.5px;cursor:pointer;text-decoration:none;box-sizing:border-box}" +
     "#alasInicio .ai-wa{background:#25a35a;color:#fff;border:0}#alasInicio .ai-cp{background:#2a221a;color:#f0e8da;border:1px solid #4a3f34}" +
     "#alasInicio .ai-mas{display:block;margin:12px auto 0;appearance:none;border:0;background:none;color:#f7a823;font-family:inherit;font-weight:600;font-size:13.5px;cursor:pointer;padding:4px}" +
+    // Sin usuario: Entrar y Crear usuario en lugar de las 4 apps
+    "#alasInicio.ai-sin .ai-logo{width:130px;height:130px}#alasInicio.ai-sin .ai-ave{width:116px;height:116px}#alasInicio.ai-sin .ai-aro{width:130px;height:130px}#alasInicio.ai-sin .ai-hero{flex:none;gap:10px;padding-top:calc(env(safe-area-inset-top,0px) + 64px)}#alasInicio.ai-sin .ai-hero h1{font-size:30px}" +
+    "#alasInicio.ai-sin .ai-panel{flex:1}" +
+    "#alasInicio .ai-form{display:flex;flex-direction:column;gap:11px;width:100%;max-width:420px;margin:0 auto}" +
+    "#alasInicio .ai-form h2{margin:0;font:700 21px Fraunces,Georgia,serif;text-align:center}#alasInicio .ai-form p{margin:-4px 0 0;font-size:13px;color:#b3a99b;text-align:center}" +
+    "#alasInicio .ai-form label{display:flex;flex-direction:column;gap:5px;font-size:12.5px;color:#b3a99b}" +
+    "#alasInicio .ai-form input{height:46px;border-radius:12px;border:1px solid #3a3027;background:#16120e;color:#f0e8da;padding:0 12px;font-family:inherit;font-size:16px;outline:none;box-sizing:border-box;width:100%}#alasInicio .ai-form input:focus{border-color:#f7a823}" +
+    "#alasInicio .ai-form .ai-big:disabled{opacity:.6}#alasInicio .ai-err{color:#ff8a6a;font-size:13px;min-height:0;text-align:center}#alasInicio .ai-err:empty{display:none}" +
+    "#alasInicio .ai-o{display:flex;align-items:center;gap:10px;color:#6f6355;font-size:12px}#alasInicio .ai-o:before,#alasInicio .ai-o:after{content:'';flex:1;height:1px;background:#3a3027}" +
+    "#alasInicio .ai-crear{height:50px;border-radius:14px;border:1px solid #f7a823;background:transparent;color:#f7a823;font-family:inherit;font-weight:700;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}" +
+    "#alasInicio .ai-cab{display:flex;align-items:center;gap:8px}#alasInicio .ai-cab h2{text-align:left}#alasInicio .ai-vol{width:36px;height:36px;border-radius:11px;border:1px solid #3a3027;background:#2a221a;color:#f0e8da;font-size:20px;line-height:1;cursor:pointer;flex:none}" +
+    "#alasInicio .ai-ok{display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;padding:16px 6px}#alasInicio .ai-ok>span{width:64px;height:64px;border-radius:50%;background:#2a3a20;border:1px solid #5c8a3a;display:flex;align-items:center;justify-content:center;font-size:30px}" +
+    // Solicitudes de usuario (solo para Nicolás): número rojo en su nombre y la lista para aprobar o rechazar
+    "#alasInicio .ai-yo{position:relative}#alasInicio .ai-yo s{position:absolute;top:-5px;left:20px;min-width:18px;height:18px;border-radius:9px;background:#e5484d;color:#fff;font-size:11px;font-weight:700;line-height:18px;text-align:center;text-decoration:none;padding:0 4px;box-sizing:border-box;border:2px solid #16120e}" +
+    "#alasInicio .ai-sol{border:1px solid #3a3027;background:#16120e;border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px;margin-top:10px}" +
+    "#alasInicio .ai-sol b{font-size:15px}#alasInicio .ai-sol small{font-size:12px;color:#b3a99b;word-break:break-all}" +
+    "#alasInicio .ai-sol select{height:40px;border-radius:10px;border:1px solid #3a3027;background:#211b15;color:#f0e8da;font-family:inherit;font-size:14px;padding:0 8px}" +
+    "#alasInicio .ai-sol .ai-dos{margin-top:2px}#alasInicio .ai-sol .ai-dos>*{height:44px;font-size:14px}#alasInicio .ai-si{background:#f7a823;color:#281a08;border:0}#alasInicio .ai-no{background:#2a221a;color:#ff8a6a;border:1px solid #4a3f34}" +
     "#alasInicio .ai-panel{background:#211b15;border-top:1px solid #3a3027;border-radius:28px 28px 0 0;padding:20px 14px calc(env(safe-area-inset-bottom,0px) + 28px);display:flex;flex-direction:column;gap:16px;animation:aiPanel .45s cubic-bezier(.2,.8,.2,1) both}@keyframes aiPanel{from{transform:translateY(30px);opacity:0}}" +
     "#alasInicio .ai-elegi{font-size:13px;color:#b3a99b;text-align:center}" +
     "#alasInicio .ai-fila{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}" +
@@ -143,7 +161,7 @@
     "#alasInicio .ai-hoja{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center}" +
     "#alasInicio .ai-hoja>div{background:#211b15;border-top:1px solid #3a3027;border-radius:22px 22px 0 0;width:100%;max-width:560px;padding:18px 16px 26px;box-sizing:border-box}" +
     "#alasInicio .ai-hoja h2{margin:0 0 8px;font:700 20px Fraunces,Georgia,serif}#alasInicio .ai-hoja ol{margin:0 0 14px;padding-left:20px;line-height:1.6}" +
-    "#alasInicio .ai-big{width:100%;height:50px;border:0;border-radius:14px;background:#f7a823;color:#281a08;font:700 16px inherit;cursor:pointer}" +
+    "#alasInicio .ai-big{width:100%;height:50px;border:0;border-radius:14px;background:#f7a823;color:#281a08;font-family:inherit;font-weight:700;font-size:16px;cursor:pointer}" +
     // Botoncito ‹ al lado del logo de cada app, para volver a Inicio (como en la Ficha de ingreso)
     ".ai-atras{flex:none;display:inline-flex;align-items:center;justify-content:center;width:36px;height:44px;margin-right:0;border-radius:12px;border:1px solid var(--line,#3a3027);background:var(--card,#211b15);color:var(--ink,#f0e8da);cursor:pointer;padding:0;-webkit-tap-highlight-color:transparent;transition:transform .12s,background .15s}" +
     ".ai-atras:active{transform:scale(.92)}.ai-atras svg{width:20px;height:20px}" +
@@ -161,6 +179,7 @@
     raiz = document.createElement("div"); raiz.id = "alasInicio"; raiz.hidden = true;
     raiz.setAttribute("role", "dialog"); raiz.setAttribute("aria-label", "Inicio: elegí la app");
     raiz.addEventListener("click", alTocar);
+    raiz.addEventListener("submit", function (e) { var f = e.target; if (f && f.classList && f.classList.contains("ai-form")) { e.preventDefault(); enviarForm(f); } });
     document.body.appendChild(raiz);
     return raiz;
   }
@@ -172,7 +191,9 @@
   var correoIni = haySesion();
   // Quién está usando la app: nombre (los conocidos por su correo) y si es Administrador o Usuario
   var API_INT = "https://script.google.com/macros/s/AKfycbzYLuWCtvRv-sQobVzwXxUhTbjfhDuul9raoOD4RbxFOkBVaPI5FLEOU4TI5z3pQl9_/exec";
-  var NOMBRES = { "reboirasnicolas4@gmail.com": "Nicolás", "delosreyes.mathias89@gmail.com": "Matías", "ctalasdelibertad545@gmail.com": "Alas de Libertad" };
+  // Los correos no se escriben acá (este archivo es público): se reconocen por una huella corta de cada correo
+  function hs(s) { var h = 5381; for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
+  var NOMBRES = { "1x5ho7k": "Nicolás", "1ctnc3l": "Matías", "12mfw6a": "Alas de Libertad" };
   function miCorreo() { try { if (typeof email === "string" && email) return email; } catch (e) {} try { if (typeof cred === "object" && cred && cred.correo) return cred.correo; } catch (e) {} return haySesion(); }
   function normRol(r) { r = String(r || ""); return /admin/i.test(r) ? "Admin" : /usuario|user/i.test(r) ? "Usuario" : ""; }
   function rolDeLaApp() { try { if (typeof role === "string" && role) return normRol(role); } catch (e) {} try { if (typeof S === "object" && S && S.rol) return normRol(S.rol); } catch (e) {} return ""; }
@@ -183,7 +204,7 @@
     if (rol) { if (!g || g.email !== k || g.rol !== rol) lsSet("alas-yo", JSON.stringify({ email: k, rol: rol, t: Date.now() })); }
     else if (g && g.email === k) rol = g.rol;
     if (!rol || !g || g.email !== k || Date.now() - (g.t || 0) > 864e5) buscarRol(k);
-    var n = NOMBRES[k] || k.split("@")[0].replace(/[._-]+/g, " ").replace(/\b\w/g, function (x) { return x.toUpperCase(); });
+    var n = NOMBRES[hs(k)] || k.split("@")[0].replace(/[._-]+/g, " ").replace(/\b\w/g, function (x) { return x.toUpperCase(); });
     return { email: k, nombre: n, rol: rol };
   }
   var buscando = false;
@@ -212,11 +233,118 @@
       "<button type='button' class='ai-mas' data-ai='cerrarhoja' style='color:#b3a99b'>Cerrar</button>");
   }
 
+  // ===== Sin usuario: Entrar y Crear usuario (en vez de las 4 apps) =====
+  var sinModo = "entrar", sinCorreo = "";
+  function googleInt(datos) {
+    return fetch(API_INT, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(datos) })
+      .then(function (r) { return r.text(); }).then(function (t) { try { return JSON.parse(t); } catch (e) { throw new Error("Google no contestó bien"); } });
+  }
+  function panelSin() {
+    var ic = "<svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' aria-hidden='true'><circle cx='10' cy='8' r='4'/><path d='M3 21c0-4 3-6 7-6s7 2 7 6M19 8v6M16 11h6'/></svg>";
+    if (sinModo === "pedir") return "<form class='ai-form' data-form='pedir' novalidate><div class='ai-cab'><button type='button' class='ai-vol' data-ai='sinentrar' aria-label='Volver'>‹</button><h2>Crear usuario</h2></div>" +
+      "<p style='text-align:left;margin:0'>Completá tus datos. Nicolás tiene que aprobarte antes de que puedas entrar.</p>" +
+      "<label>Nombre y apellido<input name='nom' autocomplete='name' maxlength='60' placeholder='Ej: Juan Pérez'></label>" +
+      "<label>Correo (va a ser tu usuario)<input name='cor' type='email' autocomplete='username' placeholder='nombre@correo.com' value='" + esc(sinCorreo) + "'></label>" +
+      "<label>Elegí tu contraseña (mínimo 6)<input name='p1' type='password' autocomplete='new-password'></label>" +
+      "<label>Repetila<input name='p2' type='password' autocomplete='new-password'></label>" +
+      "<div class='ai-err' role='alert'></div><button class='ai-big' type='submit'>Enviar solicitud</button></form>";
+    if (sinModo === "enviada") return "<div class='ai-form'><div class='ai-ok'><span>✓</span><h2>¡Solicitud enviada!</h2><p>Cuando Nicolás te apruebe, entrás acá con tu correo y la contraseña que elegiste.</p></div>" +
+      "<button type='button' class='ai-big' data-ai='sinentrar' style='background:#2a221a;color:#f0e8da;border:1px solid #4a3f34'>Volver a Entrar</button></div>";
+    if (sinModo === "setup") return "<div class='ai-form'><div class='ai-ok'><span style='background:#3a2a12;border-color:#f7a823'>🔑</span><h2>Falta activar tu usuario</h2><p>Te pasaron un código para elegir tu contraseña. Eso se hace una sola vez, en Internos.</p></div>" +
+      "<a class='ai-big' href='" + BASE + "registro-k7x2/' style='display:flex;align-items:center;justify-content:center;text-decoration:none'>Abrir Internos</a>" +
+      "<button type='button' class='ai-mas' data-ai='sinentrar' style='color:#b3a99b'>Volver</button></div>";
+    return "<form class='ai-form' data-form='entrar' novalidate><h2>Entrar</h2><p>Una sola vez: sirve para las 4 apps</p>" +
+      "<label>Correo<input name='cor' type='email' autocomplete='username' placeholder='nombre@correo.com' value='" + esc(sinCorreo) + "'></label>" +
+      "<label>Contraseña<input name='pw' type='password' autocomplete='current-password'></label>" +
+      "<div class='ai-err' role='alert'></div><button class='ai-big' type='submit'>Entrar</button>" +
+      "<div class='ai-o'>¿Es tu primera vez?</div><button type='button' class='ai-crear' data-ai='sinpedir'>" + ic + "Crear usuario</button></form>";
+  }
+  function cambiarSin(m) { var f = raiz && raiz.querySelector(".ai-form [name=cor]"); if (f && f.value) sinCorreo = f.value.trim(); sinModo = m; pintar(true); var i = raiz.querySelector(".ai-form input:not([value]),.ai-form input[value='']"); if (i && m === "pedir") try { i.focus(); } catch (e) {} }
+  function enviarForm(f) {
+    var err = f.querySelector(".ai-err"), bt = f.querySelector("button[type=submit]"), v = function (n) { var i = f.querySelector("[name=" + n + "]"); return i ? i.value : ""; };
+    var cor = v("cor").trim().toLowerCase(); sinCorreo = cor; err.textContent = "";
+    if (f.getAttribute("data-form") === "entrar") {
+      var pw = v("pw");
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cor)) { err.textContent = "Poné tu correo."; return; }
+      if (!pw) { err.textContent = "Poné tu contraseña."; return; }
+      bt.disabled = true; bt.textContent = "Entrando…";
+      googleInt({ email: cor, password: pw, action: "checkUser" }).then(function (r) {
+        if (r && r.needsSetup) { sinModo = "setup"; pintar(true); return; }
+        var rol = r && typeof r === "object" && ![r.authorized, r.autorizado, r.ok, r.success, r.allowed, r.auth].some(function (x) { return x === false; }) ? normRol(r.role || r.rol || r.Rol || (r.data && (r.data.role || r.data.rol))) : "";
+        if (!rol || !r.token) { err.textContent = (r && r.error) || (r && r.needsPassword ? "Contraseña incorrecta." : "Ese correo no tiene permiso para entrar. Si es tu primera vez, tocá Crear usuario."); return; }
+        lsSet("alas-token", JSON.stringify({ email: cor, token: r.token })); lsSet("internos-email", cor);
+        lsSet("alas-yo", JSON.stringify({ email: cor, rol: rol, t: Date.now() }));
+        correoIni = cor; sinModo = "entrar"; sinCorreo = ""; pintar(true); aviso("Hola, " + yo().nombre);
+      }).catch(function () { err.textContent = "No se pudo conectar. Probá de nuevo."; })
+        .then(function () { if (bt.isConnected) { bt.disabled = false; bt.textContent = "Entrar"; } });
+      return;
+    }
+    var nom = v("nom").trim(), a = v("p1"), b = v("p2");
+    err.textContent = nom.length < 2 ? "Poné tu nombre y apellido." : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cor) ? "Poné un correo válido." : a.length < 6 ? "La contraseña tiene que tener al menos 6 caracteres." : a !== b ? "Las dos contraseñas no coinciden." : "";
+    if (err.textContent) return;
+    bt.disabled = true; bt.textContent = "Enviando…";
+    googleInt({ action: "pedirUsuario", email: cor, nombre: nom, newPassword: a }).then(function (r) {
+      if (!r || r.ok !== true) { err.textContent = (r && r.error) || "No se pudo enviar."; return; }
+      sinModo = "enviada"; pintar(true);
+    }).catch(function () { err.textContent = "No se pudo conectar. Probá de nuevo."; })
+      .then(function () { if (bt.isConnected) { bt.disabled = false; bt.textContent = "Enviar solicitud"; } });
+  }
+
+  // ===== Solicitudes de usuario nuevo: solo las ve Nicolás, tocando su nombre arriba =====
+  var DUENO = "1x5ho7k", sols = [], solsT = 0, solsP = false;
+  function esDueno(c) { return !!c && hs(String(c).toLowerCase().trim()) === DUENO; }
+  function credInt() { try { var t = JSON.parse(lsGet("alas-token") || "null") || JSON.parse(ssGet("alas-paso") || "null"); if (t && t.token) return { email: t.email, token: t.token }; } catch (e) {} return null; }
+  function soyDueno() { var u = yo(); return !!u && esDueno(u.email); }
+  function cargarSols(forzar) {
+    if (!soyDueno() || solsP || (!forzar && Date.now() - solsT < 60000)) return; var c = credInt(); if (!c) return;
+    solsP = true;
+    googleInt({ email: c.email, token: c.token, action: "listSolicitudes" }).then(function (r) {
+      if (r && r.ok === true) { sols = r.data || []; solsT = Date.now(); marcarSols(); if (raiz && raiz.querySelector(".ai-hoja .ai-cuenta")) cuenta(); }
+    }).catch(function () {}).then(function () { solsP = false; });
+  }
+  function marcarSols() { var y = raiz && raiz.querySelector(".ai-yo"); if (!y) return; var s = y.querySelector("s"); if (!sols.length) { if (s) s.remove(); return; } if (!s) { s = document.createElement("s"); y.appendChild(s); } s.textContent = sols.length; y.setAttribute("aria-label", "Tu cuenta: " + sols.length + (sols.length === 1 ? " persona pide" : " personas piden") + " usuario"); }
+  function fechaCorta(f) { var d = new Date(f); return isNaN(d) ? "" : d.getDate() + "/" + (d.getMonth() + 1); }
+  function cuenta() {
+    var u = yo(); if (!u) return;
+    var vieja = raiz.querySelector(".ai-hoja"); if (vieja) vieja.remove();
+    var h = "<div class='ai-cuenta'><div style='display:flex;align-items:center;gap:12px;margin-bottom:6px'><i style='flex:none;width:44px;height:44px;border-radius:50%;background:linear-gradient(140deg,#f7a823,#d9560f);color:#1a120a;font-style:normal;font-weight:700;font-size:20px;line-height:44px;text-align:center'>" + esc(u.nombre[0].toUpperCase()) + "</i>" +
+      "<div style='min-width:0'><h2 style='margin:0'>" + esc(u.nombre) + "</h2><div style='font-size:13px;color:#b3a99b;word-break:break-all'>" + esc(u.email) + (u.rol ? " · " + (u.rol === "Admin" ? "Administrador" : "Usuario") : "") + "</div></div></div>";
+    if (esDueno(u.email)) {
+      h += "<h3 style='margin:14px 0 0;font:700 17px Fraunces,Georgia,serif'>👤 Piden usuario</h3>";
+      if (!sols.length) h += "<p style='margin:6px 0 0;font-size:13.5px;color:#b3a99b'>" + (solsT ? "No hay solicitudes nuevas." : "Buscando…") + "</p>";
+      sols.forEach(function (s, i) {
+        h += "<div class='ai-sol'><b>" + esc(s.nombre || s.email) + "</b><small>" + esc(s.email) + (s.fecha ? " · pidió el " + fechaCorta(s.fecha) : "") + "</small>" +
+          "<label style='display:flex;align-items:center;gap:8px;font-size:13px;color:#b3a99b'>Entra como<select data-sol='" + i + "'><option value='Usuario'>Usuario (solo mira)</option><option value='Admin'>Administrador (puede cambiar datos)</option></select></label>" +
+          "<div class='ai-dos'><button type='button' class='ai-no' data-ai='solno' data-i='" + i + "'>Rechazar</button><button type='button' class='ai-si' data-ai='solsi' data-i='" + i + "'>Aceptar</button></div></div>";
+      });
+    }
+    if (EN_INT && document.getElementById("me")) h += "<button type='button' class='ai-mas' data-ai='menuint'>Más opciones de la cuenta</button>";
+    h += "<button type='button' class='ai-mas' data-ai='cerrarhoja' style='color:#b3a99b'>Cerrar</button></div>";
+    hoja(h);
+    if (esDueno(u.email) && !solsT) cargarSols(true);
+  }
+  function resolverSol(i, si, boton) {
+    var s = sols[i], c = credInt(); if (!s || !c) return;
+    if (!si && boton.getAttribute("data-arm") !== "1") { boton.setAttribute("data-arm", "1"); boton.textContent = "¿Seguro? Tocá de nuevo"; return; }
+    var sel = raiz.querySelector("[data-sol='" + i + "']"), rol = sel ? sel.value : "Usuario";
+    raiz.querySelectorAll(".ai-sol button").forEach(function (b) { b.disabled = true; });
+    var d = si ? { email: c.email, token: c.token, action: "aprobarSolicitud", quien: s.email, rolNuevo: rol } : { email: c.email, token: c.token, action: "rechazarSolicitud", quien: s.email };
+    googleInt(d).then(function (r) {
+      if (!r || r.ok !== true) { aviso((r && r.error) || "No se pudo. Probá de nuevo."); return; }
+      sols = sols.filter(function (x) { return x.email !== s.email; }); marcarSols();
+      aviso(si ? "✓ " + (s.nombre || s.email) + " ya puede entrar como " + (rol === "Admin" ? "Administrador" : "Usuario") : "Rechazaste la solicitud de " + (s.nombre || s.email));
+    }).catch(function () { aviso("No se pudo conectar. Probá de nuevo."); }).then(function () { if (raiz.querySelector(".ai-hoja .ai-cuenta")) cuenta(); });
+  }
+
   function icono(a, clase) {
     return "<span class='ai-ic'><img src='" + esc(/^https?:/.test(a.icon) ? a.icon : RAIZ_INT + a.icon) + "' alt=''" + (a.id === "internos" ? "" : " class='z'") + "></span>";
   }
-  function pintar() {
-    if (!raiz || raiz.hidden || raiz.querySelector(".ai-carga") || raiz.classList.contains("ai-intro")) return;
+  function pintar(forzar) {
+    if (!raiz || raiz.hidden || raiz.querySelector(".ai-carga") || (raiz.classList.contains("ai-intro") && forzar !== true)) return;
+    var sin = !haySesion();
+    // sin usuario y escribiendo: no borrar lo que está escribiendo
+    if (sin && forzar !== true && raiz.querySelector(".ai-form")) { var escr = false; raiz.querySelectorAll(".ai-form input").forEach(function (i) { if (i.value || i === document.activeElement) escr = true; }); if (escr || raiz.querySelector(".ai-ok")) return; }
+    raiz.classList.toggle("ai-sin", sin);
     var cartel = "";
     if (EN_ALAS && !comoApp()) cartel = "Instalá esta app en este aparato";
     else if (!EN_ALAS && !enAlas() && !alasInstalada()) cartel = "Instalá la app Alas de Libertad";
@@ -230,12 +358,14 @@
       "<img class='ai-ave' src='" + RAIZ_INT + "logo.png' alt='Logo de Alas de Libertad'></div>" +
       "<h1>Alas de Libertad</h1><div class='ai-sub'>Comunidad Terapéutica · San José</div>";
     if (cartel) h += "<div class='ai-falta'><div style='flex:1'><b>" + cartel + "</b><span>Las 4 apps en una sola, con su ícono</span></div><button type='button' class='ai-inst' data-ai='instalarAlas'>Instalar</button></div>";
+    if (sin) { raiz.innerHTML = h + "</div><div class='ai-panel'>" + panelSin() + "</div></div>"; return; }
     h += "</div><div class='ai-panel'><div class='ai-elegi'>Elegí la app</div><div class='ai-fila'>";
     APPS.forEach(function (a) {
       h += "<button type='button' class='ai-app" + (a.id === ACTUAL ? " ai-aca" : "") + "' data-ai='abrir' data-id='" + a.id + "'" + (a.id === ACTUAL ? " aria-label='" + esc(a.name) + " (donde estás)'" : "") + ">" + icono(a) + "<span>" + esc(a.name) + "</span></button>";
     });
     h += "</div></div></div>";
     raiz.innerHTML = h;
+    marcarSols(); cargarSols();
   }
   // Al tocar otra app: pantalla de carga oscura que sube, y recién ahí se cambia de app
   // Al tocar otra app: el ícono sube como un globito hasta el medio, brilla, parpadea y recién ahí se abre la app
@@ -331,7 +461,11 @@
     if (q === "copiarcomp") { e.stopPropagation(); var ok = function () { var h = raiz.querySelector(".ai-hoja"); if (h) h.remove(); aviso("✓ Link copiado"); };
       try { navigator.clipboard.writeText(URL_ALAS).then(ok, function () { aviso(URL_ALAS); }); } catch (x) { aviso(URL_ALAS); } return; }
     if (q === "mascomp") { e.stopPropagation(); try { navigator.share({ title: "Alas de Libertad", text: TXT_COMP, url: URL_ALAS }).catch(function () {}); } catch (x) {} return; }
-    if (q === "cuenta") { var m = EN_INT && document.getElementById("me"); if (m) m.click(); else { var u = yo(); if (u) aviso(u.email); } }
+    if (q === "cuenta") { e.stopPropagation(); cuenta(); return; }
+    if (q === "menuint") { var h0 = raiz.querySelector(".ai-hoja"); if (h0) h0.remove(); var m = document.getElementById("me"); if (m) m.click(); return; }
+    if (q === "solsi" || q === "solno") { e.stopPropagation(); resolverSol(+b.getAttribute("data-i"), q === "solsi", b); return; }
+    if (q === "sinpedir") { e.preventDefault(); cambiarSin("pedir"); return; }
+    if (q === "sinentrar") { e.preventDefault(); cambiarSin("entrar"); return; }
     if (q === "volver") cerrar();
   }
   document.addEventListener("keydown", function (e) {

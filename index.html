@@ -3,7 +3,7 @@
 <head>
 <script>try{var tm=localStorage.getItem("alas-tema");if(tm)document.documentElement.dataset.tema=tm}catch(e){}</script>
 <script src="bloqueo.js?v=2"></script>
-<script src="inicio.js?v=21"></script>
+<script src="inicio.js?v=22"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Internos</title>
@@ -1089,7 +1089,7 @@ function render(){
       s.append(el("b","",String(n)),el("span","",l));s.onclick=()=>{filtroStat=(filtroStat===f?"":f);render();if(filtroStat)$("rows").closest(".wrap").scrollIntoView({behavior:"smooth",block:"start"})};return s}));
   {const fb=$("fstat");fb.hidden=!filtroStat;if(filtroStat){fb.replaceChildren(el("span","",filtroStat==="sal"?"Mostrando solo los que salen en "+AV_SAL+" días o menos":filtroStat==="fuera"?"Mostrando solo los que están de salida":"Mostrando solo los que terminan en "+AV_FIN+" días o menos"));
     const x=el("button","","Ver todos");x.type="button";x.onclick=()=>{filtroStat="";render()};fb.append(x)}}
-  $("finbox").hidden=true; $("miR").hidden=!isAdmin(); $("miU").hidden=$("goU").hidden=email!=="reboirasnicolas4@gmail.com";if(email==="reboirasnicolas4@gmail.com"&&!solRevisadas){solRevisadas=true;setTimeout(revisarSolicitudes,1500)}
+  $("finbox").hidden=true; $("miR").hidden=!isAdmin(); $("miU").hidden=$("goU").hidden=email!=="reboirasnicolas4@gmail.com";
   $("me").textContent=$("meBig").textContent=(email[0]||"?").toUpperCase(); $("add").hidden=!isAdmin()||vista!=="I";
   {const cf=$("cfuera"),nf=all.filter(x=>salidaHoy(x.i)).length;cf.hidden=!nf&&filtroStat!=="fuera";cf.classList.toggle("on",filtroStat==="fuera");cf.querySelector(".n").textContent=nf;cf.onclick=()=>{filtroStat=filtroStat==="fuera"?"":"fuera";render()}}
   document.querySelectorAll("#fchips .chip[data-t]").forEach(b=>{b.classList.toggle("on",b.dataset.t===ft&&filtroStat!=="fuera");const n=b.querySelector(".n");if(n)n.textContent=all.filter(x=>!b.dataset.t||x.i.tipo===b.dataset.t).length});
@@ -2014,14 +2014,17 @@ function renderUsu(){renderSol();const L=$("ulist");L.replaceChildren();
       c.append(nc,q)}
     const [t,w]=estadoUsu(u);c.append(el("span","st"+(w?" w":""),(w?"⚠️ ":"✔ ")+t));L.append(c)});
   if(!usuarios.length)L.append(el("p","sub","No hay usuarios."))}
-/* ===== Solicitudes de usuario nuevo ===== */
+/* ===== Solicitudes de usuario nuevo =====
+   Desde el 19/11/2026 se aceptan o rechazan en la pantalla de Inicio (tocando el nombre de Nicolás arriba).
+   En Internos ya no se muestran: ni el aviso ni la lista en Usuarios. */
 let solicitudes=[],solRevisadas=false;
-async function revisarSolicitudes(){try{const r=await api({action:"listSolicitudes"});if(r&&r.ok===true){solicitudes=r.data||[];pintarAvisoSol();if(vista==="U")renderSol()}}catch(e){}}
-function pintarAvisoSol(){const n=solicitudes.length,a=$("solav"),sm=$("miU").querySelector("small");
+const SOL_EN_INTERNOS=false;
+async function revisarSolicitudes(){if(!SOL_EN_INTERNOS)return;try{const r=await api({action:"listSolicitudes"});if(r&&r.ok===true){solicitudes=r.data||[];pintarAvisoSol();if(vista==="U")renderSol()}}catch(e){}}
+function pintarAvisoSol(){if(!SOL_EN_INTERNOS){$("solav").hidden=true;return}const n=solicitudes.length,a=$("solav"),sm=$("miU").querySelector("small");
   a.hidden=!n;if(n){a.replaceChildren(el("span","","👤"),(()=>{const d=el("span","");d.style.flex="1";d.append(el("b","",n===1?"1 persona pide usuario":n+" personas piden usuario"),el("small","","Tocá para ver y aprobar"));return d})(),el("span","","›"))}
   if(sm){sm.textContent=n?"👤 "+n+(n===1?" pide":" piden")+" usuario":"Agregar, quitar y códigos";sm.style.color=n?"var(--bad)":"";sm.style.fontWeight=n?"700":""}}
 $("solav").onclick=()=>verTab("U");
-function renderSol(){const B=$("usol");B.replaceChildren();if(!solicitudes.length)return;
+function renderSol(){const B=$("usol");B.replaceChildren();if(!SOL_EN_INTERNOS||!solicitudes.length)return;
   const h=el("h3","","👤 Piden usuario");h.style.cssText="font:700 18px Fraunces,Georgia,serif;margin:4px 0 8px";B.append(h);
   const L=el("div","ulist");L.style.marginBottom="18px";
   solicitudes.forEach(s=>{const c=el("div","uc solc");c.append(el("span","em",s.nombre||s.email));
@@ -2243,7 +2246,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261120015000";
+const APP_VER="20261120023000";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
