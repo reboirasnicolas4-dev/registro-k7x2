@@ -379,8 +379,8 @@ const SECTORES=["Cocina","Huerta","Almox","Panadería"];
 // Los que no entran en cuartos (siguen en Internos): se guardan con sector "Fuera"
 const FUERA="Fuera";
 const SINS="Tropilla", GRUPOS=[...SECTORES,SINS], secNom=s=>s===SINS?"Sin sector":s;
-const CUARTOS=[{id:"0",camas:4},{id:"1",camas:6},{id:"2",camas:6},{id:"3",camas:4,manual:true},{id:"4",camas:8}];
-const CAMAS_TROPILLA=16, MESES_C3=6;
+const CUARTOS=[{id:"0",camas:4},{id:"1",camas:6},{id:"2",camas:6},{id:"3",camas:4,manual:true},{id:"4",camas:6}];
+const CAMAS_TROPILLA=14, MESES_C3=6;
 const HOJA_CUARTOS="Cuartos", HOJA_ROT="Rotaciones";
 
 /* ===== Estado ===== */
@@ -905,7 +905,7 @@ if("serviceWorker" in navigator&&location.protocol.startsWith("http"))window.add
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261119012757";
+const APP_VER="20261120173500";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
