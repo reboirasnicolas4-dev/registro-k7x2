@@ -3,7 +3,7 @@
 <head>
 <script>try{var tm=localStorage.getItem("alas-tema");if(tm)document.documentElement.dataset.tema=tm}catch(e){}</script>
 <script src="bloqueo.js?v=2"></script>
-<script src="inicio.js?v=23"></script>
+<script src="inicio.js?v=24"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Internos</title>
@@ -1748,13 +1748,29 @@ function leerCola(){try{return JSON.parse(localStorage.getItem(COLA_K)||"[]")||[
 function guardarCola(c){try{localStorage.setItem(COLA_K,JSON.stringify(c))}catch(x){}}
 function encolar(it){guardarCola(leerCola().filter(x=>!(x.email===it.email&&x.fecha===it.fecha&&x.key===it.key)).concat([it]))}
 function sacarDeCola(it){guardarCola(leerCola().filter(x=>!(x.email===it.email&&x.fecha===it.fecha&&x.key===it.key&&x.t===it.t)))}
+/* Primero las marcas de hoy (las más nuevas primero dentro de cada día no: en el orden en que se hicieron) */
+function ordenCola(l){const h=iso(new Date());return l.slice().sort((a,b)=>((a.fecha===h)?0:1)-((b.fecha===h)?0:1)||(b.fecha<a.fecha?-1:b.fecha>a.fecha?1:0)||a.t-b.t)}
+/* ¿La planilla ya tiene esta marca tal cual? Se pregunta una vez por día de la cola */
+async function yaEstaEnHoja(it,cache){if(it.toma==="Salida"||it.estado==="llevar")return false;
+  if(!(it.fecha in cache)){cache[it.fecha]=null;try{const r=await api({action:"getEntregas",fecha:it.fecha});if(r&&r.ok===true){const m={};(r.data||[]).forEach(x=>{m[x.toma+"|"+x.id]={estado:x.estado,motivo:x.motivo||""}});cache[it.fecha]=m}}catch(e){}}
+  const m=cache[it.fecha];if(!m)return false;const h=m[it.key];
+  if(!it.estado)return !h;
+  if(!h)return false;
+  if(it.estado==="dada")return h.estado==="Dada";
+  if(it.estado==="no")return h.estado==="No la tomó"&&String(h.motivo||"")===String(it.motivo||"");
+  return false}
 /* Una sola app manda la cola a la vez (Internos, Inicio u otra app abierta): candado en el celular */
 const COLA_LOCK="alas-cola-lock",YO_COLA=Math.random().toString(36).slice(2);
 function tomarCandado(){try{const l=JSON.parse(localStorage.getItem(COLA_LOCK)||"null");if(l&&l.y!==YO_COLA&&Date.now()-l.t<90000)return false;localStorage.setItem(COLA_LOCK,JSON.stringify({y:YO_COLA,t:Date.now()}));return true}catch(x){return true}}
 function soltarCandado(){try{const l=JSON.parse(localStorage.getItem(COLA_LOCK)||"null");if(l&&l.y===YO_COLA)localStorage.removeItem(COLA_LOCK)}catch(x){}}
 async function mandarCola(){if(mandarCola.p||!token||soloCopia)return;if(!colaMia().length)return;if(!tomarCandado()){setTimeout(mandarCola,20000);return}mandarCola.p=1;let algo=false;
-  try{for(const it of leerCola().filter(x=>x.email===email)){tomarCandado();
+  const hojaYa={};
+  try{for(const it of ordenCola(leerCola().filter(x=>x.email===email))){tomarCandado();
+    // Si la planilla ya tiene esa marca igual (por ejemplo, se mandó antes pero el celular no se enteró), no se vuelve a mandar
+    if(await yaEstaEnHoja(it,hojaYa)){sacarDeCola(it);algo=true;const p=pendM[it.key];if(p&&p.t===it.t){p.ok=true;p.t=Date.now()}
+      try{if(vista==="M"){if(abiertoNo||abiertoMas)pintarGuardando();else renderMed()}}catch(x){}continue}
     let r;try{r=await api({action:"marcarMed",fecha:it.fecha,toma:it.toma,id:it.id,nombre:it.nombre,estado:it.estado,motivo:it.motivo,medicacion:it.medicacion})}catch(e){break}
+    if(r&&r.ok===true&&hojaYa[it.fecha]){if(it.estado)hojaYa[it.fecha][it.key]={estado:it.estado==="dada"?"Dada":"No la tomó",motivo:it.motivo||""};else delete hojaYa[it.fecha][it.key]}
     // Si Google contestó con un error (por ejemplo "otro proceso retuvo el candado" cuando marcan dos a la vez),
     // la marca NO se pierde: queda en la cola y se reintenta. Recién después de 12 intentos se avisa y se saca.
     if(!r||r.ok!==true){const n=(it.n||0)+1;
@@ -2281,7 +2297,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261120141700";
+const APP_VER="20261120170500";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}

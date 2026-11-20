@@ -302,10 +302,30 @@
     if (EN_INT || colaP) return; var c = credInt(); if (!c) return; var yoC = String(c.email).toLowerCase().trim();
     var mias = function () { return leerColaI().filter(function (x) { return String(x.email || "").toLowerCase().trim() === yoC; }); };
     if (!mias().length) return; if (!candado()) { clearTimeout(colaT); colaT = setTimeout(mandarColaIni, 20000); return; }
-    colaP = true;
+    colaP = true; var hojaYa = {};
+    var hoyI = (function () { var d = new Date(); return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2); })();
+    var orden = function (l) { return l.slice().sort(function (a, b) { return ((a.fecha === hoyI) ? 0 : 1) - ((b.fecha === hoyI) ? 0 : 1) || (b.fecha < a.fecha ? -1 : b.fecha > a.fecha ? 1 : 0) || a.t - b.t; }); };
+    // ¿La planilla ya tiene esta marca tal cual? Entonces no se vuelve a mandar
+    var yaEsta = function (it) {
+      if (it.toma === "Salida" || it.estado === "llevar") return Promise.resolve(false);
+      var ver = function () { var m = hojaYa[it.fecha]; if (!m) return false; var h = m[it.key]; if (!it.estado) return !h; if (!h) return false;
+        if (it.estado === "dada") return h.estado === "Dada"; if (it.estado === "no") return h.estado === "No la tomó" && String(h.motivo || "") === String(it.motivo || ""); return false; };
+      if (it.fecha in hojaYa) return Promise.resolve(ver());
+      hojaYa[it.fecha] = null;
+      return googleInt({ email: c.email, token: c.token, action: "getEntregas", fecha: it.fecha }).then(function (r) {
+        if (r && r.ok === true) { var m = {}; (r.data || []).forEach(function (x) { m[x.toma + "|" + x.id] = { estado: x.estado, motivo: x.motivo || "" }; }); hojaYa[it.fecha] = m; }
+        return ver();
+      }).catch(function () { return false; });
+    };
     var paso = function () {
-      var l = mias(); if (!l.length) { colaP = false; soltar(); return; }
+      var l = orden(mias()); if (!l.length) { colaP = false; soltar(); return; }
       var it = l[0]; candado();
+      yaEsta(it).then(function (ya) {
+        if (ya) { lsSet(COLA_K, JSON.stringify(leerColaI().filter(function (x) { return !mismoIt(x, it); }))); setTimeout(paso, 50); return; }
+        enviar(it);
+      });
+    };
+    var enviar = function (it) {
       googleInt({ email: c.email, token: c.token, action: "marcarMed", fecha: it.fecha, toma: it.toma, id: it.id, nombre: it.nombre, estado: it.estado, motivo: it.motivo, medicacion: it.medicacion })
         .then(function (r) {
           if (r && r.auth === false) { colaP = false; soltar(); return; }
