@@ -71,7 +71,7 @@
     "#alasInicio .ai-hero h1{font:700 34px/1.1 Fraunces,Georgia,serif;margin:0;background:linear-gradient(100deg,#f0e8da 0%,#f0e8da 42%,#ffd38a 50%,#f0e8da 58%,#f0e8da 100%);background-size:300% 100%;background-position:0 0;-webkit-background-clip:text;background-clip:text;color:transparent}" +
     // Entrada "Amanecer": brillo que sube, chispitas, aro que se dibuja, pájaro, título con destello y panel que sube
     "#alasInicio .ai-amanecer{position:absolute;inset:0;background:radial-gradient(70% 55% at 50% 45%,#5a3410 0%,#2a1a0c 45%,#16120e 80%)}" +
-    "#alasInicio .ai-hero>*:not(.ai-amanecer):not(.ai-chispa):not(.ai-me){position:relative}#alasInicio .ai-hero>.ai-me{position:absolute;z-index:2}" +
+    "#alasInicio .ai-hero>*:not(.ai-amanecer):not(.ai-chispa):not(.ai-top){position:relative}#alasInicio .ai-hero>.ai-top{position:absolute;z-index:2}" +
     "#alasInicio .ai-logo{width:170px;height:170px;display:flex;align-items:center;justify-content:center}" +
     "#alasInicio .ai-aro{position:absolute;inset:0;opacity:0}" +
     "#alasInicio .ai-chispa{position:absolute;bottom:-8px;width:4px;height:4px;border-radius:50%;background:#ffb43a;box-shadow:0 0 8px 2px rgba(247,168,35,.6);opacity:0;animation:aiChispa 3.6s linear infinite}" +
@@ -86,13 +86,27 @@
     "#alasInicio.ai-intro .ai-hero h1{background-position:100% 0;animation:aiCorte .8s cubic-bezier(.2,.8,.2,1) 1.7s both,aiDestello 1.1s ease 2.5s forwards}" +
     "@keyframes aiCorte{from{clip-path:inset(0 100% 0 0);transform:translateY(6px)}to{clip-path:inset(0 0 0 0);transform:none}}@keyframes aiDestello{from{background-position:100% 0}to{background-position:0 0}}" +
     "#alasInicio.ai-intro .ai-sub,#alasInicio.ai-intro .ai-falta{animation:aiSubIn .6s ease 2.3s both}@keyframes aiSubIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}" +
-    "#alasInicio.ai-intro .ai-me{animation:aiSubIn .6s ease 2.75s both}" +
+    "#alasInicio.ai-intro .ai-top{animation:aiSubIn .6s ease 2.75s both}" +
     "#alasInicio.ai-intro .ai-chispa{animation-delay:1s}" +
     "#alasInicio.ai-intro .ai-panel{animation:aiPanelIn .6s cubic-bezier(.2,.8,.2,1) 2.75s both}@keyframes aiPanelIn{from{transform:translateY(110%)}to{transform:none}}" +
     "#alasInicio.ai-intro .ai-app{animation:aiPop .5s cubic-bezier(.3,1.6,.5,1) both}@keyframes aiPop{from{opacity:0;transform:translateY(40px) scale(.6)}to{opacity:1;transform:none}}" +
     "#alasInicio.ai-intro .ai-app:nth-child(1){animation-delay:3.1s}#alasInicio.ai-intro .ai-app:nth-child(2){animation-delay:3.2s}#alasInicio.ai-intro .ai-app:nth-child(3){animation-delay:3.3s}#alasInicio.ai-intro .ai-app:nth-child(4){animation-delay:3.4s}" +
     "#alasInicio .ai-sub{font-size:11.5px;letter-spacing:3px;text-transform:uppercase;color:#d9b98a}" +
-    "#alasInicio .ai-me{position:absolute;top:calc(env(safe-area-inset-top,0px) + 16px);right:16px;width:44px;height:44px;border-radius:50%;border:1px solid #f7a823;background:#3a2a12;color:#f7a823;font:700 17px inherit;cursor:pointer}" +
+    // Arriba: quién está usando la app (nombre y rol, en una línea) y el botoncito Compartir
+    "#alasInicio .ai-top{top:calc(env(safe-area-inset-top,0px) + 16px);left:16px;right:16px;display:flex;align-items:center;justify-content:space-between;gap:8px}" +
+    "#alasInicio .ai-yo,#alasInicio .ai-comp{appearance:none;display:flex;align-items:center;border:1px solid #3a3027;background:rgba(33,27,21,.75);color:#f0e8da;border-radius:99px;cursor:pointer;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);transition:transform .12s;-webkit-tap-highlight-color:transparent}" +
+    "#alasInicio .ai-yo:active,#alasInicio .ai-comp:active{transform:scale(.94)}" +
+    "#alasInicio .ai-yo{gap:7px;min-width:0;max-width:calc(100% - 112px);padding:4px 9px 4px 4px;font-family:inherit}" +
+    "#alasInicio .ai-yo i{flex:none;width:30px;height:30px;border-radius:50%;background:linear-gradient(140deg,#f7a823,#d9560f);color:#1a120a;font-style:normal;font-weight:700;font-size:15px;line-height:30px;font-family:inherit;text-align:center}" +
+    "#alasInicio .ai-yo b{font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}" +
+    "#alasInicio .ai-yo em{flex:none;font-style:normal;font-size:9.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:3px 7px;border-radius:99px;background:#f7a823;color:#1a120a}" +
+    "#alasInicio .ai-yo em.u{background:#3a3027;color:#d9b98a}" +
+    "#alasInicio .ai-comp{flex:none;margin-left:auto;height:32px;gap:6px;padding:0 11px 0 9px;color:#f3d9a8;font-family:inherit;font-weight:600;font-size:12.5px}#alasInicio .ai-comp svg{width:14px;height:14px;color:#f7a823}" +
+    "#alasInicio .ai-qr{display:block;width:150px;height:150px;margin:4px auto 6px;border-radius:14px}" +
+    "#alasInicio .ai-dos{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}" +
+    "#alasInicio .ai-dos>*{height:50px;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;font-weight:700;font-size:14.5px;cursor:pointer;text-decoration:none;box-sizing:border-box}" +
+    "#alasInicio .ai-wa{background:#25a35a;color:#fff;border:0}#alasInicio .ai-cp{background:#2a221a;color:#f0e8da;border:1px solid #4a3f34}" +
+    "#alasInicio .ai-mas{display:block;margin:12px auto 0;appearance:none;border:0;background:none;color:#f7a823;font-family:inherit;font-weight:600;font-size:13.5px;cursor:pointer;padding:4px}" +
     "#alasInicio .ai-panel{background:#211b15;border-top:1px solid #3a3027;border-radius:28px 28px 0 0;padding:20px 14px calc(env(safe-area-inset-bottom,0px) + 28px);display:flex;flex-direction:column;gap:16px;animation:aiPanel .45s cubic-bezier(.2,.8,.2,1) both}@keyframes aiPanel{from{transform:translateY(30px);opacity:0}}" +
     "#alasInicio .ai-elegi{font-size:13px;color:#b3a99b;text-align:center}" +
     "#alasInicio .ai-fila{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}" +
@@ -156,7 +170,47 @@
     return "";
   }
   var correoIni = haySesion();
-  function inicial() { try { if (typeof email === "string" && email) return email[0].toUpperCase(); } catch (e) {} return correoIni ? correoIni[0].toUpperCase() : "?"; }
+  // Quién está usando la app: nombre (los conocidos por su correo) y si es Administrador o Usuario
+  var API_INT = "https://script.google.com/macros/s/AKfycbzYLuWCtvRv-sQobVzwXxUhTbjfhDuul9raoOD4RbxFOkBVaPI5FLEOU4TI5z3pQl9_/exec";
+  var NOMBRES = { "reboirasnicolas4@gmail.com": "Nicolás", "delosreyes.mathias89@gmail.com": "Matías", "ctalasdelibertad545@gmail.com": "Alas de Libertad" };
+  function miCorreo() { try { if (typeof email === "string" && email) return email; } catch (e) {} try { if (typeof cred === "object" && cred && cred.correo) return cred.correo; } catch (e) {} return haySesion(); }
+  function normRol(r) { r = String(r || ""); return /admin/i.test(r) ? "Admin" : /usuario|user/i.test(r) ? "Usuario" : ""; }
+  function rolDeLaApp() { try { if (typeof role === "string" && role) return normRol(role); } catch (e) {} try { if (typeof S === "object" && S && S.rol) return normRol(S.rol); } catch (e) {} return ""; }
+  function yo() {
+    var c = miCorreo(); if (!c || c === "?") return null; var k = c.toLowerCase().trim();
+    var g = null; try { g = JSON.parse(lsGet("alas-yo") || "null"); } catch (e) {}
+    var rol = rolDeLaApp();
+    if (rol) { if (!g || g.email !== k || g.rol !== rol) lsSet("alas-yo", JSON.stringify({ email: k, rol: rol, t: Date.now() })); }
+    else if (g && g.email === k) rol = g.rol;
+    if (!rol || !g || g.email !== k || Date.now() - (g.t || 0) > 864e5) buscarRol(k);
+    var n = NOMBRES[k] || k.split("@")[0].replace(/[._-]+/g, " ").replace(/\b\w/g, function (x) { return x.toUpperCase(); });
+    return { email: k, nombre: n, rol: rol };
+  }
+  var buscando = false;
+  function buscarRol(k) {
+    if (buscando) return; var t = null; try { t = JSON.parse(lsGet("alas-token") || "null") || JSON.parse(ssGet("alas-paso") || "null"); } catch (e) {}
+    if (!t || !t.token || String(t.email || "").toLowerCase().trim() !== k) return; buscando = true;
+    fetch(API_INT, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ email: t.email, token: t.token, action: "checkUser" }) })
+      .then(function (r) { return r.json(); }).then(function (r) {
+        var rol = r && typeof r === "object" && ![r.authorized, r.autorizado, r.ok, r.success].some(function (v) { return v === false; }) ? normRol(r.role || r.rol || r.Rol || (r.data && (r.data.role || r.data.rol))) : "";
+        if (rol) { lsSet("alas-yo", JSON.stringify({ email: k, rol: rol, t: Date.now() })); var e = raiz && raiz.querySelector(".ai-yo em"); if (e) { e.textContent = rol === "Admin" ? "Administrador" : "Usuario"; e.className = rol === "Admin" ? "" : "u"; e.hidden = false; } }
+      }).catch(function () {}).then(function () { buscando = false; });
+  }
+  function barraArriba() {
+    var u = haySesion() || miCorreo() ? yo() : null;
+    var h = "<div class='ai-top'>";
+    if (u) h += "<button type='button' class='ai-yo' data-ai='cuenta' aria-label='Tu cuenta: " + esc(u.nombre) + "'><i>" + esc(u.nombre[0].toUpperCase()) + "</i><b>" + esc(u.nombre) + "</b><em" + (u.rol === "Admin" ? "" : " class='u'") + (u.rol ? "" : " hidden") + ">" + (u.rol === "Admin" ? "Administrador" : "Usuario") + "</em></button>";
+    h += "<button type='button' class='ai-comp' data-ai='compartir'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round' aria-hidden='true'><circle cx='18' cy='5' r='3'/><circle cx='6' cy='12' r='3'/><circle cx='18' cy='19' r='3'/><path d='M8.6 13.5l6.8 4M15.4 6.5l-6.8 4'/></svg>Compartir</button></div>";
+    return h;
+  }
+  var TXT_COMP = "Instalá la app Alas de Libertad (Internos, Bitácora, Médicos y Despensa en una sola): ";
+  function compartir() {
+    hoja("<h2 style='text-align:center'>Compartir la app</h2><p style='margin:0 0 6px;font-size:13px;color:#b3a99b;text-align:center'>Al abrir el link, el compañero ve cómo instalarla paso a paso.</p>" +
+      "<img class='ai-qr' src='" + RAIZ_INT + "qr-alas.svg' alt='Código QR de la app'><p style='margin:0;font-size:12px;color:#b3a99b;text-align:center'>Que lo escaneen con la cámara del celular</p>" +
+      "<div class='ai-dos'><a class='ai-wa' href='https://wa.me/?text=" + encodeURIComponent(TXT_COMP + URL_ALAS) + "' target='_blank' rel='noopener'><svg width='18' height='18' viewBox='0 0 24 24' fill='currentColor' aria-hidden='true'><path d='M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.2.1.7-.1 1.1z'/></svg>WhatsApp</a><button type='button' class='ai-cp' data-ai='copiarcomp'>Copiar link</button></div>" +
+      (navigator.share ? "<button type='button' class='ai-mas' data-ai='mascomp'>Más opciones (correo, Telegram…)</button>" : "") +
+      "<button type='button' class='ai-mas' data-ai='cerrarhoja' style='color:#b3a99b'>Cerrar</button>");
+  }
 
   function icono(a, clase) {
     return "<span class='ai-ic'><img src='" + esc(/^https?:/.test(a.icon) ? a.icon : RAIZ_INT + a.icon) + "' alt=''" + (a.id === "internos" ? "" : " class='z'") + "></span>";
@@ -171,7 +225,7 @@
       chispas += "<span class='ai-chispa' aria-hidden='true' style='left:" + x + "%;--dx:" + ((i % 2 ? 1 : -1) * (10 + (i * 7) % 25)) + "px;animation-delay:" + (1.0 + (i * 0.37) % 3.2).toFixed(2) + "s'></span>";
     });
     var h = "<div class='ai'><div class='ai-hero'><div class='ai-amanecer' aria-hidden='true'></div>" + chispas +
-      (EN_INT ? "<button type='button' class='ai-me' data-ai='cuenta' aria-label='Tu cuenta'>" + esc(inicial()) + "</button>" : "") +
+      barraArriba() +
       "<div class='ai-logo'><svg class='ai-aro' width='170' height='170' viewBox='0 0 170 170' aria-hidden='true'><circle cx='85' cy='85' r='80' fill='none' stroke='#f7a823' stroke-width='2.5' stroke-linecap='round' pathLength='100' stroke-dasharray='100' transform='rotate(-90 85 85)'/></svg>" +
       "<img class='ai-ave' src='" + RAIZ_INT + "logo.png' alt='Logo de Alas de Libertad'></div>" +
       "<h1>Alas de Libertad</h1><div class='ai-sub'>Comunidad Terapéutica · San José</div>";
@@ -273,7 +327,11 @@
     if (q === "copiarlink") { e.stopPropagation(); try { navigator.clipboard.writeText(URL_ALAS); aviso("Link copiado: pegalo en Chrome"); } catch (x) { aviso(URL_ALAS); } return; }
     if (q === "abrirchrome") { e.stopPropagation(); var u = new URL(URL_ALAS); location.href = "intent://" + u.host + u.pathname + "#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=" + encodeURIComponent(URL_ALAS) + ";end"; return; }
     if (q === "abrir") { if (raiz.querySelector(".ai-carga")) return; abrir(app(b.getAttribute("data-id")), b); return; }
-    if (q === "cuenta") { var m = document.getElementById("me"); if (m) m.click(); }
+    if (q === "compartir") { e.stopPropagation(); compartir(); return; }
+    if (q === "copiarcomp") { e.stopPropagation(); var ok = function () { var h = raiz.querySelector(".ai-hoja"); if (h) h.remove(); aviso("✓ Link copiado"); };
+      try { navigator.clipboard.writeText(URL_ALAS).then(ok, function () { aviso(URL_ALAS); }); } catch (x) { aviso(URL_ALAS); } return; }
+    if (q === "mascomp") { e.stopPropagation(); try { navigator.share({ title: "Alas de Libertad", text: TXT_COMP, url: URL_ALAS }).catch(function () {}); } catch (x) {} return; }
+    if (q === "cuenta") { var m = EN_INT && document.getElementById("me"); if (m) m.click(); else { var u = yo(); if (u) aviso(u.email); } }
     if (q === "volver") cerrar();
   }
   document.addEventListener("keydown", function (e) {
