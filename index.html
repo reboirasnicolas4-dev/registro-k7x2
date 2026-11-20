@@ -1392,7 +1392,7 @@ function evento(c){const d=x=>days(hoy,x),dm=x=>String(x.getDate()).padStart(2,"
   if(c.sal)return["Próxima salida "+dm(c.sal),""];
   return["Termina el "+fd(c.fin),""]}
 // Cuartos: resumen desde la pestaña Cuartos
-const CU_DEF=[["Tropilla",16,x=>!!x.sector],["Cuarto 0",4,x=>!x.sector&&x.cuarto==="0"],["Cuarto 1",6,x=>!x.sector&&x.cuarto==="1"],["Cuarto 2",6,x=>!x.sector&&x.cuarto==="2"],["Cuarto 3",4,x=>!x.sector&&x.cuarto==="3"],["Cuarto 4",8,x=>!x.sector&&x.cuarto==="4"]];
+const CU_DEF=[["Tropilla",16,x=>!!x.sector],["Cuarto 0",4,x=>!x.sector&&x.cuarto==="0"],["Cuarto 1",6,x=>!x.sector&&x.cuarto==="1"],["Cuarto 2",6,x=>!x.sector&&x.cuarto==="2"],["Cuarto 3",4,x=>!x.sector&&x.cuarto==="3"],["Cuarto 4",6,x=>!x.sector&&x.cuarto==="4"]];
 function camasLibres(){const act=items.filter(i=>i.nombre&&i.ingreso);let l=0;
   CU_DEF.forEach(([n,cap,f])=>{l+=Math.max(0,cap-act.filter(i=>camas[i.id]&&f(camas[i.id])).length)});
   const sin=act.filter(i=>!camas[i.id]||(!camas[i.id].fuera&&!camas[i.id].sector&&!camas[i.id].cuarto));return{libres:l,sin}}
@@ -2281,7 +2281,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261120130000";
+const APP_VER="20261120141500";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
