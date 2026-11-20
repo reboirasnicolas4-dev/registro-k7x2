@@ -3,7 +3,7 @@
 <head>
 <script>try{var tm=localStorage.getItem("alas-tema");if(tm)document.documentElement.dataset.tema=tm}catch(e){}</script>
 <script src="bloqueo.js?v=2"></script>
-<script src="inicio.js?v=22"></script>
+<script src="inicio.js?v=23"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Internos</title>
@@ -441,6 +441,17 @@ img.av{border-radius:30%}
 .edet p{margin:2px 0 0;color:var(--mut);line-height:1.4;white-space:pre-line}
 /* medicación: más lugar para la lista */
 #vMed .mauto{display:none}
+/* qué se está marcando y aviso de marcas que todavía no llegaron a la planilla */
+#vMed .mquees{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 13px;border-radius:14px;background:#241a0e;border:1px solid #5a3a12;margin-bottom:10px}
+#vMed .mquees span{font-size:12.5px;color:#d9b98a}#vMed .mquees b{font-size:14.5px;color:#f7a823;text-align:right}
+#vMed .mquees.otro{background:#3a1712;border-color:#d9560f}#vMed .mquees.otro b{color:#ff9a7a}
+#vMed .mguard{display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:14px;background:#3a2a12;border:1px solid #f7a823;margin-bottom:10px}
+#vMed .mguard[hidden]{display:none}
+#vMed .mguard svg{width:22px;height:22px;flex:none;fill:none;stroke:#f7a823;stroke-width:2.6;stroke-linecap:round;animation:mgira 1s linear infinite}
+@keyframes mgira{to{transform:rotate(360deg)}}
+#vMed .mguard b{display:block;font-size:14.5px}#vMed .mguard small{display:block;font-size:12.5px;color:#d9b98a;margin-top:2px}
+#vMed .mguard.ok{background:#1f2d18;border-color:#5c8a3a}#vMed .mguard.ok>span{font-size:18px;color:#7fb35a}
+.est.guard{background:#7a5a14!important}
 #vMed .mtop{gap:7px;padding:4px 0 6px;margin-bottom:6px}
 #vMed .tomas button{padding:7px 0}
 .mfila{display:flex;gap:8px}.mfila .msb{flex:1;min-width:0}
@@ -605,6 +616,9 @@ img.av{border-radius:30%}
   </section>
   <section id="vMed" hidden>
     <div class="mtop">
+      <div class="mquees" id="mquees"><span>Estás marcando</span><b id="mqueb"></b></div>
+      <div class="mguard" id="mguard" role="status" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.2-8.6"/></svg><div><b id="mguardt"></b><small>No cierres la app hasta que termine</small></div></div>
+      <div class="mguard ok" id="mguardok" role="status" hidden><span aria-hidden="true">✓</span><div><b>Todo guardado en la planilla</b></div></div>
       <div class="tomas" id="mtomas"></div>
       <small class="mauto" id="mauto"></small>
       <div class="mfila"><div class="msb"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
@@ -1734,8 +1748,12 @@ function leerCola(){try{return JSON.parse(localStorage.getItem(COLA_K)||"[]")||[
 function guardarCola(c){try{localStorage.setItem(COLA_K,JSON.stringify(c))}catch(x){}}
 function encolar(it){guardarCola(leerCola().filter(x=>!(x.email===it.email&&x.fecha===it.fecha&&x.key===it.key)).concat([it]))}
 function sacarDeCola(it){guardarCola(leerCola().filter(x=>!(x.email===it.email&&x.fecha===it.fecha&&x.key===it.key&&x.t===it.t)))}
-async function mandarCola(){if(mandarCola.p||!token||soloCopia)return;mandarCola.p=1;let algo=false;
-  try{for(const it of leerCola().filter(x=>x.email===email)){
+/* Una sola app manda la cola a la vez (Internos, Inicio u otra app abierta): candado en el celular */
+const COLA_LOCK="alas-cola-lock",YO_COLA=Math.random().toString(36).slice(2);
+function tomarCandado(){try{const l=JSON.parse(localStorage.getItem(COLA_LOCK)||"null");if(l&&l.y!==YO_COLA&&Date.now()-l.t<90000)return false;localStorage.setItem(COLA_LOCK,JSON.stringify({y:YO_COLA,t:Date.now()}));return true}catch(x){return true}}
+function soltarCandado(){try{const l=JSON.parse(localStorage.getItem(COLA_LOCK)||"null");if(l&&l.y===YO_COLA)localStorage.removeItem(COLA_LOCK)}catch(x){}}
+async function mandarCola(){if(mandarCola.p||!token||soloCopia)return;if(!colaMia().length)return;if(!tomarCandado()){setTimeout(mandarCola,20000);return}mandarCola.p=1;let algo=false;
+  try{for(const it of leerCola().filter(x=>x.email===email)){tomarCandado();
     let r;try{r=await api({action:"marcarMed",fecha:it.fecha,toma:it.toma,id:it.id,nombre:it.nombre,estado:it.estado,motivo:it.motivo,medicacion:it.medicacion})}catch(e){break}
     // Si Google contestó con un error (por ejemplo "otro proceso retuvo el candado" cuando marcan dos a la vez),
     // la marca NO se pierde: queda en la cola y se reintenta. Recién después de 12 intentos se avisa y se saca.
@@ -1744,10 +1762,25 @@ async function mandarCola(){if(mandarCola.p||!token||soloCopia)return;mandarCola
       try{const f=JSON.parse(localStorage.getItem("alas-med-fallidas")||"[]");f.push({fecha:it.fecha,toma:it.toma,nombre:it.nombre,estado:it.estado,error:String((r&&r.error)||r||""),t:Date.now()});localStorage.setItem("alas-med-fallidas",JSON.stringify(f.slice(-50)))}catch(x){}
       try{aviso("⚠ No se pudo guardar en la planilla: "+it.nombre+" ("+it.toma+" "+it.fecha.split("-").reverse().join("/")+"). Marcala de nuevo.")}catch(x){}}
     sacarDeCola(it);algo=true;
-    const p=pendM[it.key];if(p&&p.t===it.t){if(r&&r.ok===true){p.ok=true;p.t=Date.now()}else delete pendM[it.key]}}}
-  finally{mandarCola.p=0}
+    const p=pendM[it.key];if(p&&p.t===it.t){if(r&&r.ok===true){p.ok=true;p.t=Date.now()}else delete pendM[it.key]}
+    try{if(vista==="M"){if(abiertoNo||abiertoMas)pintarGuardando();else renderMed()}}catch(x){}}}
+  finally{mandarCola.p=0;soltarCandado()}
   if(algo&&leerCola().some(x=>x.email===email))setTimeout(mandarCola,500)}
 setInterval(mandarCola,30000);
+/* Aviso en Medicación: qué día y comida se está marcando, y cuántas marcas faltan llegar a la planilla */
+const DIAS=["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
+function colaMia(){return leerCola().filter(x=>x.email===email)}
+function colaHas(f,k){return colaMia().some(x=>x.fecha===f&&x.key===k)}
+function pintarQueEs(){const f=fechaMed(),h=iso(hoy),d=parse(f),e=$("mquees");if(!e)return;
+  $("mqueb").textContent=tomaSel+" · "+(f===h?"hoy ":"")+DIAS[d.getDay()]+" "+d.getDate()+"/"+(d.getMonth()+1);e.classList.toggle("otro",f!==h)}
+let guardVis=false,guardOkT=0;
+function pintarGuardando(){const g=$("mguard");if(!g)return;const n=colaMia().length;
+  if(n){$("mguardt").textContent="Guardando "+n+(n===1?" marca":" marcas")+"…";g.hidden=false;$("mguardok").hidden=true;guardVis=true;clearTimeout(guardOkT);return}
+  g.hidden=true;if(guardVis){guardVis=false;$("mguardok").hidden=false;clearTimeout(guardOkT);guardOkT=setTimeout(()=>{$("mguardok").hidden=true},3000)}}
+let guardN=-1;
+setInterval(()=>{if(vista!=="M"||document.visibilityState!=="visible")return;const n=colaMia().length;
+  if(n===guardN&&!(guardVis&&!n))return;guardN=n;
+  if(abiertoNo||abiertoMas||document.querySelector("dialog[open]"))pintarGuardando();else renderMed()},2000);
 /* Las marcas que hacen otros (desde su celular) aparecen solas: mientras Medicación u Hoy están a la vista,
    se vuelven a pedir cada 45 segundos, y también al volver a la app */
 function refrescarMarcas(){if(!token||soloCopia||document.visibilityState!=="visible"||(vista!=="M"&&vista!=="H"))return;
@@ -1799,6 +1832,7 @@ function renderMed(){
   $("mtomas").replaceChildren(...TOMAS.map(t=>{const b=el("button",t===tomaSel?"on":"",t);b.type="button";b.onclick=()=>{tomaSel=t;tomaAMano=t!==tomaHora();abiertoNo=null;abiertoMas=null;renderMed()};
     if(marcasDe===fechaMed()){const c=cuentaToma(t);if(c.tot)b.append(el("small","",c.hechas>=c.tot?"✔ completo":"faltan "+(c.tot-c.hechas)))}return b}));
   $("mauto").textContent=tomaAMano?"Elegiste "+tomaSel+" a mano.":"Se eligió "+tomaSel+" por la hora. Tocá otra toma si hace falta.";
+  pintarQueEs();pintarGuardando();
   const qm=nq($("mq").value.trim()); $("mqx").hidden=!qm;
   const coincide=i=>{if(!qm)return true;const n=nq(i.nombre.trim());return n.split(/\s+/).some(p=>p.startsWith(qm))||n.includes(qm)};
   const f=parse(fechaMed()),k=tomaSel.toLowerCase();
@@ -1813,7 +1847,8 @@ function renderMed(){
     t.append(resaltarM(i.nombre.trim(),qm),el("span","",String(i[k]).trim()));r.append(avatar(i,"av"),t);
     const bt=el("div","bt");
     if(salePend(i)){t.append(el("em","salhoy","🚪 Sale hoy"))}
-    if(m){bt.append(el("span","est "+(m.estado==="Dada"?"ok":"no"),(m.estado==="Dada"?"✓ Dada":"✗ No la tomó"+(m.motivo?": "+m.motivo:""))+" · "+soloHora(m.hora)+" · "+String(m.usuario).split("@")[0]));
+    if(m){const enCola=colaHas(fechaMed(),tomaSel+"|"+i.id);
+      bt.append(el("span","est "+(m.estado==="Dada"?"ok":"no")+(enCola?" guard":""),(m.estado==="Dada"?"✓ Dada":"✗ No la tomó"+(m.motivo?": "+m.motivo:""))+" · "+(enCola?"guardando…":soloHora(m.hora)+" · "+String(m.usuario).split("@")[0])));
       if(isAdmin()){const u=el("button","","Deshacer");u.type="button";u.onclick=()=>marcar(i,"");bt.append(u)}}
     else if(!isAdmin()){bt.append(el("span","est","Sin marcar"))}
     else if(abiertoNo===i.id){const inp=el("input");inp.placeholder="Motivo (opcional)";inp.id="mot-"+i.id;
@@ -2246,7 +2281,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261120023000";
+const APP_VER="20261120130000";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}

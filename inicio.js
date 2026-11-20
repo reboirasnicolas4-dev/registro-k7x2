@@ -290,6 +290,43 @@
       .then(function () { if (bt.isConnected) { bt.disabled = false; bt.textContent = "Enviar solicitud"; } });
   }
 
+  // ===== Marcas de medicación que quedaron esperando en el celular =====
+  // Internos las manda solo; acá se mandan también desde Inicio, Bitácora, Médicos y Despensa,
+  // así llegan a la planilla aunque Internos se haya cerrado. Una sola app a la vez (candado en el celular).
+  var COLA_K = "alas-cola-med", COLA_LOCK = "alas-cola-lock", YO_COLA = Math.random().toString(36).slice(2), colaP = false, colaT = 0;
+  function leerColaI() { try { return JSON.parse(lsGet(COLA_K) || "[]") || []; } catch (e) { return []; } }
+  function mismoIt(a, b) { return a.email === b.email && a.fecha === b.fecha && a.key === b.key && a.t === b.t; }
+  function candado() { try { var l = JSON.parse(lsGet(COLA_LOCK) || "null"); if (l && l.y !== YO_COLA && Date.now() - l.t < 90000) return false; lsSet(COLA_LOCK, JSON.stringify({ y: YO_COLA, t: Date.now() })); return true; } catch (e) { return true; } }
+  function soltar() { try { var l = JSON.parse(lsGet(COLA_LOCK) || "null"); if (l && l.y === YO_COLA) localStorage.removeItem(COLA_LOCK); } catch (e) {} }
+  function mandarColaIni() {
+    if (EN_INT || colaP) return; var c = credInt(); if (!c) return; var yoC = String(c.email).toLowerCase().trim();
+    var mias = function () { return leerColaI().filter(function (x) { return String(x.email || "").toLowerCase().trim() === yoC; }); };
+    if (!mias().length) return; if (!candado()) { clearTimeout(colaT); colaT = setTimeout(mandarColaIni, 20000); return; }
+    colaP = true;
+    var paso = function () {
+      var l = mias(); if (!l.length) { colaP = false; soltar(); return; }
+      var it = l[0]; candado();
+      googleInt({ email: c.email, token: c.token, action: "marcarMed", fecha: it.fecha, toma: it.toma, id: it.id, nombre: it.nombre, estado: it.estado, motivo: it.motivo, medicacion: it.medicacion })
+        .then(function (r) {
+          if (r && r.auth === false) { colaP = false; soltar(); return; }
+          if (!r || r.ok !== true) {
+            var n = (it.n || 0) + 1;
+            if (n < 12) { lsSet(COLA_K, JSON.stringify(leerColaI().map(function (x) { return mismoIt(x, it) ? Object.assign({}, x, { n: n }) : x; }))); colaP = false; soltar(); clearTimeout(colaT); colaT = setTimeout(mandarColaIni, 15000); return; }
+            try { var f = JSON.parse(lsGet("alas-med-fallidas") || "[]"); f.push({ fecha: it.fecha, toma: it.toma, nombre: it.nombre, estado: it.estado, error: String((r && r.error) || r || ""), t: Date.now() }); lsSet("alas-med-fallidas", JSON.stringify(f.slice(-50))); } catch (e) {}
+            aviso("⚠ No se pudo guardar en la planilla: " + it.nombre + ". Marcala de nuevo en Internos.");
+          }
+          lsSet(COLA_K, JSON.stringify(leerColaI().filter(function (x) { return !mismoIt(x, it); })));
+          setTimeout(paso, 300);
+        }).catch(function () { colaP = false; soltar(); clearTimeout(colaT); colaT = setTimeout(mandarColaIni, 30000); });
+    };
+    paso();
+  }
+  if (!EN_INT) {
+    setTimeout(mandarColaIni, 2500); setInterval(mandarColaIni, 30000);
+    document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") setTimeout(mandarColaIni, 1500); });
+    window.addEventListener("online", function () { setTimeout(mandarColaIni, 1000); });
+  }
+
   // ===== Solicitudes de usuario nuevo: solo las ve Nicolás, tocando su nombre arriba =====
   var DUENO = "1x5ho7k", sols = [], solsT = 0, solsP = false;
   function esDueno(c) { return !!c && hs(String(c).toLowerCase().trim()) === DUENO; }
