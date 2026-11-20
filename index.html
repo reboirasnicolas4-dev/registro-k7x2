@@ -1729,7 +1729,13 @@ function sacarDeCola(it){guardarCola(leerCola().filter(x=>!(x.email===it.email&&
 async function mandarCola(){if(mandarCola.p||!token||soloCopia)return;mandarCola.p=1;let algo=false;
   try{for(const it of leerCola().filter(x=>x.email===email)){
     let r;try{r=await api({action:"marcarMed",fecha:it.fecha,toma:it.toma,id:it.id,nombre:it.nombre,estado:it.estado,motivo:it.motivo,medicacion:it.medicacion})}catch(e){break}
-    sacarDeCola(it);algo=true;  // si Google la rechazó de verdad (no por conexión) tampoco se reintenta
+    // Si Google contestó con un error (por ejemplo "otro proceso retuvo el candado" cuando marcan dos a la vez),
+    // la marca NO se pierde: queda en la cola y se reintenta. Recién después de 12 intentos se avisa y se saca.
+    if(!r||r.ok!==true){const n=(it.n||0)+1;
+      if(n<12){guardarCola(leerCola().map(x=>(x.email===it.email&&x.fecha===it.fecha&&x.key===it.key&&x.t===it.t)?Object.assign({},x,{n}):x));setTimeout(mandarCola,15000);break}
+      try{const f=JSON.parse(localStorage.getItem("alas-med-fallidas")||"[]");f.push({fecha:it.fecha,toma:it.toma,nombre:it.nombre,estado:it.estado,error:String((r&&r.error)||r||""),t:Date.now()});localStorage.setItem("alas-med-fallidas",JSON.stringify(f.slice(-50)))}catch(x){}
+      try{aviso("⚠ No se pudo guardar en la planilla: "+it.nombre+" ("+it.toma+" "+it.fecha.split("-").reverse().join("/")+"). Marcala de nuevo.")}catch(x){}}
+    sacarDeCola(it);algo=true;
     const p=pendM[it.key];if(p&&p.t===it.t){if(r&&r.ok===true){p.ok=true;p.t=Date.now()}else delete pendM[it.key]}}}
   finally{mandarCola.p=0}
   if(algo&&leerCola().some(x=>x.email===email))setTimeout(mandarCola,500)}
@@ -2226,7 +2232,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261119235953";
+const APP_VER="20261120010526";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
