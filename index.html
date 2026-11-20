@@ -1005,6 +1005,13 @@ async function load(){
 const DAY=864e5;
 const parse=s=>{const[y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
 const hoy=(()=>{const n=new Date();return new Date(n.getFullYear(),n.getMonth(),n.getDate())})();
+/* Cambio de día: si la app quedó abierta de un día para otro, se recarga sola para que "hoy" sea el día de hoy
+   (si no, las marcas de medicación se guardaban con la fecha de ayer). La sesión se mantiene. */
+function diaCambio(){const n=new Date();return n.getFullYear()!==hoy.getFullYear()||n.getMonth()!==hoy.getMonth()||n.getDate()!==hoy.getDate()}
+function revisarDia(){if(!diaCambio()||document.visibilityState!=="visible")return;
+  const ae=document.activeElement;if((ae&&(ae.tagName==="INPUT"||ae.tagName==="TEXTAREA"))||document.querySelector("dialog[open]")){setTimeout(revisarDia,60000);return}
+  try{if(typeof pasarSesion==="function")pasarSesion()}catch(x){}location.reload()}
+document.addEventListener("visibilitychange",revisarDia);window.addEventListener("focus",revisarDia);window.addEventListener("pageshow",revisarDia);setInterval(revisarDia,60000);
 /* Si la app quedó abierta de un día para el otro (por ejemplo de noche a la mañana), se recarga sola al cambiar el día:
    así nunca se marca la medicación con la fecha de ayer. Lo que esté sin mandar queda guardado en el celular. */
 function cambioDeDia(){const n=new Date();if(n.getDate()===hoy.getDate()&&n.getMonth()===hoy.getMonth()&&n.getFullYear()===hoy.getFullYear())return;
@@ -2219,7 +2226,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261119224810";
+const APP_VER="20261119235953";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
