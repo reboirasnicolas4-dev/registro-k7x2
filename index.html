@@ -1671,6 +1671,10 @@ const TOMAS=["Desayuno","Almuerzo","Merienda","Cena"];
 const tomaHora=()=>{const n=new Date(),h=n.getHours()+n.getMinutes()/60;return h<11?"Desayuno":h<15.5?"Almuerzo":h<19?"Merienda":"Cena"};
 let tomaSel=tomaHora(), tomaAMano=false;
 let marcas={}, abiertoNo=null, abiertoMas=null, llevar=[], marcasDe="";
+/* Marcas que están en la planilla pero no en la base en vivo (por ejemplo, cargadas a mano en la hoja): se siguen viendo en la app */
+let hojaM={}, hojaDe="";
+function ponerHoja(f,data){hojaM={};hojaDe=f;(data||[]).forEach(m=>{if(m&&m.estado)hojaM[m.toma+"|"+m.id]=m})}
+function sumarHoja(f){if(hojaDe!==f)return;const v=(FS.vistos&&FS.vistos[f])||{};Object.keys(hojaM).forEach(k=>{if(!marcas[k]&&!v[k])marcas[k]=hojaM[k]})}
 /* Aviso de abajo con «Deshacer» (unos segundos) */
 function aviso(txt,deshacer){const t=$("toast");$("tmsg").textContent=txt;const u=$("tundo");u.hidden=!deshacer;
   u.onclick=()=>{t.classList.remove("on");if(deshacer)deshacer()};t.classList.add("on");clearTimeout(aviso.t);aviso.t=setTimeout(()=>t.classList.remove("on"),6000)}
@@ -1753,7 +1757,7 @@ function refrescarMarcas(){if(!token||soloCopia||document.visibilityState!=="vis
   if(refrescarMarcas.p)return;refrescarMarcas.p=1;const f0=iso(hoy);
   // pedido liviano: solo las marcas de hoy
   api({action:"getEntregas",fecha:f0}).then(r=>{if(!r||r.ok!==true||fechaMed()!==f0||abiertoNo||abiertoMas)return;
-    const n={};(r.data||[]).forEach(m=>n[m.toma+"|"+m.id]=m);
+    const n={};(r.data||[]).forEach(m=>n[m.toma+"|"+m.id]=m);ponerHoja(f0,r.data);
     const antes=JSON.stringify(Object.keys(marcas).sort().map(k=>k+marcas[k].estado));
     marcas=n;aplicarPendientes(f0);marcasDe=f0;guardarCacheMed();loadMed.ok=Date.now();
     if(JSON.stringify(Object.keys(marcas).sort().map(k=>k+marcas[k].estado))!==antes){if(vista==="M")renderMed();else if(vista==="H")renderHoy()}
@@ -1780,7 +1784,8 @@ async function loadMed(){
     if(fechaMed()!==f0)return;
     if(FS.vivo!==f0)marcas={};
     // con la base viva, lo de la planilla solo completa lo que falte (por si algún celular viejo marcó sin pasar por la base)
-    (r.data||[]).forEach(m=>{const k=m.toma+"|"+m.id;if(FS.vivo!==f0||!marcas[k])marcas[k]=m});aplicarPendientes(f0);
+    ponerHoja(f0,r.data);
+    if(FS.vivo!==f0)(r.data||[]).forEach(m=>{marcas[m.toma+"|"+m.id]=m});else sumarHoja(f0);aplicarPendientes(f0);
     llevar=((r2&&r2.data)||[]).filter(m=>m.toma==="Salida");marcasDe=f0;guardarCacheMed();$("mmsg").textContent="";renderMed();
     loadMed.ok=Date.now();return true;
   }catch(e){loadMed.ok=0;
@@ -1872,9 +1877,10 @@ async function fsEscuchar(){
       const m=(s.data()||{}).m||{},n={};
       Object.keys(m).forEach(k=>{const o=m[k];if(o&&o.estado)n[k]=Object.assign({fecha:f},o)});
       FS.vivo=f;FS.ult=Date.now();
+      FS.vistos=FS.vistos||{};const vv=FS.vistos[f]=FS.vistos[f]||{};Object.keys(m).forEach(k=>vv[k]=1);
       try{const mm=$("mmsg");if(mm&&/^Google (no contesta|tarda)/.test(mm.textContent))mm.textContent=""}catch(x){}
       if(fechaMed()!==f)return;
-      marcas=n;aplicarPendientes(f);marcasDe=f;guardarCacheMed();
+      marcas=n;sumarHoja(f);aplicarPendientes(f);marcasDe=f;guardarCacheMed();
       if(fsOcupado())return;   // no cortar a quien está escribiendo un motivo: se ve al cerrar
       if(vista==="M")renderMed();else if(vista==="H")renderHoy()},
     async e=>{FS.vivo="";FS.unsub=null;
@@ -2237,7 +2243,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261120011129";
+const APP_VER="20261120013000";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
