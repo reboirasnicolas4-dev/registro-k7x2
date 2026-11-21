@@ -4,6 +4,14 @@ self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", e => e.waitUntil(self.clients.claim()));
 self.addEventListener("fetch", () => {});
 
+// Este receptor lo usan Internos y Bitácora (comparten la dirección de avisos).
+// Los avisos de Bitácora (urgentes) abren Bitácora; los demás, Internos.
+function destino(m, title, body) {
+  const u = m.url || "";
+  if (/^https?:/.test(u) || u.startsWith("/")) return u;
+  if (/bit[aá]cora|urgente/i.test((m.tag || "") + " " + title + " " + (m.app || ""))) return "/bitacora-m5w8/";
+  return u || "./";
+}
 // Aviso que llega desde Firebase (lo manda el script de la planilla)
 self.addEventListener("push", e => {
   let d = {};
@@ -13,7 +21,7 @@ self.addEventListener("push", e => {
   const body = m.body || n.body || "";
   e.waitUntil(self.registration.showNotification(title, {
     body, icon: "icon-alas-192.png", badge: "favicon-32.png",
-    tag: m.tag || "alas", renotify: true, data: { url: m.url || "./" }
+    tag: m.tag || "alas", renotify: true, data: { url: destino(m, title, body) }
   }));
 });
 // Al tocar el aviso se abre (o se trae al frente) la app
@@ -21,7 +29,7 @@ self.addEventListener("notificationclick", e => {
   e.notification.close();
   const url = new URL((e.notification.data && e.notification.data.url) || "./", self.registration.scope).href;
   e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(cs => {
-    for (const c of cs) if (c.url.startsWith(self.registration.scope) && "focus" in c) return c.focus();
+    for (const c of cs) if (c.url.startsWith(url) && "focus" in c) return c.focus();
     return self.clients.openWindow(url);
   }));
 });
