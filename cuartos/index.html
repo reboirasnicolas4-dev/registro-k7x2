@@ -102,6 +102,13 @@ td{padding:8px 12px;border-top:1px solid var(--line)}
 .empty{color:var(--mut);padding:20px;text-align:center}
 dialog{border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);padding:0;width:min(360px,92vw)}
 dialog::backdrop{background:rgba(0,0,0,.45)}
+/* Sumar a un cuarto (los que no entraban en cuartos) */
+#sdlg .sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#sdlg .sgrid button{height:62px;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:1px solid #5c8a3a;background:#1f2d18;color:var(--ink);font:inherit;cursor:pointer}
+#sdlg .sgrid button b{font-size:16px}#sdlg .sgrid button small{font-size:12px;opacity:.85}
+#sdlg .sgrid button.lleno{border-color:#5a2a1a;background:#2a1a14;color:#c98a6a}
+#sdlg .ssecs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+#sdlg .ssecs button{height:44px;border-radius:12px;border:1px solid var(--line);background:#2a221a;color:var(--ink);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
 .mn{display:grid;gap:8px;padding:16px}
 .mn .sub2{color:var(--mut);font-size:13px;margin:-4px 0 4px}
 .mn .ops{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -362,6 +369,14 @@ dialog{border-radius:24px}
   <div class="ops"><button type="button" id="o-desh"><b>↶ Deshacer</b><small>el último cambio</small></button><button type="button" id="o-act"><b>↻ Actualizar</b><small>traer lo último de la planilla</small></button></div>
   <div class="ops"><button type="button" id="o-vaciar"><b>🗑 Vaciar cuartos</b><small>todos quedan sin cama · Tropilla no se toca</small></button></div>
   <div class="row"><button type="button" id="o-cerrar">Cerrar</button></div>
+</div></dialog>
+<dialog id="sdlg"><div class="mn">
+  <h2 id="stit">¿A dónde va?</h2>
+  <p class="sub2">Elegís vos. Los demás cuartos quedan como están.</p>
+  <div class="sgrid" id="scuartos"></div>
+  <p class="sub2" style="margin:12px 0 6px">O a Tropilla, con sector:</p>
+  <div class="ssecs" id="ssecs"></div>
+  <div class="row"><button type="button" id="scancel">Cancelar</button></div>
 </div></dialog>
 <dialog id="pdlg"><div class="mn">
   <h2>Compartir reparto</h2>
@@ -700,7 +715,7 @@ function renderSectores(){$("borrarsec").hidden=!isAdmin();
     td.className="ssec";td.append(s);tr.append(td,el("td","sdonde",donde(p)));return tr}));
   $("fbox").hidden=!fuera.length;
   $("flist").replaceChildren(...fuera.map(p=>{const r=el("div","r");r.append(el("span","",p.nombre));
-    if(isAdmin()){const b=el("button","","Volver a cuartos");b.type="button";b.onclick=()=>volverACuartos(p);r.append(b)}return r}));
+    if(isAdmin()){const b=el("button","","Sumar a un cuarto");b.type="button";b.onclick=()=>elegirCuarto(p);r.append(b)}return r}));
 }
 function renderHist(){
   const l=$("hlist");
@@ -789,6 +804,20 @@ $("mfuera").onclick=()=>{const p=menuP;$("menu").close();
   ultimoLog=p.nombre+" no entra en cuartos";p.sector="";p.cuarto="";p.antes="";p.fuera=true;
   gente=gente.filter(x=>x.id!==p.id);fuera.push(p);const np=parejas.length;parejas=parejas.filter(x=>!x.includes(p.id));sel=null;render();guardarPronto();if(parejas.length!==np)guardarParejas("Quitó «no juntar» de "+p.nombre);
   toast(nom1(p)+" ya no cuenta en Cuartos (lo volvés a sumar en Sectores)")};
+/* Sumar a alguien que no entraba en cuartos: se elige el cuarto (o Tropilla con sector) a mano; nadie más se mueve */
+let sumando=null;
+function elegirCuarto(p){if(!isAdmin())return;sumando=p;$("stit").textContent="¿A dónde va "+nom1(p)+"?";
+  $("scuartos").replaceChildren(...CUARTOS.map(c=>{const n=enCuarto(c.id).length,lib=c.camas-n,b=el("button",lib<=0?"lleno":"");b.type="button";
+    b.append(el("b","","Cuarto "+c.id),el("small","",lib<=0?"lleno ("+n+"/"+c.camas+")":lib+(lib===1?" cama libre":" camas libres")));
+    b.onclick=()=>{if(lib<=0&&!confirm("El cuarto "+c.id+" está lleno ("+n+"/"+c.camas+"). ¿Lo ponés igual?"))return;sumarA(p,c.id,"")};return b}));
+  $("ssecs").replaceChildren(...SECTORES.map(x=>{const b=el("button","",x);b.type="button";b.onclick=()=>sumarA(p,"",x);return b}));
+  $("sdlg").showModal()}
+function sumarA(p,cuarto,sector){$("sdlg").close();sumando=null;if(!fuera.some(x=>x.id===p.id))return;
+  antesDeCambiar(p.nombre+(cuarto?" entra al cuarto "+cuarto:" entra a Tropilla ("+sector+")"));
+  p.fuera=false;p.cuarto=cuarto;p.antes=cuarto;p.sector=sector;fuera=fuera.filter(x=>x.id!==p.id);
+  gente.push(p);gente.sort((a,b)=>a.ingreso-b.ingreso||a.nombre.localeCompare(b.nombre,"es"));render();guardarPronto();
+  toast(nom1(p)+" quedó en "+(cuarto?"el cuarto "+cuarto:"Tropilla ("+sector+")")+" ✓")}
+$("scancel").onclick=()=>{$("sdlg").close();sumando=null};
 function volverACuartos(p){ultimoLog=p.nombre+" vuelve a cuartos";p.fuera=false;fuera=fuera.filter(x=>x.id!==p.id);
   gente.push(p);gente.sort((a,b)=>a.ingreso-b.ingreso||a.nombre.localeCompare(b.nombre,"es"));render();guardarPronto();toast(nom1(p)+" vuelve a contar en Cuartos (quedó sin cama)")}
 $("msacar").onclick=()=>{const p=menuP;$("menu").close();
@@ -914,7 +943,7 @@ if("serviceWorker" in navigator&&location.protocol.startsWith("http"))window.add
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261120180500";
+const APP_VER="20261121121500";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
