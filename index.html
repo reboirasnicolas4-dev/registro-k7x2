@@ -242,6 +242,11 @@ label.opt:has(input:checked){border:2px solid var(--acc)}
 .drow.fin{opacity:.75}.drow .av{grid-row:span 2}.drow b{font-size:15.5px}
 .drow .pl{display:flex;grid-column:2}.drow .nt{grid-column:2;color:var(--mut);font-size:13.5px}
 .drow .bt{grid-column:2;display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}.drow .bt button{font-size:13.5px;padding:8px 12px}
+.drow{grid-template-columns:44px minmax(0,1fr) 14px;cursor:pointer;-webkit-tap-highlight-color:transparent}.drow:active{transform:scale(.99)}.drow .fl{grid-column:3;grid-row:1/span 9;color:var(--mut);font-size:22px;align-self:center}
+.drow .pl{flex-wrap:wrap;gap:4px}.dsub{margin:-4px 0 4px;color:var(--mut);font-size:13.5px}
+.dmas{display:flex;flex-direction:column;gap:8px;margin-top:4px;padding-top:10px;border-top:1px solid var(--line)}.dmas button{width:100%}
+#df input.falta{border-color:#ec8a1c;background:#fff6ec}
+#df input:disabled,#df textarea:disabled{opacity:1;color:inherit;-webkit-text-fill-color:currentColor}
 .ulist{display:grid;gap:10px}
 .lnkb{background:none;border:0;color:var(--acc);font:inherit;font-weight:700;cursor:pointer;padding:6px;text-decoration:underline}
 .solc{border-color:var(--acc)!important}.solc .acts2{display:flex;gap:8px;flex:1 1 100%}.solc .acts2 button{flex:1;padding:10px;font-weight:700}
@@ -706,6 +711,7 @@ img.av{border-radius:30%}
 
 <dialog id="ddlg"><form id="df" class="ff">
   <h2 id="dtit">Destallo</h2>
+  <p id="dsub" class="dsub" hidden></p>
   <label>Nombre<input name="nombre" required autocomplete="off"></label>
   <div class="g2">
     <label>Cédula<input name="cedula" autocomplete="off" placeholder="1.234.567-8"></label>
@@ -713,7 +719,8 @@ img.av{border-radius:30%}
   </div>
   <label>Nota<textarea name="nota" placeholder="Opcional"></textarea></label>
   <div class="msg" id="dmsg2" role="alert"></div>
-  <div class="acts"><button type="button" class="d" id="ddel" hidden>Borrar</button><button type="button" id="dcancel">Cancelar</button><button type="submit" class="p" id="dsave">Guardar</button></div>
+  <div class="acts"><button type="button" id="dcancel">Cancelar</button><button type="submit" class="p" id="dsave">Guardar</button></div>
+  <div class="dmas" id="dmas" hidden><button type="button" id="dbaja">Dar de baja del destallo</button><button type="button" class="d" id="ddel">Quitar de la lista (se cargó por error)</button></div>
 </form></dialog>
 <dialog id="tdlg"><form id="tf" class="ff">
   <h2>Dar de baja del destallo</h2>
@@ -1526,14 +1533,11 @@ function renderDet(){const q=nq($("dq").value.trim()),L=$("dlist"),out=[];
     if(d.fin){const m=d.mot||"Terminó el destallo";pl.append(el("span","pill"+(m==="Se fue antes"?" w":""),m),el("span","pill",(d.fecha?fd(parse(d.fecha)):"¿?")+" → "+fd(parse(d.fin))))}
     else if(d.fecha){const n=days(parse(d.fecha),hoy);pl.append(el("span","pill o",n<=0?"Desde hoy":"Desde el "+fd(parse(d.fecha))+" · hace "+n+(n===1?" día":" días")))}
     else pl.append(el("span","pill w","Falta la fecha"));
-    if(d.cedula)pl.append(el("span","pill",d.cedula));r.append(pl);
+    if(d.cedula)pl.append(el("span","pill",d.cedula));else pl.append(el("span","pill w","Sin cédula"));r.append(pl);
     if(d.nota)r.append(el("div","nt",d.nota));
     if(d.fin&&d.nsal)r.append(el("div","nt","Observación: "+d.nsal));
-    if(isAdmin()){const bt=el("div","bt");
-      if(!d.fin){const t=el("button","p","Dar de baja del destallo");t.type="button";t.onclick=()=>abrirSalida(d);bt.append(t)}
-      else{const u=el("button","","Volver a Destallo");u.type="button";u.onclick=()=>{if(detArm!=="v"+d.fila){detArm="v"+d.fila;u.textContent="¿Seguro? Tocá de nuevo";return}detArm="";
-        guardarDet(d,{"Terminó el":"","Motivo de salida":"","Nota de salida":""},"Volvió a Destallo: "+d.nombre+" (antes: "+(d.mot||"Terminó el destallo")+" el "+fd(parse(d.fin))+")")};bt.append(u)}
-      const e=el("button","","Editar");e.type="button";e.onclick=()=>abrirDet(d);bt.append(e);r.append(bt)}
+    r.append(el("span","fl","›"));r.setAttribute("role","button");r.tabIndex=0;
+    r.onclick=()=>abrirDet(d);r.onkeydown=e=>{if(e.key==="Enter")abrirDet(d)};
     return r};
   if(tab==="act"){act.forEach(d=>out.push(tarjeta(d)));if(!act.length)out.push(el("p","empty",q?"Nadie coincide con la búsqueda.":"Nadie está haciendo el destallo ahora."))}
   else{if(terT.length){const c={};terT.forEach(d=>{const m=d.mot||"Terminó el destallo";c[m]=(c[m]||0)+1});
@@ -1543,9 +1547,27 @@ function renderDet(){const q=nq($("dq").value.trim()),L=$("dlist"),out=[];
 async function guardarDet(d,rec,log){$("dmsg").textContent="Guardando…";
   try{const r=d?await api({action:"updateRow",sheet:"Destallo",fila:d.fila,record:rec,log}):await api({action:"addRow",sheet:"Destallo",record:rec,log});
     confirmar(r);detCargado=false;await loadDet();return true}catch(e){$("dmsg").textContent="No se pudo guardar: "+e.message;return false}}
-function abrirDet(d){detCur=d||null;const f=$("df");f.reset();$("dmsg2").textContent="";$("dtit").textContent=d?d.nombre:"Agregar a Destallo";
-  f.nombre.value=d?d.nombre:"";f.cedula.value=d?d.cedula:"";f.fecha.value=d?d.fecha:iso(hoy);f.nota.value=d?d.nota:"";$("ddel").hidden=true;$("ddlg").showModal()}
-$("df").addEventListener("submit",async e=>{e.preventDefault();const f=$("df");
+function abrirDet(d){detCur=d||null;detArm="";const f=$("df");f.reset();$("dmsg2").textContent="";$("dtit").textContent=d?d.nombre:"Agregar a Destallo";
+  f.nombre.value=d?d.nombre:"";f.cedula.value=d?d.cedula:"";f.fecha.value=d?d.fecha:iso(hoy);f.nota.value=d?d.nota:"";
+  const adm=isAdmin();[f.nombre,f.cedula,f.fecha,f.nota].forEach(i=>i.disabled=!adm);
+  f.cedula.placeholder=adm?"Falta cargarla":"Sin cédula";f.cedula.classList.toggle("falta",!!d&&!d.cedula);f.nota.placeholder=adm?"Opcional":"";
+  $("dsave").hidden=!adm;$("dcancel").textContent=adm?"Cancelar":"Cerrar";
+  let sub="";if(d){if(d.fin)sub=(d.mot||"Terminó el destallo")+" · "+(d.fecha?fd(parse(d.fecha)):"¿?")+" → "+fd(parse(d.fin))+(d.nsal?" · "+d.nsal:"");
+    else if(d.fecha){const n=days(parse(d.fecha),hoy);sub="En el destallo desde el "+fd(parse(d.fecha))+(n>0?" · hace "+n+(n===1?" día":" días"):"")}else sub="Falta la fecha de inicio"}
+  $("dsub").textContent=sub;$("dsub").hidden=!sub;
+  $("dmas").hidden=!(adm&&d);$("dbaja").textContent=d&&d.fin?"Volver a Destallo":"Dar de baja del destallo";$("ddel").textContent="Quitar de la lista (se cargó por error)";
+  $("ddlg").showModal();if(d)try{document.activeElement.blur()}catch(x){}}
+$("dbaja").onclick=()=>{const d=detCur;if(!d||!isAdmin())return;
+  if(!d.fin){$("ddlg").close();abrirSalida(d);return}
+  if(detArm!=="v"){detArm="v";$("dbaja").textContent="¿Seguro? Tocá de nuevo";return}detArm="";
+  $("ddlg").close();guardarDet(d,{"Terminó el":"","Motivo de salida":"","Nota de salida":""},"Volvió a Destallo: "+d.nombre+" (antes: "+(d.mot||"Terminó el destallo")+" el "+fd(parse(d.fin))+")")};
+$("ddel").onclick=async()=>{const d=detCur;if(!d||!isAdmin())return;
+  if(detArm!=="b"){detArm="b";$("ddel").textContent="¿Seguro? Se borra de la planilla. Tocá de nuevo";return}detArm="";
+  $("ddel").disabled=true;$("dmsg").textContent="Guardando…";
+  try{const r=await api({action:"deleteRow",sheet:"Destallo",fila:d.fila,log:"Quitó de Destallo (cargado por error): "+d.nombre+(d.cedula?" · "+d.cedula:"")});
+    confirmar(r);detCargado=false;$("ddlg").close();await loadDet()}catch(e){$("dmsg2").textContent="No se pudo quitar: "+e.message}
+  $("ddel").disabled=false};
+$("df").addEventListener("submit",async e=>{e.preventDefault();const f=$("df");if(!isAdmin())return;
   const rec={"Nombre":f.nombre.value.trim(),"Cédula":f.cedula.value.trim(),"Fecha":f.fecha.value,"Nota":f.nota.value.trim()};
   $("dsave").disabled=true;const ok=await guardarDet(detCur,rec,(detCur?"Editó en Destallo: ":"Agregó a Destallo: ")+rec["Nombre"]);$("dsave").disabled=false;
   if(ok)$("ddlg").close();else $("dmsg2").textContent=$("dmsg").textContent});
@@ -2329,7 +2351,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261121162000";
+const APP_VER="20261122162000";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
