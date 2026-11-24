@@ -244,6 +244,7 @@ label.opt:has(input:checked){border:2px solid var(--acc)}
 .drow .bt{grid-column:2;display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}.drow .bt button{font-size:13.5px;padding:8px 12px}
 .drow{grid-template-columns:44px minmax(0,1fr) 14px;cursor:pointer;-webkit-tap-highlight-color:transparent}.drow:active{transform:scale(.99)}.drow .fl{grid-column:3;grid-row:1/span 9;color:var(--mut);font-size:22px;align-self:center}
 .drow .pl{flex-wrap:wrap;gap:4px}.dsub{margin:-4px 0 4px;color:var(--mut);font-size:13.5px}
+.hchips{display:flex;flex-wrap:wrap;gap:6px;margin:-2px 0 6px}.hchips button{padding:7px 11px;font-size:13.5px;border-radius:99px}.hchips button.on{background:var(--acc);color:var(--accx);border-color:transparent;font-weight:700}
 .dmas{display:flex;flex-direction:column;gap:8px;margin-top:4px;padding-top:10px;border-top:1px solid var(--line)}.dmas button{width:100%}
 #df input.falta{border-color:#ec8a1c;background:#fff6ec}
 #df input:disabled,#df textarea:disabled{opacity:1;color:inherit;-webkit-text-fill-color:currentColor}
@@ -840,6 +841,9 @@ img.av{border-radius:30%}
       <label>Vuelve el<input name="vuelveel" type="date"></label>
     </div>
     <input type="hidden" name="nosalioel">
+    <label id="lhsal">Hora que lo vienen a buscar<input name="horasal" type="time" step="300"></label>
+    <div class="hchips" id="hchips"></div>
+    <small id="hsalinfo" style="color:var(--mut)"></small>
     <div class="acts" style="justify-content:flex-start">
       <button type="button" id="salhoy">Salió hoy</button>
       <button type="button" id="nosal">No salió</button>
@@ -984,7 +988,10 @@ function toISO(v){
 function toItem(o){return{id:String(pick(o,"id")),nombre:String(pick(o,"nombre","nombredelinterno")),cedula:String(pick(o,"cedula")),
   ingreso:toISO(pick(o,"ingreso","fechadeingreso","fechaingreso")),tipo:String(pick(o,"tipo")),
   desayuno:String(pick(o,"desayuno")),almuerzo:String(pick(o,"almuerzo")),merienda:String(pick(o,"merienda")),cena:String(pick(o,"cena")),
-  salio:toISO(pick(o,"salioel")),vuelve:toISO(pick(o,"vuelveel")),nosalio:toISO(pick(o,"nosalioel")),foto:String(pick(o,"foto"))}}
+  salio:toISO(pick(o,"salioel")),vuelve:toISO(pick(o,"vuelveel")),nosalio:toISO(pick(o,"nosalioel")),foto:String(pick(o,"foto")),horasal:leerHora(pick(o,"horasal"))}}
+// Hora en que lo vienen a buscar: se guarda junto con la fecha de esa salida ("2026-11-27 15:30")
+function leerHora(v){v=String(v||"").trim();const m=v.match(/^(\d{4}-\d{2}-\d{2})[ T](\d{1,2}):(\d{2})/);return m?m[1]+" "+m[2].padStart(2,"0")+":"+m[3]:""}
+function horaDe(i,f){if(!i||!i.horasal||!f)return "";const d=typeof f==="string"?f:iso(f);return i.horasal.slice(0,10)===d?i.horasal.slice(11):""}
 function confirmar(res){
   if(res&&typeof res==="object"){if(res.error)throw new Error(res.error);if(res.ok===true)return}
   throw new Error("el script no confirmó el cambio y respondió: "+JSON.stringify(res).slice(0,140)+". Probablemente sigue publicado el código viejo: pegá el código nuevo, guardalo y publicá una Nueva versión");
@@ -1123,12 +1130,12 @@ function render(){
   list.forEach(({i,c})=>{
     const tr=el("tr","r"); tr.tabIndex=0;
     {const td=el("td","n"),w=el("div","nm"),tx=el("div"),pl=el("div","pl");tx.style.minWidth="0";
-      pl.append(el("span","pill",i.tipo||"—"));const [pt,pc]=evento(c);if(pc)pl.append(el("span","pill "+pc,pt));
+      pl.append(el("span","pill",i.tipo||"—"));const [pt,pc]=evento(c,i);if(pc)pl.append(el("span","pill "+pc,pt));
       {const cm=textoCama(i.id),mes=c.ing>hoy?0:Math.min(DUR,fullM(c.ing,hoy)+1),sub=[c.ing>hoy?"Ingresa el "+fd(c.ing):c.fin<=hoy?"":"mes "+mes+" de "+DUR,cm?cm[0].replace(/^Cuarto/,"cuarto"):"",pc?"":pt].filter(Boolean).join(" · ");
         if(sub)pl.append(el("span","psub",sub))}
       tx.append(el("span","",i.nombre.trim()),pl);
       if(c.ing<=hoy&&c.fin>hoy){const pb=el("div","pbar"),bi=el("i");bi.style.width=Math.max(3,Math.min(100,Math.round((hoy-c.ing)/(c.fin-c.ing)*100)))+"%";pb.append(bi);tx.append(pb)}w.append(avatar(i,"av"),tx);td.append(w);tr.append(td)} cell(tr,i.cedula); cell(tr,fd(c.ing)); cell(tr,c.lleva); cell(tr,c.falta);
-    cell(tr,fd(c.fin),"",c.finSoon); cell(tr,c.sal?fd(c.sal):"Sin salidas pendientes","",c.salSoon); cell(tr,c.salF,"",c.salSoon); cell(tr,c.vuelve);
+    cell(tr,fd(c.fin),"",c.finSoon); cell(tr,c.sal?fd(c.sal)+(horaDe(i,c.sal)?" · "+horaDe(i,c.sal):""):"Sin salidas pendientes","",c.salSoon); cell(tr,c.salF,"",c.salSoon); cell(tr,c.vuelve);
     const t=el("td"); t.append(el("span","t",i.tipo)); tr.append(t);
     tr.onclick=()=>openDlg(i); tr.onkeydown=e=>{if(e.key==="Enter")openDlg(i)};
     tb.append(tr);
@@ -1154,9 +1161,10 @@ function openDlg(it){
   {const fl=$("fichalink");fl.hidden=!it;fl.href="ficha/";// la cédula va por sessionStorage, no en la dirección
     fl.onclick=()=>{try{sessionStorage.setItem("ficha-abrir",JSON.stringify({ced:it.cedula||"",nom:(it.nombre||"").trim()}))}catch(x){}}} $("fotobt").hidden=!isAdmin(); $("fmsg").textContent="";
   f.salioel.value=it?.salio||""; f.vuelveel.value=it?.vuelve||""; f.nosalioel.value=it?.nosalio||""; salInfo();
+  f.horasal.value=horaDe(it,salDestino());horaInfo();
   $("salhoy").hidden=$("nosal").hidden=$("volvio").hidden=!isAdmin();
   const ro=!isAdmin();
-  [...f.elements].forEach(x=>{if(x.tagName!=="BUTTON"&&x.tagName!=="FIELDSET")x.disabled=ro});
+  [...f.elements].forEach(x=>{if(x.tagName!=="BUTTON"&&x.tagName!=="FIELDSET")x.disabled=ro});horaInfo();
   $("save").hidden=ro; $("del").hidden=ro||!it||email!=="reboirasnicolas4@gmail.com"; $("egr").hidden=ro||!it; $("cancel").textContent=ro?"Cerrar":"Cancelar";
   $("ft2").textContent=it?it.nombre.trim():"Agregar interno";
   $("fseg").hidden=!it; verSol("d");
@@ -1256,6 +1264,7 @@ $("f").addEventListener("submit",async e=>{
   const rec={id:cur?.id||("i"+Date.now().toString(36)),nombre:f.nombre.value.trim(),cedula:f.cedula.value.trim(),tipo:f.tipo.value,ingreso:f.ingreso.value};
   MEALS.forEach(m=>rec[m]=f[m].value);
   rec.salioel=f.salioel.value; rec.vuelveel=f.vuelveel.value; rec.nosalioel=f.nosalioel.value;
+  {const dd=salDestino();rec.horasal=f.horasal.value&&dd?dd+" "+f.horasal.value:""}
   if(rec.salioel&&!rec.vuelveel){$("msg").textContent="Poné también la fecha en que vuelve.";return}
   if(!rec.nombre||!rec.ingreso){$("msg").textContent="Completá el nombre y la fecha de ingreso.";return}
   $("save").disabled=true; $("save").textContent="Guardando…";
@@ -1291,6 +1300,17 @@ function autoVuelve(){const f=$("f");if(!f.salioel.value){f.vuelveel.value="";sa
   const n=numSalida(f.ingreso.value,f.salioel.value),s=parse(f.salioel.value);
   f.vuelveel.value=iso(new Date(s.getFullYear(),s.getMonth(),s.getDate()+DIAS_SAL(n)));salInfo();}
 $("f").salioel.addEventListener("change",autoVuelve);
+// ¿A qué salida corresponde la hora? La puesta a mano (si es de hoy en adelante) o la próxima que se calcula sola
+function salDestino(){const f=$("f");if(f.salioel.value&&f.salioel.value>=iso(hoy))return f.salioel.value;
+  if(!f.ingreso.value)return "";const it={...(cur||{}),ingreso:f.ingreso.value,salio:f.salioel.value,vuelve:f.vuelveel.value,nosalio:f.nosalioel.value};
+  try{const c=calc(it);return c.sal?iso(c.sal):""}catch(x){return ""}}
+function horaInfo(){const f=$("f"),d=salDestino();f.horasal.disabled=!isAdmin()||!d;
+  $("hsalinfo").textContent=d?"Para la salida del "+fd(parse(d)):"No tiene una salida próxima.";
+  document.querySelectorAll("#hchips button").forEach(b=>b.classList.toggle("on",b.dataset.h===f.horasal.value))}
+["salioel","vuelveel","horasal","ingreso"].forEach(k=>$("f")[k].addEventListener("input",horaInfo));
+["salhoy","nosal","volvio"].forEach(k=>$(k).addEventListener("click",()=>setTimeout(horaInfo)));
+["09:00","10:00","11:00","14:00","15:00","16:00","17:00","18:00"].forEach(h=>{const b=el("button","",h);b.type="button";b.dataset.h=h;
+  b.onclick=()=>{const f=$("f");if(f.horasal.disabled)return;f.horasal.value=f.horasal.value===h?"":h;horaInfo()};$("hchips").append(b)});
 $("salhoy").onclick=()=>{$("f").salioel.value=iso(hoy);autoVuelve()};
 $("volvio").onclick=()=>{const f=$("f");f.salioel.value="";f.vuelveel.value="";f.nosalioel.value="";salInfo()};
 $("nosal").onclick=()=>{const f=$("f"),c=salidaCercana(f.ingreso.value);if(!c){$("msg").textContent="No tiene salidas programadas.";return}
@@ -1393,12 +1413,13 @@ $("me").onclick=()=>$("cdlg").showModal(); $("cclose").onclick=()=>$("cdlg").clo
 $("goU").onclick=()=>verTab("U");
 $("cdlg").addEventListener("click",e=>{if(e.target===$("cdlg")||e.target.closest("#goU,#out"))$("cdlg").close()},true);
 // Lo próximo de cada interno, para la etiqueta de la lista
-function evento(c){const d=x=>days(hoy,x),dm=x=>String(x.getDate()).padStart(2,"0")+"/"+String(x.getMonth()+1).padStart(2,"0");
+function evento(c,i){const d=x=>days(hoy,x),dm=x=>String(x.getDate()).padStart(2,"0")+"/"+String(x.getMonth()+1).padStart(2,"0");
   if(c.vuelve)return["De salida · vuelve "+(c.vuelve==="Hoy"?"hoy":"en "+c.vuelve),"o"];
   if(c.fin<=hoy)return["Cumplió el tratamiento","w"];
   if(c.finSoon){const n=d(c.fin);return[n===0?"Termina hoy":"Termina en "+n+(n===1?" día":" días"),"w"]}
-  if(c.salSoon){const n=d(c.sal);return[n===0?"Sale hoy":"Sale en "+n+(n===1?" día":" días"),"w"]}
-  if(c.sal)return["Próxima salida "+dm(c.sal),""];
+  const hh=i?horaDe(i,c.sal):"",ah=hh?" · "+hh:"";
+  if(c.salSoon){const n=d(c.sal);return[(n===0?"Sale hoy":"Sale en "+n+(n===1?" día":" días"))+ah,"w"]}
+  if(c.sal)return["Próxima salida "+dm(c.sal)+ah,""];
   return["Termina el "+fd(c.fin),""]}
 // Cuartos: resumen desde la pestaña Cuartos
 const CU_DEF=[["Tropilla",14,x=>!!x.sector],["Cuarto 0",4,x=>!x.sector&&x.cuarto==="0"],["Cuarto 1",6,x=>!x.sector&&x.cuarto==="1"],["Cuarto 2",6,x=>!x.sector&&x.cuarto==="2"],["Cuarto 3",4,x=>!x.sector&&x.cuarto==="3"],["Cuarto 4",6,x=>!x.sector&&x.cuarto==="4"]];
@@ -1428,7 +1449,7 @@ function renderHoy(){
   {const S=$("hsal"),sal=all.filter(x=>salePend(x.i)),vuel=all.filter(x=>{const e=salidaHoy(x.i);return e&&+e.v===+hoy}),fuera=all.filter(x=>salidaHoy(x.i));
     const L=[el("h4","","Salidas de hoy")];
     const fila=(i,txt,btn)=>{const r=el("div","hrow"),t=el("div","tx");t.append(el("b","",i.nombre.trim()),el("span","",txt));r.append(avatar(i,"av"),t);if(btn&&isAdmin())r.append(btn);r.onclick=e=>{if(!e.target.closest("button"))openDlg(i)};return r};
-    sal.forEach(({i})=>{const e=salePend(i);L.push(fila(i,"Sale hoy · vuelve el "+DIAS_L[e.v.getDay()]+" "+fd(e.v).slice(0,5),btnH("Ya salió","p",()=>yaSalio(i))))});
+    sal.forEach(({i})=>{const e=salePend(i);L.push(fila(i,(horaDe(i,e.d)?"Lo buscan a las "+horaDe(i,e.d)+" · ":"Sale hoy · ")+"vuelve el "+DIAS_L[e.v.getDay()]+" "+fd(e.v).slice(0,5),btnH("Ya salió","p",()=>yaSalio(i))))});
     vuel.forEach(({i})=>L.push(fila(i,"Vuelve hoy",btnH("Ya volvió","",()=>yaVolvio(i)))));
     if(!sal.length&&!vuel.length)L.push(el("p","hnada","Hoy nadie sale ni vuelve."));
     const otros=fuera.length-vuel.length;if(otros>0)L.push(el("p","hnada",(otros===1?"1 está":otros+" están")+" de salida y vuelve"+(otros===1?"":"n")+" otro día."));
@@ -1456,7 +1477,7 @@ function renderHoy(){
     {const P=$("hprox"),ls=all.map(x=>({...x,e:x.c.evs.filter(e=>e.d>hoy&&days(hoy,e.d)<=AV_SAL).sort((a,b)=>a.d-b.d)[0]})).filter(x=>x.e).sort((a,b)=>a.e.d-b.e.d||a.c.ing-b.c.ing);
       P.hidden=!ls.length;
       if(ls.length){const h=el("h4","","Salen esta semana");h.append(ver("sal"));const L=[h],MAX=6;let dia="";
-        ls.slice(0,MAX).forEach(({i,e})=>{const k=diaTxt(e.d);if(k!==dia){dia=k;L.push(el("p","hdia",k))}L.push(fila(i,"Vuelve el "+diaTxt(e.v)))});
+        ls.slice(0,MAX).forEach(({i,e})=>{const k=diaTxt(e.d);if(k!==dia){dia=k;L.push(el("p","hdia",k))}L.push(fila(i,(horaDe(i,e.d)?"A las "+horaDe(i,e.d)+" · ":"")+"Vuelve el "+diaTxt(e.v)))});
         if(ls.length>MAX)L.push(el("p","hnada","+ "+(ls.length-MAX)+" más el resto de la semana"));
         P.replaceChildren(...L)}}
   }
@@ -1744,7 +1765,7 @@ function salidaHoy(i){return calc(i).evs.find(e=>!pendiente(e)&&hoy>=e.d&&hoy<=e
 function salePend(i){return calc(i).evs.find(e=>pendiente(e))}
 async function yaSalio(i){if(!isAdmin())return;const e=salePend(i);if(!e)return;
   if(!confirm("¿Marcar que "+i.nombre.trim()+" ya salió? Vuelve el "+fd(e.v)+". Desde ahora no cuenta para la medicación ni Cuartos."))return;
-  const rec={id:i.id,nombre:i.nombre.trim(),cedula:i.cedula||"",tipo:i.tipo||"Privado",ingreso:i.ingreso,salioel:iso(hoy),vuelveel:iso(e.v),nosalioel:i.nosalio||""};
+  const rec={id:i.id,nombre:i.nombre.trim(),cedula:i.cedula||"",tipo:i.tipo||"Privado",ingreso:i.ingreso,salioel:iso(hoy),vuelveel:iso(e.v),nosalioel:i.nosalio||"",horasal:i.horasal||""};
   MEALS.forEach(m=>rec[m]=i[m]||"");
   await guardarSalida(rec)}
 // "Ya volvió": termina la salida hoy (queda registrada: salió el … y volvió hoy)
@@ -1753,7 +1774,7 @@ async function yaVolvio(i){if(!isAdmin())return;const e=salidaHoy(i);if(!e)retur
   // el día que vuelve cuenta como salida, así que al volver antes la salida termina ayer y hoy ya está presente
   const ayer=new Date(hoy.getFullYear(),hoy.getMonth(),hoy.getDate()-1),mismoDia=+e.d>=+hoy;
   const rec={id:i.id,nombre:i.nombre.trim(),cedula:i.cedula||"",tipo:i.tipo||"Privado",ingreso:i.ingreso,
-    salioel:mismoDia?"":iso(e.d),vuelveel:mismoDia?"":iso(ayer),nosalioel:mismoDia?iso(e.d):(i.nosalio||"")};
+    salioel:mismoDia?"":iso(e.d),vuelveel:mismoDia?"":iso(ayer),nosalioel:mismoDia?iso(e.d):(i.nosalio||""),horasal:i.horasal||""};
   MEALS.forEach(m=>rec[m]=i[m]||"");
   await guardarSalida(rec)}
 async function marcarLlevar(i,quitar){if(!isAdmin())return;
@@ -2351,7 +2372,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261122162000";
+const APP_VER="20261124170000";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
