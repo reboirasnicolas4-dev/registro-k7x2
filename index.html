@@ -1432,7 +1432,7 @@ function pintarMens(all){
   const y=mensDia.getFullYear(),m=mensDia.getMonth(),d=mensDia.getDate(),ay=new Date(y,m,d-1);
   $("mdtxt").textContent=DIAS_L[mensDia.getDay()]+" "+d+" de "+MESES_L[m];
   $("mdsub").textContent="Le toca a los que entraron un "+ay.getDate()+" o un "+d;
-  const L=all.filter(({c})=>c.ing<ay&&(tocaEn(c.ing,y,m)===d||tocaEn(c.ing,ay.getFullYear(),ay.getMonth())===ay.getDate()))
+  const L=all.filter(({i,c})=>i.tipo==="Privado"&&c.ing<ay&&(tocaEn(c.ing,y,m)===d||tocaEn(c.ing,ay.getFullYear(),ay.getMonth())===ay.getDate()))
     .sort((a,b)=>a.c.ing-b.c.ing);
   const R=$("mrows");R.replaceChildren();let hechos=0;
   L.forEach(({i,c})=>{const mesT=tocaEn(c.ing,y,m)===d?[y,m]:[ay.getFullYear(),ay.getMonth()];
@@ -1441,8 +1441,8 @@ function pintarMens(all){
     const tx=el("div");tx.append(el("b","",i.nombre),el("small","","Entró el "+fd(c.ing)+(ok&&t.por?" · tildó "+t.por:"")));
     r.append(cb,tx,el("span","pill",i.tipo||"—"));
     cb.onchange=()=>tildarMens(clave,i,mesT,cb.checked);R.append(r)});
-  if(!L.length)R.append(el("div","mvacio",mensCargada?"Ese día no le toca a nadie":"Cargando…"));
-  $("mcnt").textContent=L.length?L.length+(L.length===1?" interno":" internos")+" · "+hechos+(hechos===1?" tildado":" tildados")+(isAdmin()?"":" · solo los administradores pueden tildar"):"";
+  if(!L.length)R.append(el("div","mvacio",mensCargada?"Ese día no le toca a ningún privado":"Cargando…"));
+  $("mcnt").textContent=L.length?L.length+(L.length===1?" privado":" privados")+" · "+hechos+(hechos===1?" tildado":" tildados")+(isAdmin()?"":" · solo los administradores pueden tildar"):"";
 }
 async function tildarMens(clave,i,mesT,on){if(!isAdmin())return;mensGuardando.add(clave);render();
   const quien=(window.AlasInicio&&AlasInicio.nombre&&AlasInicio.nombre())||email.split("@")[0];
@@ -2416,7 +2416,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261126080000";
+const APP_VER="20261126075000";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
