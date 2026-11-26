@@ -3,7 +3,7 @@
 <head>
 <script>try{var tm=localStorage.getItem("alas-tema");if(tm)document.documentElement.dataset.tema=tm}catch(e){}</script>
 <script src="bloqueo.js?v=2"></script>
-<script src="inicio.js?v=24"></script>
+<script src="inicio.js?v=25"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Internos</title>
@@ -245,6 +245,13 @@ label.opt:has(input:checked){border:2px solid var(--acc)}
 .drow{grid-template-columns:44px minmax(0,1fr) 14px;cursor:pointer;-webkit-tap-highlight-color:transparent}.drow:active{transform:scale(.99)}.drow .fl{grid-column:3;grid-row:1/span 9;color:var(--mut);font-size:22px;align-self:center}
 .drow .pl{flex-wrap:wrap;gap:4px}.dsub{margin:-4px 0 4px;color:var(--mut);font-size:13.5px}
 .hchips{display:flex;flex-wrap:wrap;gap:6px;margin:-2px 0 6px}.hchips button{padding:7px 11px;font-size:13.5px;border-radius:99px}.hchips button.on{background:var(--acc);color:var(--accx);border-color:transparent;font-weight:700}
+#mensbox{margin:4px 0 14px}.mdia{display:flex;align-items:center;gap:8px;background:var(--card,#fffaf3);border:1px solid var(--line);border-radius:14px;padding:10px;margin-bottom:10px}
+.mdia button{width:44px;height:44px;border-radius:10px;font-size:20px;padding:0;flex:none}.mdia div{flex:1;text-align:center}.mdia b{display:block;font-size:16px}.mdia small{color:var(--mut);font-size:13px}
+.mcnt{font-size:13px;color:var(--mut);margin:2px 2px 10px}
+.mrow{display:flex;align-items:center;gap:12px;background:var(--card,#fffaf3);border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin-bottom:8px;cursor:pointer}
+.mrow input{width:26px;height:26px;accent-color:#2e7d32;flex:none;margin:0}.mrow b{display:block;font-size:16px}.mrow small{color:var(--mut);font-size:13px}
+.mrow.ok{background:#eef7ee;border-color:#cfe5cf}.mrow.ok b{text-decoration:line-through;color:#4b7a4b}.mrow .pill{margin-left:auto;flex:none}
+.mvacio{text-align:center;color:var(--mut);padding:22px;border:1px dashed var(--line);border-radius:14px}
 .dmas{display:flex;flex-direction:column;gap:8px;margin-top:4px;padding-top:10px;border-top:1px solid var(--line)}.dmas button{width:100%}
 #df input.falta{border-color:#ec8a1c;background:#fff6ec}
 #df input:disabled,#df textarea:disabled{opacity:1;color:inherit;-webkit-text-fill-color:currentColor}
@@ -596,10 +603,14 @@ img.av{border-radius:30%}
   </div>
   <div class="chips" id="fchips">
     <button type="button" class="chip on" data-t=""><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c.6-3.3 3-5 6-5s5.4 1.7 6 5"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14c2.6 0 4.4 1.5 5 4"/></svg>Todos <span class="n"></span></button><button type="button" class="chip" data-t="MIDES"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v16M15 9h4a1 1 0 0 1 1 1v11M3 21h18M8 8h3M8 12h3M8 16h3"/></svg>MIDES <span class="n"></span></button><button type="button" class="chip" data-t="Privado"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/></svg>Privado <span class="n"></span></button>
-<button type="button" class="chip" id="cfuera">🚪 De salida <span class="n"></span></button>
+<button type="button" class="chip" id="cmens">📅 Mensualidad</button><button type="button" class="chip" id="cfuera">🚪 De salida <span class="n"></span></button>
     <button type="button" class="chip share" id="compartir" aria-label="Compartir" title="Compartir"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.2 10.9l7.6-3.8M8.2 13.1l7.6 3.8"/></svg></button>
   </div>
   <div class="fstat" id="fstat" hidden></div>
+  <div id="mensbox" hidden>
+    <div class="mdia"><button type="button" id="mant" aria-label="Día anterior">‹</button><div><b id="mdtxt"></b><small id="mdsub"></small></div><button type="button" id="msig" aria-label="Día siguiente">›</button></div>
+    <div class="mcnt" id="mcnt"></div><div id="mrows"></div>
+  </div>
   <div class="wrap cards"><table>
     <thead><tr><th>Nombre</th><th>Cédula</th><th class="s" id="sort">Ingreso ▲</th><th>Lleva</th><th>Le falta</th><th>Finalización</th><th>Próxima salida</th><th>Falta para salir</th><th>Vuelve en</th><th>Tipo</th></tr></thead>
     <tbody id="rows"></tbody>
@@ -1117,10 +1128,12 @@ function render(){
   $("stats").replaceChildren(...[[all.length,"internos","",""],[all.filter(x=>x.c.salSoon).length,"salen en "+AV_SAL+" días o menos","w","sal"],[all.filter(x=>x.c.finSoon).length,"terminan en "+AV_FIN+" días o menos","w","fin"]]
     .map(([n,l,k,f])=>{const s=el("button","stat "+k+(filtroStat===f&&f?" on":""));s.type="button";s.setAttribute("aria-pressed",String(filtroStat===f&&!!f));
       s.append(el("b","",String(n)),el("span","",l));s.onclick=()=>{filtroStat=(filtroStat===f?"":f);render();if(filtroStat)$("rows").closest(".wrap").scrollIntoView({behavior:"smooth",block:"start"})};return s}));
-  {const fb=$("fstat");fb.hidden=!filtroStat;if(filtroStat){fb.replaceChildren(el("span","",filtroStat==="sal"?"Mostrando solo los que salen en "+AV_SAL+" días o menos":filtroStat==="fuera"?"Mostrando solo los que están de salida":"Mostrando solo los que terminan en "+AV_FIN+" días o menos"));
+  {const fb=$("fstat");fb.hidden=!filtroStat||filtroStat==="mens";if(filtroStat){fb.replaceChildren(el("span","",filtroStat==="sal"?"Mostrando solo los que salen en "+AV_SAL+" días o menos":filtroStat==="fuera"?"Mostrando solo los que están de salida":"Mostrando solo los que terminan en "+AV_FIN+" días o menos"));
     const x=el("button","","Ver todos");x.type="button";x.onclick=()=>{filtroStat="";render()};fb.append(x)}}
   $("finbox").hidden=true; $("miR").hidden=!isAdmin(); $("miU").hidden=$("goU").hidden=email!=="reboirasnicolas4@gmail.com";
   $("me").textContent=$("meBig").textContent=(email[0]||"?").toUpperCase(); $("add").hidden=!isAdmin()||vista!=="I";
+  {const mo=filtroStat==="mens";$("cmens").classList.toggle("on",mo);$("cmens").onclick=()=>{filtroStat=mo?"":"mens";if(!mo)cargarMens();render()};
+    $("mensbox").hidden=!mo;$("rows").closest(".wrap").hidden=mo;if(mo){$("empty").hidden=true;pintarMens(all)}}
   {const cf=$("cfuera"),nf=all.filter(x=>salidaHoy(x.i)).length;cf.hidden=!nf&&filtroStat!=="fuera";cf.classList.toggle("on",filtroStat==="fuera");cf.querySelector(".n").textContent=nf;cf.onclick=()=>{filtroStat=filtroStat==="fuera"?"":"fuera";render()}}
   document.querySelectorAll("#fchips .chip[data-t]").forEach(b=>{b.classList.toggle("on",b.dataset.t===ft&&filtroStat!=="fuera");const n=b.querySelector(".n");if(n)n.textContent=all.filter(x=>!b.dataset.t||x.i.tipo===b.dataset.t).length});
   $("ptrb").textContent="↓ Deslizá hacia abajo para actualizar · al día "+new Date().toTimeString().slice(0,5);
@@ -1407,7 +1420,38 @@ $("tema").onclick=()=>{let t="";try{t=localStorage.getItem("alas-tema")||""}catc
   if(n)document.documentElement.dataset.tema=n;else delete document.documentElement.dataset.tema;pintarTema()};
 pintarTema();
 
-document.querySelectorAll("#fchips .chip[data-t]").forEach(b=>b.onclick=()=>{$("ft").value=b.dataset.t;if(filtroStat==="fuera")filtroStat="";render()});
+document.querySelectorAll("#fchips .chip[data-t]").forEach(b=>b.onclick=()=>{$("ft").value=b.dataset.t;if(filtroStat==="fuera"||filtroStat==="mens")filtroStat="";render()});
+/* ===== Mensualidad: a quién le toca hoy o le tocó ayer (según el día que entró), con casilla para tildar ===== */
+let mensDia=null,mensT={},mensCargada=false,mensGuardando=new Set();
+const tocaEn=(ing,y,m)=>Math.min(ing.getDate(),new Date(y,m+1,0).getDate()); // si entró un 31 y el mes tiene 30, le toca el 30
+async function cargarMens(){try{const r=await api({action:"getSheet",sheet:"Mensualidad"});if(!r||r.ok!==true)throw new Error((r&&r.error)||"respuesta inesperada");
+  mensT={};(r.data||[]).forEach(o=>{const k=String(o.clave||"");if(k)mensT[k]={fila:o._fila,por:String(o.por||""),el:String(o.tildadoel||"")}});mensCargada=true;
+  if(filtroStat==="mens")render()}catch(e){$("mcnt").textContent="No se pudo cargar lo tildado: "+e.message}}
+function pintarMens(all){
+  if(!mensDia)mensDia=new Date(hoy.getFullYear(),hoy.getMonth(),hoy.getDate());
+  const y=mensDia.getFullYear(),m=mensDia.getMonth(),d=mensDia.getDate(),ay=new Date(y,m,d-1);
+  $("mdtxt").textContent=DIAS_L[mensDia.getDay()]+" "+d+" de "+MESES_L[m];
+  $("mdsub").textContent="Le toca a los que entraron un "+ay.getDate()+" o un "+d;
+  const L=all.filter(({c})=>c.ing<ay&&(tocaEn(c.ing,y,m)===d||tocaEn(c.ing,ay.getFullYear(),ay.getMonth())===ay.getDate()))
+    .sort((a,b)=>a.c.ing-b.c.ing);
+  const R=$("mrows");R.replaceChildren();let hechos=0;
+  L.forEach(({i,c})=>{const mesT=tocaEn(c.ing,y,m)===d?[y,m]:[ay.getFullYear(),ay.getMonth()];
+    const clave=i.id+"@"+mesT[0]+"-"+String(mesT[1]+1).padStart(2,"0"),t=mensT[clave],ok=!!t;if(ok)hechos++;
+    const r=el("label","mrow"+(ok?" ok":"")),cb=document.createElement("input");cb.type="checkbox";cb.checked=ok;cb.disabled=!isAdmin()||mensGuardando.has(clave)||!mensCargada;
+    const tx=el("div");tx.append(el("b","",i.nombre),el("small","","Entró el "+fd(c.ing)+(ok&&t.por?" · tildó "+t.por:"")));
+    r.append(cb,tx,el("span","pill",i.tipo||"—"));
+    cb.onchange=()=>tildarMens(clave,i,mesT,cb.checked);R.append(r)});
+  if(!L.length)R.append(el("div","mvacio",mensCargada?"Ese día no le toca a nadie":"Cargando…"));
+  $("mcnt").textContent=L.length?L.length+(L.length===1?" interno":" internos")+" · "+hechos+(hechos===1?" tildado":" tildados")+(isAdmin()?"":" · solo los administradores pueden tildar"):"";
+}
+async function tildarMens(clave,i,mesT,on){if(!isAdmin())return;mensGuardando.add(clave);render();
+  const quien=(window.AlasInicio&&AlasInicio.nombre&&AlasInicio.nombre())||email.split("@")[0];
+  try{if(on){const r=await api({action:"addRow",sheet:"Mensualidad",record:{"Clave":clave,"Mes":MESES_L[mesT[1]]+" de "+mesT[0],"Nombre":i.nombre,"id":i.id,"Tildado el":fd(new Date())+" "+new Date().toTimeString().slice(0,5),"Por":quien},log:"Mensualidad tildada: "+i.nombre+" ("+MESES_L[mesT[1]]+")"});confirmar(r)}
+    else{const t=mensT[clave];if(t){const r=await api({action:"deleteRow",sheet:"Mensualidad",fila:t.fila,log:"Mensualidad destildada: "+i.nombre+" ("+MESES_L[mesT[1]]+")"});confirmar(r)}}
+    mensGuardando.delete(clave);await cargarMens()}
+  catch(e){mensGuardando.delete(clave);$("mcnt").textContent="No se pudo guardar: "+e.message;render()}}
+$("mant").onclick=()=>{mensDia=new Date(mensDia.getFullYear(),mensDia.getMonth(),mensDia.getDate()-1);render()};
+$("msig").onclick=()=>{mensDia=new Date(mensDia.getFullYear(),mensDia.getMonth(),mensDia.getDate()+1);render()};
 // Menú de la cuenta (la letra de arriba)
 $("me").onclick=()=>$("cdlg").showModal(); $("cclose").onclick=()=>$("cdlg").close();
 $("goU").onclick=()=>verTab("U");
@@ -2372,7 +2416,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261124170000";
+const APP_VER="20261126080000";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}

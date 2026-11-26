@@ -605,6 +605,8 @@
     },
     // tocar el logo: abre Inicio
     abrir: function () { mostrar(); },
+    // nombre de quien está usando la app (Nicolás, Matías…)
+    nombre: function () { var y = yo(); return y ? y.nombre : ""; },
     cerrar: cerrar
   };
 })();
