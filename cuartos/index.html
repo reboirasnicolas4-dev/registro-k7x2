@@ -389,7 +389,7 @@ dialog{border-radius:24px}
 /* ===== Configuración ===== */
 const DEFAULT_API="https://script.google.com/macros/s/AKfycbzYLuWCtvRv-sQobVzwXxUhTbjfhDuul9raoOD4RbxFOkBVaPI5FLEOU4TI5z3pQl9_/exec";
 let API=DEFAULT_API;
-const SECTORES=["Cocina","Huerta","Almox","Panadería"];
+const SECTORES=["Cocina","Huerta","Almox","Panadería","Animales"];
 // En Tropilla sin sector: se guarda con el valor "Tropilla" en la columna sector
 // Los que no entran en cuartos (siguen en Internos): se guardan con sector "Fuera"
 const FUERA="Fuera";
@@ -943,7 +943,7 @@ if("serviceWorker" in navigator&&location.protocol.startsWith("http"))window.add
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261121162000";
+const APP_VER="20261127112000";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
