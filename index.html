@@ -851,7 +851,7 @@ img.av{border-radius:30%}
       <label>Salió el<input name="salioel" type="date"></label>
       <label>Vuelve el<input name="vuelveel" type="date"></label>
     </div>
-    <input type="hidden" name="nosalioel">
+    <input type="hidden" name="nosalioel"><input type="hidden" name="salioconf">
     <label id="lhsal">Hora que lo vienen a buscar<input name="horasal" type="time" step="300"></label>
     <div class="hchips" id="hchips"></div>
     <small id="hsalinfo" style="color:var(--mut)"></small>
@@ -999,7 +999,7 @@ function toISO(v){
 function toItem(o){return{id:String(pick(o,"id")),nombre:String(pick(o,"nombre","nombredelinterno")),cedula:String(pick(o,"cedula")),
   ingreso:toISO(pick(o,"ingreso","fechadeingreso","fechaingreso")),tipo:String(pick(o,"tipo")),
   desayuno:String(pick(o,"desayuno")),almuerzo:String(pick(o,"almuerzo")),merienda:String(pick(o,"merienda")),cena:String(pick(o,"cena")),
-  salio:toISO(pick(o,"salioel")),vuelve:toISO(pick(o,"vuelveel")),nosalio:toISO(pick(o,"nosalioel")),foto:String(pick(o,"foto")),horasal:leerHora(pick(o,"horasal"))}}
+  salio:toISO(pick(o,"salioel")),vuelve:toISO(pick(o,"vuelveel")),nosalio:toISO(pick(o,"nosalioel")),foto:String(pick(o,"foto")),horasal:leerHora(pick(o,"horasal")),salioconf:toISO(pick(o,"salioconf"))}}
 // Hora en que lo vienen a buscar: se guarda junto con la fecha de esa salida ("2026-11-27 15:30")
 function leerHora(v){v=String(v||"").trim();const m=v.match(/^(\d{4}-\d{2}-\d{2})[ T](\d{1,2}):(\d{2})/);return m?m[1]+" "+m[2].padStart(2,"0")+":"+m[3]:""}
 function horaDe(i,f){if(!i||!i.horasal||!f)return "";const d=typeof f==="string"?f:iso(f);return i.horasal.slice(0,10)===d?i.horasal.slice(11):""}
@@ -1068,15 +1068,15 @@ const fd=d=>String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padSt
 function planSalidas(ing,fin){const out=[];for(let n=1;;n++){const d=addM(ing,PRIMERA+n-1);if(d>=fin)break;
   out.push({n,d,v:new Date(d.getFullYear(),d.getMonth(),d.getDate()+DIAS_SAL(n))})}return out}
 function numSalidaD(ing,s){return Math.max(1,fullM(ing,new Date(s.getFullYear(),s.getMonth(),s.getDate()+15))-PRIMERA+1)} // tolera salidas adelantadas o atrasadas
-// Una salida automática que empieza hoy no cuenta hasta que se toca «Ya salió» (si no se toca, mañana ya cuenta)
-function pendiente(e){return !e.man&&+e.d===+hoy}
+// Una salida que empieza hoy (automática o con la fecha puesta de antemano) no cuenta hasta que se toca «Ya salió» (si no se toca, mañana ya cuenta)
+function pendiente(e){return !e.conf&&+e.d===+hoy}
 function afueraEl(e,f){return f>=e.d&&f<=e.v&&!(pendiente(e)&&+f===+hoy)}
 function calc(it){
   const ing=parse(it.ingreso), fin=addM(ing,DUR);
   const m0=ing>hoy?0:fullM(ing,hoy);
   // Salidas automáticas, menos la marcada "No salió" y la reemplazada por una salida puesta a mano
   const skip=it.nosalio?+parse(it.nosalio):null;
-  const man=it.salio&&it.vuelve?{n:numSalidaD(ing,parse(it.salio)),d:parse(it.salio),v:parse(it.vuelve),man:true}:null;
+  const man=it.salio&&it.vuelve?{n:numSalidaD(ing,parse(it.salio)),d:parse(it.salio),v:parse(it.vuelve),man:true,conf:!!it.salioconf&&it.salioconf===it.salio}:null;
   const evs=planSalidas(ing,fin).filter(p=>+p.d!==skip&&!(man&&man.n===p.n)).map(p=>({d:p.d,v:p.v}));
   if(man) evs.push(man);
   let vuelve="";
@@ -1173,7 +1173,7 @@ function openDlg(it){
     if(isAdmin()){const x=el("button","p","Ya volvió");x.type="button";x.onclick=()=>yaVolvio(it);b.append(x)}}}
   {const fl=$("fichalink");fl.hidden=!it;fl.href="ficha/";// la cédula va por sessionStorage, no en la dirección
     fl.onclick=()=>{try{sessionStorage.setItem("ficha-abrir",JSON.stringify({ced:it.cedula||"",nom:(it.nombre||"").trim()}))}catch(x){}}} $("fotobt").hidden=!isAdmin(); $("fmsg").textContent="";
-  f.salioel.value=it?.salio||""; f.vuelveel.value=it?.vuelve||""; f.nosalioel.value=it?.nosalio||""; salInfo();
+  f.salioel.value=it?.salio||""; f.vuelveel.value=it?.vuelve||""; f.nosalioel.value=it?.nosalio||""; f.salioconf.value=it?.salioconf||""; salInfo();
   f.horasal.value=horaDe(it,salDestino());horaInfo();
   $("salhoy").hidden=$("nosal").hidden=$("volvio").hidden=!isAdmin();
   const ro=!isAdmin();
@@ -1276,7 +1276,7 @@ $("f").addEventListener("submit",async e=>{
   e.preventDefault(); if(!isAdmin()) return; const f=$("f");
   const rec={id:cur?.id||("i"+Date.now().toString(36)),nombre:f.nombre.value.trim(),cedula:f.cedula.value.trim(),tipo:f.tipo.value,ingreso:f.ingreso.value};
   MEALS.forEach(m=>rec[m]=f[m].value);
-  rec.salioel=f.salioel.value; rec.vuelveel=f.vuelveel.value; rec.nosalioel=f.nosalioel.value;
+  rec.salioel=f.salioel.value; rec.vuelveel=f.vuelveel.value; rec.nosalioel=f.nosalioel.value; rec.salioconf=f.salioconf.value&&f.salioconf.value===f.salioel.value?f.salioconf.value:"";
   {const dd=salDestino();rec.horasal=f.horasal.value&&dd?dd+" "+f.horasal.value:""}
   if(rec.salioel&&!rec.vuelveel){$("msg").textContent="Poné también la fecha en que vuelve.";return}
   if(!rec.nombre||!rec.ingreso){$("msg").textContent="Completá el nombre y la fecha de ingreso.";return}
@@ -1306,7 +1306,7 @@ function numSalida(ingISO,salISO){return !ingISO||!salISO?1:numSalidaD(parse(ing
 function salidaCercana(ingISO){if(!ingISO)return null;const ing=parse(ingISO);const pl=planSalidas(ing,addM(ing,DUR));
   return pl.length?pl.reduce((a,b)=>Math.abs(b.d-hoy)<Math.abs(a.d-hoy)?b:a):null}
 function salInfo(){const f=$("f");const t=[];
-  if(f.salioel.value){const n=numSalida(f.ingreso.value,f.salioel.value);t.push("Salida puesta a mano: n.º "+n+" ("+DUR_TXT(n)+", el día que vuelve también cuenta). Podés cambiar la fecha de vuelta si se coordinó distinto.")}
+  if(f.salioel.value){const n=numSalida(f.ingreso.value,f.salioel.value);const conf=f.salioconf.value&&f.salioconf.value===f.salioel.value;t.push((f.salioel.value>=iso(hoy)&&!conf?"Salida programada (cuenta cuando toques «Ya salió»)":"Salida puesta a mano")+": n.º "+n+" ("+DUR_TXT(n)+", el día que vuelve también cuenta). Podés cambiar la fecha de vuelta si se coordinó distinto.")}
   if(f.nosalioel.value)t.push("No salió el "+fd(parse(f.nosalioel.value))+".");
   $("salinfo").textContent=t.length?t.join(" "):"Automático: sin cambios.";}
 function autoVuelve(){const f=$("f");if(!f.salioel.value){f.vuelveel.value="";salInfo();return}
@@ -1324,8 +1324,8 @@ function horaInfo(){const f=$("f"),d=salDestino();f.horasal.disabled=!isAdmin()|
 ["salhoy","nosal","volvio"].forEach(k=>$(k).addEventListener("click",()=>setTimeout(horaInfo)));
 ["09:00","10:00","11:00","14:00","15:00","16:00","17:00","18:00"].forEach(h=>{const b=el("button","",h);b.type="button";b.dataset.h=h;
   b.onclick=()=>{const f=$("f");if(f.horasal.disabled)return;f.horasal.value=f.horasal.value===h?"":h;horaInfo()};$("hchips").append(b)});
-$("salhoy").onclick=()=>{$("f").salioel.value=iso(hoy);autoVuelve()};
-$("volvio").onclick=()=>{const f=$("f");f.salioel.value="";f.vuelveel.value="";f.nosalioel.value="";salInfo()};
+$("salhoy").onclick=()=>{$("f").salioel.value=iso(hoy);$("f").salioconf.value=iso(hoy);autoVuelve()};
+$("volvio").onclick=()=>{const f=$("f");f.salioel.value="";f.vuelveel.value="";f.nosalioel.value="";f.salioconf.value="";salInfo()};
 $("nosal").onclick=()=>{const f=$("f"),c=salidaCercana(f.ingreso.value);if(!c){$("msg").textContent="No tiene salidas programadas.";return}
   f.nosalioel.value=iso(c.d);f.salioel.value="";f.vuelveel.value="";salInfo()};
 $("add").onclick=()=>openDlg(null);
@@ -1795,8 +1795,8 @@ function llevarDe(i,e,lista){const a=iso(new Date(e.d.getFullYear(),e.d.getMonth
 // Guarda «Ya salió» / «Ya volvió»: mientras Google contesta, la ficha queda bloqueada para no pisar el cambio con las fechas viejas
 // Se ve hecho al instante y se manda a Google por detrás; si Google falla, vuelve atrás y avisa
 async function guardarSalida(rec){
-  const i=items.find(x=>x.id===rec.id),antes=i?{salio:i.salio,vuelve:i.vuelve,nosalio:i.nosalio}:null;
-  if(i){i.salio=rec.salioel;i.vuelve=rec.vuelveel;i.nosalio=rec.nosalioel}
+  const i=items.find(x=>x.id===rec.id),antes=i?{salio:i.salio,vuelve:i.vuelve,nosalio:i.nosalio,salioconf:i.salioconf}:null;
+  if(i){i.salio=rec.salioel;i.vuelve=rec.vuelveel;i.nosalio=rec.nosalioel;i.salioconf=rec.salioconf}
   if($("dlg").open)$("dlg").close();
   render();if(vista==="M")renderMed();
   const am=$("amsg");am.textContent="Guardando "+rec.nombre+"…";
@@ -1809,7 +1809,7 @@ function salidaHoy(i){return calc(i).evs.find(e=>!pendiente(e)&&hoy>=e.d&&hoy<=e
 function salePend(i){return calc(i).evs.find(e=>pendiente(e))}
 async function yaSalio(i){if(!isAdmin())return;const e=salePend(i);if(!e)return;
   if(!confirm("¿Marcar que "+i.nombre.trim()+" ya salió? Vuelve el "+fd(e.v)+". Desde ahora no cuenta para la medicación ni Cuartos."))return;
-  const rec={id:i.id,nombre:i.nombre.trim(),cedula:i.cedula||"",tipo:i.tipo||"Privado",ingreso:i.ingreso,salioel:iso(hoy),vuelveel:iso(e.v),nosalioel:i.nosalio||"",horasal:i.horasal||""};
+  const rec={id:i.id,nombre:i.nombre.trim(),cedula:i.cedula||"",tipo:i.tipo||"Privado",ingreso:i.ingreso,salioel:iso(hoy),vuelveel:iso(e.v),nosalioel:i.nosalio||"",horasal:i.horasal||"",salioconf:iso(hoy)};
   MEALS.forEach(m=>rec[m]=i[m]||"");
   await guardarSalida(rec)}
 // "Ya volvió": termina la salida hoy (queda registrada: salió el … y volvió hoy)
@@ -1818,7 +1818,7 @@ async function yaVolvio(i){if(!isAdmin())return;const e=salidaHoy(i);if(!e)retur
   // el día que vuelve cuenta como salida, así que al volver antes la salida termina ayer y hoy ya está presente
   const ayer=new Date(hoy.getFullYear(),hoy.getMonth(),hoy.getDate()-1),mismoDia=+e.d>=+hoy;
   const rec={id:i.id,nombre:i.nombre.trim(),cedula:i.cedula||"",tipo:i.tipo||"Privado",ingreso:i.ingreso,
-    salioel:mismoDia?"":iso(e.d),vuelveel:mismoDia?"":iso(ayer),nosalioel:mismoDia?iso(e.d):(i.nosalio||""),horasal:i.horasal||""};
+    salioel:mismoDia?"":iso(e.d),vuelveel:mismoDia?"":iso(ayer),nosalioel:mismoDia?iso(e.d):(i.nosalio||""),horasal:i.horasal||"",salioconf:mismoDia?"":(i.salioconf||"")};
   MEALS.forEach(m=>rec[m]=i[m]||"");
   await guardarSalida(rec)}
 async function marcarLlevar(i,quitar){if(!isAdmin())return;
@@ -2416,7 +2416,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261127112000";
+const APP_VER="20261127115000";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}

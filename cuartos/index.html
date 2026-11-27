@@ -409,11 +409,11 @@ const dias=(a,b)=>Math.round((b-a)/864e5);
 function salidaHoy(o){
   const ing=o.ingreso,fin=addM(ing,DUR),skip=o.nosalio?+parse(o.nosalio):null;
   const numS=s=>Math.max(1,fullM(ing,new Date(s.getFullYear(),s.getMonth(),s.getDate()+15))-PRIMERA+1);
-  const man=o.salio&&o.vuelve?{n:numS(parse(o.salio)),d:parse(o.salio),v:parse(o.vuelve),man:true}:null;
+  const man=o.salio&&o.vuelve?{n:numS(parse(o.salio)),d:parse(o.salio),v:parse(o.vuelve),man:true,conf:!!o.salioconf&&o.salioconf===o.salio}:null;
   const evs=[];for(let n=1;;n++){const d=addM(ing,PRIMERA+n-1);if(d>=fin)break;if(+d===skip||(man&&man.n===n))continue;evs.push({d,v:new Date(d.getFullYear(),d.getMonth(),d.getDate()+DIAS_SAL(n))})}
   if(man)evs.push(man);
-  // la salida automática de hoy no cuenta hasta que en Internos se toca «Ya salió»
-  const e=evs.find(e=>HOY>=e.d&&HOY<=e.v&&(e.man||+e.d!==+HOY));return e?e.v:null;
+  // la salida de hoy (automática o programada) no cuenta hasta que en Internos se toca «Ya salió»
+  const e=evs.find(e=>HOY>=e.d&&HOY<=e.v&&(e.conf||+e.d!==+HOY));return e?e.v:null;
 }
 const $=id=>document.getElementById(id);
 const el=(t,c,txt)=>{const e=document.createElement(t);if(c)e.className=c;if(txt!=null)e.textContent=txt;return e};
@@ -488,7 +488,7 @@ function armar(int,cu,rot,nj){
   gente=int.filter(o=>String(o.nombre||"").trim()&&o.ingreso).map(o=>{const g=guardado[String(o.id)]||{};
     return{id:String(o.id),nombre:String(o.nombre).trim(),cedula:String(o.cedula||""),ingreso:parse(toISO(o.ingreso)),
       sector:GRUPOS.includes(g.sector)?g.sector:"",cuarto:CUARTOS.some(c=>c.id===String(g.cuarto))?String(g.cuarto):"",antes:String(g.antes||""),
-      salio:toISO(o.salioel),vuelve:toISO(o.vuelveel),nosalio:toISO(o.nosalioel),fuera:g.sector===FUERA}})
+      salio:toISO(o.salioel),vuelve:toISO(o.vuelveel),nosalio:toISO(o.nosalioel),salioconf:toISO(o.salioconf),fuera:g.sector===FUERA}})
     .sort((a,b)=>a.ingreso-b.ingreso||a.nombre.localeCompare(b.nombre,"es"));
   fuera=gente.filter(p=>p.fuera);gente=gente.filter(p=>!p.fuera);
   historial=((rot&&rot.data)||[]).slice().reverse();
@@ -943,7 +943,7 @@ if("serviceWorker" in navigator&&location.protocol.startsWith("http"))window.add
 </script>
 <script>
 /* Actualización automática: si hay una versión nueva publicada, la app se recarga sola (GitHub guarda la página hasta 10 minutos) */
-const APP_VER="20261127112000";
+const APP_VER="20261127115000";
 (async()=>{try{if(!location.protocol.startsWith("http"))return;const base=location.pathname.replace(/cuartos\/?.*$/,"");
   const v=(await fetch(base+"version.txt?x="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():"")).trim();
   if(v&&v!==APP_VER&&sessionStorage.getItem("alas-recarga")!==v){sessionStorage.setItem("alas-recarga",v);try{if(typeof pasarSesion==="function")pasarSesion()}catch(e){}
